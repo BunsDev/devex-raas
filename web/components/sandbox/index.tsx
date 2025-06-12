@@ -14,58 +14,14 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-import CodeEditor from "./editor";
-import { FileTree } from "./FileTree";
 
-const Terminal = ({
-  className,
-  isVisible,
-}: {
-  className?: string;
-  isVisible: boolean;
-}) => (
-  <div
-    className={`bg-black text-white font-mono text-sm h-full ${className} ${!isVisible ? "hidden" : ""}`}
-  >
-    <div className="p-2 border-b border-gray-700 bg-gray-800 flex items-center justify-between">
-      <span className="text-gray-300 text-xs">Terminal</span>
-    </div>
-    <div className="p-3">
-      <div className="text-green-400">$ npm run dev</div>
-      <div className="text-gray-300">Starting development server...</div>
-      <div className="text-green-400">✓ Ready on http://localhost:3000</div>
-      <div className="text-blue-400 mt-2">$ █</div>
-    </div>
-  </div>
-);
-
-const Output = ({
-  className,
-  isVisible,
-}: {
-  className?: string;
-  isVisible: boolean;
-}) => (
-  <div
-    className={`bg-gray-50 border-t h-full ${className} ${!isVisible ? "hidden" : ""}`}
-  >
-    <div className="p-2 border-b bg-gray-100 flex items-center justify-between">
-      <span className="text-gray-700 text-xs font-semibold">Output</span>
-      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-        <Play className="h-3 w-3" />
-      </Button>
-    </div>
-    <div className="p-3 font-mono text-xs">
-      <div className="text-green-600">✓ Build successful</div>
-      <div className="text-gray-600">Hello, Developer!</div>
-      <div className="text-blue-600">Compilation completed in 1.2s</div>
-    </div>
-  </div>
-);
+import Editor from "./Editor";
+import FileTree from "./FileTree";
+import Output from "./Output";
+import Terminal from "./Terminal";
 
 interface CodingPageProps {}
-
-const CodingPage: React.FC<CodingPageProps> = () => {
+const Sandbox: React.FC<CodingPageProps> = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [terminalVisible, setTerminalVisible] = useState(true);
   const [outputVisible, setOutputVisible] = useState(true);
@@ -260,7 +216,7 @@ const CodingPage: React.FC<CodingPageProps> = () => {
                   tabIndex={-1}
                   className="h-full focus:outline-none"
                 >
-                  <CodeEditor />
+                  <Editor />
                 </div>
               </ResizablePanel>
 
@@ -360,4 +316,4 @@ const CodingPage: React.FC<CodingPageProps> = () => {
   );
 };
 
-export default CodingPage;
+export default Sandbox;

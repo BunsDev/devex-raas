@@ -1,6 +1,6 @@
 import { File, Folder, Tree } from "@/components/magicui/file-tree";
 
-export function FileTree() {
+export default function FileTree() {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background">
       <Tree

@@ -1,14 +1,15 @@
-import React, { useRef, useState, useCallback, useMemo } from "react";
-import dynamic from "next/dynamic";
 import {
+  Download,
+  Maximize2,
+  Minimize2,
   Play,
   Save,
   Settings,
-  Download,
   Upload,
-  Maximize2,
-  Minimize2,
 } from "lucide-react";
+import { editor } from "monaco-editor";
+import dynamic from "next/dynamic";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
 // Dynamically import Monaco Editor (SSR disabled)
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -21,7 +22,7 @@ interface Theme {
   label: string;
 }
 
-const CodeEditor: React.FC = () => {
+const Editor: React.FC = () => {
   const editorRef = useRef<any>(null);
   const [language, setLanguage] = useState<string>("javascript");
   const [theme, setTheme] = useState<string>("vs-dark");
@@ -77,7 +78,7 @@ for (let i = 0; i < 10; i++) {
   );
 
   // Editor options memoized to prevent unnecessary re-renders
-  const editorOptions = useMemo(
+  const editorOptions: editor.IStandaloneEditorConstructionOptions = useMemo(
     () => ({
       fontSize,
       wordWrap,
@@ -88,9 +89,9 @@ for (let i = 0; i < 10; i++) {
       suggest: { showKeywords: true, showSnippets: true },
       quickSuggestions: true,
       cursorBlinking: "smooth",
-      cursorSmoothCaretAnimation: true,
+      cursorSmoothCaretAnimation: "on",
       folding: true,
-      lineNumbers: "on",
+      lineNumbers: "on" as editor.LineNumbersType,
     }),
     [fontSize, wordWrap, minimap],
   );
@@ -400,4 +401,4 @@ for (let i = 0; i < 10; i++) {
   );
 };
 
-export default CodeEditor;
+export default Editor;

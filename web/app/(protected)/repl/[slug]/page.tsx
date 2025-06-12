@@ -1,6 +1,6 @@
 "use client";
 
-import Editor from "@/components/sandbox/sandbox";
+import Sandbox from "@/components/sandbox";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -12,7 +12,7 @@ export default function ReplPage() {
   // file-tree component from magicui.design
   // resizable component from shadcn-ui
   //
-  return <Editor />;
+  return <Sandbox />;
 
   return (
     <div className="h-screen w-screen flex flex-col justify-center items-center gap-8">
