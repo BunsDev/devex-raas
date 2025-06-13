@@ -1,0 +1,13 @@
+{
+  "name": "node-js-template",
+  "version": "1.0.0",
+  "description": "A Hello-World node-js-template server",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
