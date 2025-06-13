@@ -1,4 +1,4 @@
-# ☁️ Cloud Dev Platform — Minimal REPL-as-a-Service
+# ☁️ DEVEX — Minimal REPL-as-a-Service
 
 A cloud-based code sandbox that creates isolated REPL environments for each user. Inspired by Replit, built from the ground up using **Go**, **Kubernetes**, and **Next.js**.
 
