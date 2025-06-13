@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/services/auth"
 	"github.com/parthkapoor-dev/core/services/repl"
 )
@@ -21,9 +22,10 @@ func NewAPIServer(addr string) *APIServer {
 func (api *APIServer) Run() error {
 
 	router := http.NewServeMux()
+	s3Client := s3.NewS3Client()
 
 	router.Handle("/api/v1/auth/", http.StripPrefix("/api/v1/auth", auth.NewHandler()))
-	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler()))
+	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler(s3Client)))
 
 	server := http.Server{
 		Addr:    api.addr,
