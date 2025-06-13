@@ -18,8 +18,8 @@ import (
 var (
 	spacesAccessKey = dotenv.EnvString("SPACES_ACCESS_KEY", "YOUR_SPACES_ACCESS_KEY")
 	spacesSecretKey = dotenv.EnvString("SPACES_SECRET_KEY", "YOUR_SPACES_SECRET_KEY")
-	spacesRegion    = dotenv.EnvString("SPACES_REGION", "your-region") // e.g. "blr1"
-	spacesBucket    = dotenv.EnvString("SPACES_BUCKET", "your-bucket")
+	spacesRegion    = dotenv.EnvString("SPACES_REGION", "blr1")
+	spacesBucket    = dotenv.EnvString("SPACES_BUCKET", "devex")
 	spacesEndpoint  = dotenv.EnvString("SPACES_ENDPOINT", "https://blr1.digitaloceanspaces.com")
 )
 
@@ -41,7 +41,6 @@ func NewS3Client() *S3Client {
 
 	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(spacesEndpoint)
-		// Force path-style addressing for DigitalOcean Spaces
 		o.UsePathStyle = true
 	})
 

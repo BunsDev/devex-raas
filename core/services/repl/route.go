@@ -4,13 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/parthkapoor-dev/core/internal/k8s"
 	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/pkg/json"
 )
 
 type Repl struct {
-	name     string
-	template string
+	UserName string `json:"userName"`
+	Template string `json:"template"`
 }
 
 func NewHandler(s3Client *s3.S3Client) http.Handler {
@@ -19,6 +20,8 @@ func NewHandler(s3Client *s3.S3Client) http.Handler {
 	mux.HandleFunc("POST /new", func(w http.ResponseWriter, r *http.Request) {
 		newRepl(w, r, s3Client)
 	})
+	mux.HandleFunc("GET /start/{userName}/{replId}", startRepl)
+
 	return mux
 }
 
@@ -31,7 +34,10 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client) {
 		return
 	}
 
-	if err := s3Client.CopyFolder("templates/node-js/", "repl/base0/"); err != nil {
+	// TODO: Create a new replId
+	// TODO: Copy to this path: repl/userName/replId
+
+	if err := s3Client.CopyFolder(repl.Template, "repl/base0/"); err != nil {
 		log.Fatal("S3 CopyTemplate is giving Err: ", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -39,4 +45,24 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client) {
 
 	json.WriteJSON(w, http.StatusOK, "Success")
 
+}
+
+func startRepl(w http.ResponseWriter, r *http.Request) {
+
+	userName := r.PathValue("userName")
+	replId := r.PathValue("replId")
+
+	log.Println(userName, replId)
+
+	// TODO: Check whether replId exists or not?
+
+	if err := k8s.CreateReplDeploymentAndService(replId); err != nil {
+		log.Fatal("K8s Deployment Failed", err)
+		json.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// TODO: Copy Files from S3 to Runner
+
+	json.WriteJSON(w, http.StatusOK, "Success")
 }
