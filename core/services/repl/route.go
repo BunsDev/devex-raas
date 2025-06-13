@@ -21,6 +21,7 @@ func NewHandler(s3Client *s3.S3Client) http.Handler {
 		newRepl(w, r, s3Client)
 	})
 	mux.HandleFunc("GET /start/{userName}/{replId}", startRepl)
+	mux.HandleFunc("GET /delete/{userName}/{replId}", deleteRepl)
 
 	return mux
 }
@@ -61,6 +62,27 @@ func startRepl(w http.ResponseWriter, r *http.Request) {
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// TODO: Copy Files from S3 to Runner
+
+	json.WriteJSON(w, http.StatusOK, "Success")
+}
+
+func deleteRepl(w http.ResponseWriter, r *http.Request) {
+
+	userName := r.PathValue("userName")
+	replId := r.PathValue("replId")
+
+	log.Println(userName, replId)
+
+	// TODO: Check whether replId exists or not?
+	// TODO: Delete Repl
+
+	// if err := k8s.CreateReplDeploymentAndService(replId); err != nil {
+	// 	log.Fatal("K8s Deployment Failed", err)
+	// 	json.WriteError(w, http.StatusInternalServerError, err.Error())
+	// 	return
+	// }
 
 	// TODO: Copy Files from S3 to Runner
 
