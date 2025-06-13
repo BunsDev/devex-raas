@@ -23,7 +23,7 @@ func (api *APIServer) Run() error {
 	router := http.NewServeMux()
 
 	router.Handle("/api/v1/auth/", http.StripPrefix("/api/v1/auth", auth.NewHandler()))
-	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repel", repl.NewHandler()))
+	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler()))
 
 	server := http.Server{
 		Addr:    api.addr,
