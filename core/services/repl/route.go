@@ -76,14 +76,8 @@ func deleteRepl(w http.ResponseWriter, r *http.Request) {
 	log.Println(userName, replId)
 
 	// TODO: Check whether replId exists or not?
+	// TODO: Send Back all data to repl
 	// TODO: Delete Repl
-
-	// if err := k8s.CreateReplDeploymentAndService(replId); err != nil {
-	// 	log.Fatal("K8s Deployment Failed", err)
-	// 	json.WriteError(w, http.StatusInternalServerError, err.Error())
-	// 	return
-	// }
-
 	// TODO: Copy Files from S3 to Runner
 
 	json.WriteJSON(w, http.StatusOK, "Success")

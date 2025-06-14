@@ -21,9 +21,8 @@
 .DS_Store
 
 # Environment variables
-.env
-.env.*
+*/.env
 
 # Logs and temporary files
 *.log
-/tmp/
+*/tmp/
