@@ -13,9 +13,9 @@ import (
 
 func NewHandler() http.Handler {
 	mux := http.NewServeMux()
-	ws := ws.NewWSHandler()
 
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ws := ws.NewWSHandler()
 		handleWs(w, r, ws)
 	})
 	return mux
@@ -35,6 +35,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
 	}
 
 	ws.On("Connection", func(data any) {
+		log.Println("we go connected")
 		rootContents, _ := fs.FetchDir("/workspaces", "")
 		ws.Emit("Loaded", map[string]any{
 			"rootContents": rootContents,
@@ -43,8 +44,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
 
 	OnTyped(ws, "fetchDir", func(req FetchDirRequest) {
 
-		dirPath := fmt.Sprintf("/workspace/%s", req.Dir)
-		contents, err := fs.FetchDir(dirPath, req.Dir)
+		contents, err := fs.FetchDir("/workspaces", req.Dir)
 		if err != nil {
 			log.Printf("Error fetching directory: %v", err)
 			ws.Emit("fetchDirResponse", map[string]any{
@@ -54,7 +54,10 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
 		}
 
 		// Send response back to client
-		ws.Emit("fetchDirResponse", contents)
+		ws.Emit("fetchDirResponse", map[string]any{
+			"contents": contents,
+			"path":     req.Dir,
+		})
 	})
 
 	// Handle fetchContent event

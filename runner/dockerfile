@@ -1,0 +1,34 @@
+# ---- Step 1: Build Stage ----
+FROM golang:1.24 AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy go.mod and go.sum first for dependency caching
+COPY go.mod go.sum ./
+RUN go mod tidy
+
+# Copy the rest of the source code
+COPY . .
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o runner ./cmd/main.go
+
+
+# ---- Step 2: Final Runtime Stage ----
+# Use a minimal image with no shell
+FROM gcr.io/distroless/static
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/runner .
+
+# Set permissions if needed (optional for distroless)
+# RUN chmod +x /app/runner
+
+# Port on which your service will run (optional doc)
+EXPOSE 8080
+
+# Run the binary (this is the only process in container)
+CMD ["/app/runner"]

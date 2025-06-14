@@ -16,18 +16,59 @@ import {
 } from "lucide-react";
 
 import Editor from "./Editor";
-import FileTree from "./FileTree";
+import FileTree, { Tree } from "./FileTree";
 import Output from "./Output";
 import Terminal from "./Terminal";
+import { Events, useRunnerSocket } from "@/hooks/useSocket";
 
-interface CodingPageProps {}
-const Sandbox: React.FC<CodingPageProps> = () => {
+interface SandboxProps {
+  slug: string;
+}
+const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [terminalVisible, setTerminalVisible] = useState(true);
   const [outputVisible, setOutputVisible] = useState(true);
   const [activeBottomPanel, setActiveBottomPanel] = useState<
     "terminal" | "output"
   >("terminal");
+  const [tree, setTree] = useState<Tree | null>(null);
+
+  const { isConnected, emit, on, off } = useRunnerSocket(slug as string);
+  useEffect(() => {
+    if (!isConnected) return;
+
+    emit("Connection");
+
+    on("Loaded", (data) => {
+      console.log("Recieved Loaded Data", data);
+      setTree({
+        "": data.rootContents,
+      });
+    });
+
+    // Listen for dir response
+    on("fetchDirResponse", (data) => {
+      console.log("📁 Dir contents:", data);
+      setTree((prev) => ({ ...prev, [data.path]: data.contents }));
+    });
+
+    // Listen for terminal data
+    on("terminal", (payload) => {
+      const text = new TextDecoder("utf-8").decode(payload.data);
+      console.log("🖥️ Terminal output:", text);
+    });
+
+    return () => {
+      off("fetchDirResponse");
+      off("terminal");
+    };
+  }, [isConnected]);
+
+  async function fetchDir(path: string) {
+    emit("fetchDir", { Dir: path });
+  }
+
+  async function fetchContent(path: string) {}
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -109,6 +150,8 @@ const Sandbox: React.FC<CodingPageProps> = () => {
   const showBottomPanel = terminalVisible || outputVisible;
   const currentBottomContent =
     activeBottomPanel === "terminal" ? terminalVisible : outputVisible;
+
+  if (!tree) return <div>Loading Page</div>;
 
   return (
     <div className="h-screen w-full bg-gray-100 flex flex-col">
@@ -192,7 +235,11 @@ const Sandbox: React.FC<CodingPageProps> = () => {
                   tabIndex={-1}
                   className="h-full focus:outline-none"
                 >
-                  <FileTree />
+                  <FileTree
+                    tree={tree}
+                    fetchDir={fetchDir}
+                    fetchContent={fetchContent}
+                  />
                 </div>
               </ResizablePanel>
               <ResizableHandle withHandle />

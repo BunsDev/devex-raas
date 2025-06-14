@@ -26,3 +26,4 @@
 # Logs and temporary files
 *.log
 */tmp/
+*/workspaces/

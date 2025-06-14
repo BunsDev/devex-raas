@@ -5,9 +5,21 @@ import (
 	"path/filepath"
 )
 
-func FetchDir(basePath, relativePath string) ([]os.DirEntry, error) {
+func FetchDir(basePath, relativePath string) ([]DirEntry, error) {
 	fullPath := filepath.Join(basePath, relativePath)
-	return os.ReadDir(fullPath)
+	entries, err := os.ReadDir(fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []DirEntry
+	for _, entry := range entries {
+		result = append(result, DirEntry{
+			Name:  entry.Name(),
+			IsDir: entry.IsDir(),
+		})
+	}
+	return result, nil
 }
 
 func FetchFileContent(fullPath string) (string, error) {

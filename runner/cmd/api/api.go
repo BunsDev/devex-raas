@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/parthkapoor-dev/runner/services/repl"
+	"github.com/rs/cors"
 )
 
 type APIServer struct {
@@ -23,9 +24,15 @@ func (api *APIServer) Run() error {
 
 	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler()))
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // TODO: Update to frontend URL in prod
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+	})
 	server := http.Server{
 		Addr:    api.addr,
-		Handler: router,
+		Handler: c.Handler(router),
 	}
 
 	log.Println("Server has started at ", api.addr)
