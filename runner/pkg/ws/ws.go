@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -168,32 +167,4 @@ func (ws *WSHandler) IsConnected() bool {
 // For now, it's the same as Emit but can be extended for multiple connections
 func (ws *WSHandler) Broadcast(event string, data any) error {
 	return ws.Emit(event, data)
-}
-
-// Example usage and helper functions
-
-// TypedMessage represents a strongly-typed message structure
-type TypedMessage[T any] struct {
-	Event string `json:"event"`
-	Data  T      `json:"data"`
-}
-
-// EmitTyped sends a strongly-typed message
-func EmitTyped[T any](ws *WSHandler, event string, data T) error {
-	return ws.Emit(event, data)
-}
-
-// OnTyped registers a strongly-typed event handler
-func OnTyped[T any](ws *WSHandler, event string, handler func(T)) {
-	ws.On(event, func(data any) {
-		// Type assertion and conversion
-		if jsonData, err := json.Marshal(data); err == nil {
-			var typedData T
-			if err := json.Unmarshal(jsonData, &typedData); err == nil {
-				handler(typedData)
-			} else {
-				log.Printf("Failed to unmarshal data for event %s: %v", event, err)
-			}
-		}
-	})
 }
