@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/parthkapoor-dev/proxy/services/repl"
+	"github.com/parthkapoor-dev/runner/services/repl"
 )
 
 type APIServer struct {

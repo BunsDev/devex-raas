@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/parthkapoor-dev/proxy/cmd/api"
+	"github.com/parthkapoor-dev/runner/cmd/api"
 )
 
 func main() {
