@@ -1,0 +1,8 @@
+go 1.24.3
+
+use (
+	./core
+	./runner/proxy-service
+	./runner/repl-service
+	./runner
+)
