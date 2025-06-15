@@ -17,8 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o runner ./cmd/main.go
 
 # ---- Step 2: Final Runtime Stage ----
 # Use a minimal image with no shell
-FROM gcr.io/distroless/static
-
+FROM debian:bookworm-slim
 WORKDIR /app
 
 # Copy binary from builder

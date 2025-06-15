@@ -41,7 +41,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty
 	host := r.Host
 	replId := strings.Split(host, ".")[0]
 	if replId == "" {
-		log.Println("No repl ID found, closing connection")
+		log.Fatal("No repl ID found, closing connection")
 		return
 	}
 
@@ -97,7 +97,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty
 		// Save file locally
 		err := fs.SaveFile(fullPath, req.Content)
 		if err != nil {
-			log.Printf("Error saving file: %v", err)
+			log.Fatal("Error saving file: %v", err)
 			ws.Emit("updateContentResponse", map[string]any{
 				"error": err.Error(),
 			})
@@ -116,15 +116,12 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty
 		sessionId = generateSessionID()
 		session, err := pty.CreateSession(sessionId, nil)
 		if err != nil {
-			log.Fatal("Unable to CREATE a new SESSION: ", err)
 			return
 		}
 		session.SetOnDataCallback(func(data []byte) {
-			log.Println("SENDING DATA FROM TERMINAL TO FRONTEND: ", string(data))
 			ws.Emit("terminalResponse", string(data))
 		})
 		session.SetOnCloseCallback(func() {
-			log.Println("We gotta Close this session")
 			ws.Emit("terminalClosed", nil)
 		})
 	})
@@ -133,10 +130,8 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty
 	OnTyped(ws, "terminalInput", func(req TerminalDataRequest) {
 		session, exist := pty.GetSession(sessionId)
 		if exist == false {
-			log.Fatal("SESSION DOES NOT EXISTS", session)
 			return
 		}
-		log.Println("RECEIVED INPUT FROM FRONTEND TO TERMINAL: ", req.Data)
 		session.WriteString(req.Data)
 	})
 
