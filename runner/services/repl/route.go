@@ -1,6 +1,8 @@
 package repl
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,12 +18,21 @@ func NewHandler() http.Handler {
 
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		ws := ws.NewWSHandler()
-		handleWs(w, r, ws)
+
+		pty := pty.NewPTYManager()
+		defer pty.Cleanup()
+
+		handleWs(w, r, ws, pty)
 	})
 	return mux
 }
+func generateSessionID() string {
+	bytes := make([]byte, 8)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 
-func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
+}
+func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty.PTYManager) {
 
 	if err := ws.Init(w, r); err != nil {
 		log.Fatal(err)
@@ -73,7 +84,10 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
 		}
 
 		// Send response back to client
-		ws.Emit("fetchContentResponse", map[string]string{"content": data})
+		ws.Emit("fetchContentResponse", map[string]string{
+			"content": data,
+			"path":    req.Path,
+		})
 	})
 
 	// Handle updateContent event
@@ -95,14 +109,35 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
 		})
 	})
 
+	var sessionId string
+
 	// Handle requestTerminal event
 	ws.On("requestTerminal", func(data any) {
-		pty.StartTerminal(replId)
+		sessionId = generateSessionID()
+		session, err := pty.CreateSession(sessionId, nil)
+		if err != nil {
+			log.Fatal("Unable to CREATE a new SESSION: ", err)
+			return
+		}
+		session.SetOnDataCallback(func(data []byte) {
+			log.Println("SENDING DATA FROM TERMINAL TO FRONTEND: ", string(data))
+			ws.Emit("terminalResponse", string(data))
+		})
+		session.SetOnCloseCallback(func() {
+			log.Println("We gotta Close this session")
+			ws.Emit("terminalClosed", nil)
+		})
 	})
 
 	// Handle terminalData event
-	OnTyped(ws, "terminalData", func(req TerminalDataRequest) {
-		// TODO: pty.write
+	OnTyped(ws, "terminalInput", func(req TerminalDataRequest) {
+		session, exist := pty.GetSession(sessionId)
+		if exist == false {
+			log.Fatal("SESSION DOES NOT EXISTS", session)
+			return
+		}
+		log.Println("RECEIVED INPUT FROM FRONTEND TO TERMINAL: ", req.Data)
+		session.WriteString(req.Data)
 	})
 
 }

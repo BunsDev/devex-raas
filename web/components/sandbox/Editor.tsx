@@ -9,7 +9,13 @@ import {
 } from "lucide-react";
 import { editor } from "monaco-editor";
 import dynamic from "next/dynamic";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 // Dynamically import Monaco Editor (SSR disabled)
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -25,9 +31,11 @@ interface Theme {
 const Editor = ({
   code,
   setCode,
+  fileType,
 }: {
   code: string;
   setCode: React.Dispatch<React.SetStateAction<string>>;
+  fileType: string;
 }) => {
   const editorRef = useRef<any>(null);
   const [language, setLanguage] = useState<string>("javascript");
@@ -40,6 +48,15 @@ const Editor = ({
   const [minimap, setMinimap] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
+
+  useEffect(() => {
+    const detectedLang = detectLanguageFromExtension(fileType);
+    if (detectedLang) {
+      setLanguage(detectedLang);
+    }
+    console.log("New File Type: ", fileType);
+    console.log("Extension Detected", detectedLang);
+  }, [fileType]);
 
   // Supported languages and themes
   const languages = useMemo(

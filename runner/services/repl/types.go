@@ -22,8 +22,7 @@ type UpdateContentRequest struct {
 }
 
 type TerminalDataRequest struct {
-	Data       string `json:"data"`
-	TerminalID int    `json:"terminalId"`
+	Data string `json:"data"`
 }
 
 type TerminalResponse struct {

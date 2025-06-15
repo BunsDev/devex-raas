@@ -5,7 +5,8 @@ export type Events = {
   fetchDirResponse: (data: any) => void;
   fetchContentResponse: (data: any) => void;
   updateContentResponse: (data: any) => void;
-  terminal: (data: { data: Uint8Array }) => void;
+  terminalResponse: (data: any) => void;
+  terminalClosed: (data: any) => void;
 };
 
 type EventHandler = (...args: any[]) => void;

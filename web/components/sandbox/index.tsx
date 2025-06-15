@@ -18,12 +18,13 @@ import {
 import Editor from "./Editor";
 import FileTree, { Tree } from "./FileTree";
 import Output from "./Output";
-import Terminal from "./Terminal";
-import { Events, useRunnerSocket } from "@/hooks/useSocket";
+import Terminal, { TerminalRef } from "./Terminal";
+import { useRunnerSocket } from "@/hooks/useSocket";
 
 interface SandboxProps {
   slug: string;
 }
+
 const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [terminalVisible, setTerminalVisible] = useState(true);
@@ -33,17 +34,18 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   >("terminal");
   const [tree, setTree] = useState<Tree | null>(null);
   const [code, setCode] = useState<string>(
-    `// Welcome to your Cloud IDE Editor`,
+    `// Welcome to Devex: your Cloud IDE Editor`,
   );
-
+  const [fileType, setFileType] = useState<string>("js");
   const { isConnected, emit, on, off } = useRunnerSocket(slug as string);
+
   useEffect(() => {
     if (!isConnected) return;
 
     emit("Connection");
 
     on("Loaded", (data) => {
-      console.log("Recieved Loaded Data", data);
+      console.log("Received Loaded Data", data);
       setTree({
         "": data.rootContents,
       });
@@ -57,32 +59,61 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
 
     // Listen for content response
     on("fetchContentResponse", (data) => {
-      console.log("📁 Dir contents:", data);
+      console.log("📄 File contents:", data);
       setCode(data.content);
+      setFileType(data.path.split(".").pop()?.toLowerCase() || "txt");
     });
 
     // Listen for terminal data
-    on("terminal", (payload) => {
-      const text = new TextDecoder("utf-8").decode(payload.data);
-      console.log("🖥️ Terminal output:", text);
+    on("terminalResponse", (data) => {
+      terminalRef.current?.writeData(data);
+      console.log("🖥️ Terminal output:", data);
+    });
+
+    on("terminalClosed", (data) => {
+      terminalRef.current?.writeData(
+        "\r\n\x1b[31mTerminal session closed\x1b[0m\r\n",
+      );
+      console.log("🖥️ Terminal Closed");
     });
 
     return () => {
+      off("Loaded");
       off("fetchDirResponse");
-      off("terminal");
+      off("fetchContentResponse");
+      off("terminalResponse");
     };
   }, [isConnected]);
 
-  async function fetchDir(path: string) {
-    emit("fetchDir", { Dir: path });
-  }
+  // Editor Helpers
+  const fetchDir = async (path: string) => emit("fetchDir", { Dir: path });
+  const fetchContent = async (path: string) => emit("fetchContent", { path });
 
-  async function fetchContent(path: string) {
-    emit("fetchContent", { path });
-  }
+  // Terminal Helpers
+  const handleTerminalSendData = (data: string) =>
+    emit("terminalInput", { data, terminalId: 12 });
+  const handleRequestTerminal = () => emit("requestTerminal");
+  const handleTerminalResize = () => {};
+
+  const handleTerminalReady = useCallback(() => {
+    terminalRef.current?.writeData(
+      "Terminal initialized. Connecting to server...\r\n",
+    );
+  }, []);
+
+  // Handle terminal close
+  const handleTerminalClose = useCallback(() => {
+    console.log("Close the Terminal");
+  }, []);
+
+  // Handle terminal error
+  const handleTerminalError = useCallback((error: string) => {
+    console.error("Terminal error:", error);
+  }, []);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const terminalRef = useRef<TerminalRef>(null);
 
   // Keyboard shortcuts handler
   const handleKeyDown = useCallback(
@@ -159,10 +190,17 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
 
   // Calculate if bottom panel should be shown
   const showBottomPanel = terminalVisible || outputVisible;
-  const currentBottomContent =
-    activeBottomPanel === "terminal" ? terminalVisible : outputVisible;
 
-  if (!tree) return <div>Loading Page</div>;
+  if (!tree) {
+    return (
+      <div className="h-screen w-full bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Loading Sandbox...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-full bg-gray-100 flex flex-col">
@@ -274,7 +312,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                   tabIndex={-1}
                   className="h-full focus:outline-none"
                 >
-                  <Editor code={code} setCode={setCode} />
+                  <Editor code={code} setCode={setCode} fileType={fileType} />
                 </div>
               </ResizablePanel>
 
@@ -341,18 +379,21 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
 
                       {/* Panel content */}
                       <div className="h-full pt-8">
-                        <Terminal
-                          className="h-full"
-                          isVisible={
-                            activeBottomPanel === "terminal" && terminalVisible
-                          }
-                        />
-                        <Output
-                          className="h-full"
-                          isVisible={
-                            activeBottomPanel === "output" && outputVisible
-                          }
-                        />
+                        {activeBottomPanel === "terminal" &&
+                          terminalVisible && (
+                            <Terminal
+                              onSendData={handleTerminalSendData}
+                              onRequestTerminal={handleRequestTerminal}
+                              onTerminalResize={handleTerminalResize}
+                              onReady={handleTerminalReady}
+                              onClose={handleTerminalClose}
+                              onError={handleTerminalError}
+                              ref={terminalRef}
+                            />
+                          )}
+                        {activeBottomPanel === "output" && outputVisible && (
+                          <Output className="h-full" isVisible={true} />
+                        )}
                       </div>
                     </div>
                   </ResizablePanel>
@@ -361,14 +402,6 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
             </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
-      </div>
-
-      {/* Status bar */}
-      <div className="h-6 bg-blue-600 text-white text-xs flex items-center px-3 space-x-4">
-        <span>TypeScript</span>
-        <span>UTF-8</span>
-        <span>Ln 8, Col 25</span>
-        <span className="ml-auto">Ready</span>
       </div>
     </div>
   );
