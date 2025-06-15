@@ -22,7 +22,13 @@ interface Theme {
   label: string;
 }
 
-const Editor: React.FC = () => {
+const Editor = ({
+  code,
+  setCode,
+}: {
+  code: string;
+  setCode: React.Dispatch<React.SetStateAction<string>>;
+}) => {
   const editorRef = useRef<any>(null);
   const [language, setLanguage] = useState<string>("javascript");
   const [theme, setTheme] = useState<string>("vs-dark");
@@ -34,16 +40,6 @@ const Editor: React.FC = () => {
   const [minimap, setMinimap] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [code, setCode] = useState<string>(`// Welcome to your Cloud IDE Editor
-function fibonacci(n) {
-  if (n <= 1) return n;
-  return fibonacci(n - 1) + fibonacci(n - 2);
-}
-
-console.log('Fibonacci sequence:');
-for (let i = 0; i < 10; i++) {
-  console.log(\`F(\${i}) = \${fibonacci(i)}\`);
-}`);
 
   // Supported languages and themes
   const languages = useMemo(

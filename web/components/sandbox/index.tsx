@@ -32,6 +32,9 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
     "terminal" | "output"
   >("terminal");
   const [tree, setTree] = useState<Tree | null>(null);
+  const [code, setCode] = useState<string>(
+    `// Welcome to your Cloud IDE Editor`,
+  );
 
   const { isConnected, emit, on, off } = useRunnerSocket(slug as string);
   useEffect(() => {
@@ -52,6 +55,12 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
       setTree((prev) => ({ ...prev, [data.path]: data.contents }));
     });
 
+    // Listen for content response
+    on("fetchContentResponse", (data) => {
+      console.log("📁 Dir contents:", data);
+      setCode(data.content);
+    });
+
     // Listen for terminal data
     on("terminal", (payload) => {
       const text = new TextDecoder("utf-8").decode(payload.data);
@@ -68,7 +77,9 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
     emit("fetchDir", { Dir: path });
   }
 
-  async function fetchContent(path: string) {}
+  async function fetchContent(path: string) {
+    emit("fetchContent", { path });
+  }
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -263,7 +274,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                   tabIndex={-1}
                   className="h-full focus:outline-none"
                 >
-                  <Editor />
+                  <Editor code={code} setCode={setCode} />
                 </div>
               </ResizablePanel>
 

@@ -62,7 +62,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
 
 	// Handle fetchContent event
 	OnTyped(ws, "fetchContent", func(req FetchContentRequest) {
-		fullPath := fmt.Sprintf("/workspace/%s", req.Path)
+		fullPath := fmt.Sprintf("/workspaces/%s", req.Path)
 		data, err := fs.FetchFileContent(fullPath)
 		if err != nil {
 			log.Printf("Error fetching file content: %v", err)
@@ -73,7 +73,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler) {
 		}
 
 		// Send response back to client
-		ws.Emit("fetchContentResponse", data)
+		ws.Emit("fetchContentResponse", map[string]string{"content": data})
 	})
 
 	// Handle updateContent event
