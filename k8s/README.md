@@ -1,97 +1,150 @@
-## Setting up the k8s Cluster
+## Setting up the K8s Cluster
 
-Please Note: The Following docs were meant for personal use only. If you find any issue in it, feel free to contribute in the project.
+> 📌 **Note**: The following docs were meant for personal use. If you find any issue, feel free to contribute to the project.
 
-Please Read the Contribution Guide, before sending PR requests.
+Please read the [Contribution Guide](./CONTRIBUTING.md) before sending PR requests.
+
+---
 
 ### Step 0: Prerequisites
-Your System should have installed
-```
-Cloned this project
-docker
-kubectl
-kind (For Local Testing only)
-helm (You can skip this, as we have already generated this ingress-controller.yaml file)
+
+Your system should have the following installed:
+
 ```
 
-Following are the steps for setting up the k8s Cluster.
-Note: This is to be only done once, when creating a new cluster on cloud or kind
+* This project cloned
+* Docker
+* kubectl
+* kind (For Local Testing only)
+* helm (Optional — already included via pre-generated ingress-controller.yaml)
+
+````
+
+---
 
 ### Step 1: Create a new Cluster
-Create or new cluster on Cloud (DigitalOcean, AWS or Azure) or we can test locally using kind
+
+You can create a new cluster on Cloud (DigitalOcean, AWS, Azure) or test locally using `kind`.
+
+To create a local Kind cluster:
+
+```bash
+kind create cluster --name devex-cluster
+````
+
+To check if the cluster is running:
+
+```bash
+kubectl get nodes
+```
+
+Sample output:
 
 ```
-kind create cluster --name devex-cluster
-```
-To See whether the cluster is running
-```
-kubectl get nodes
-NAME                                  STATUS   ROLES           AGE   VERSION
+NAME                        STATUS   ROLES           AGE   VERSION
 devex-cluster-control-plane   Ready    control-plane   45m   v1.33.1
 ```
 
-Note: By default we have a single node in a kind cluster, create a kind config file to create more nodes
+> 📝 By default, Kind creates a single-node cluster. To create multiple nodes, define a Kind config file.
 
-### Step 2: Install Nginx-Ingress-Controller on this Cluster
-We can get Nginx Ingress Controller using helm
+---
 
-First Add the Repository & Create a new namespace
-```
+### Step 2: Install NGINX Ingress Controller
+
+You can use Helm (recommended) or apply the generated YAML.
+
+**Add Helm repo and create namespace:**
+
+```bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm search repo ingress-nginx --versions
 
 kubectl create namespace ingress-nginx
 ```
 
-Then we can either install helm in the cluster, or use template files
-- helm install
-```
+#### Option 1: Install using Helm
+
+```bash
 helm install ingress-nginx ingress-nginx \
---namespace ingress-nginx \
+  --namespace ingress-nginx
 ```
-- helm template
-```
-(Note: you can skip this test, and directly use this ingress-controller.yaml file)
+
+#### Option 2: Use pre-generated template
+
+> Skip if you've already installed via Helm.
+
+```bash
 helm template ingress-nginx ingress-nginx \
---repo https://kubernetes.github.io/ingress-nginx \
---namespace ingress-nginx \
-> ./ingress-controller.yaml
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --namespace ingress-nginx > ./ingress-controller.yaml
 
 kubectl apply -f ./ingress-controller.yaml
 ```
 
-### Step 3: (Kind only) Port Forwarding
-Check the installation
+---
 
-```
+### Step 3: (Kind only) Port Forwarding for Local Testing
+
+Check if NGINX Ingress Controller is running:
+
+```bash
 kubectl -n ingress-nginx get pods
 ```
 
-The traffic for our cluster will come in over the Ingress service
-Note that we dont have load balancer capability in kind by default, so our LoadBalancer is pending:
+Check services:
 
-```
+```bash
 kubectl -n ingress-nginx get svc
-NAME                                 TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
-ingress-nginx-controller             LoadBalancer   10.96.130.21    <pending>     80:31011/TCP,443:31772/TCP   26m
-ingress-nginx-controller-admission   ClusterIP      10.96.125.210   <none>        443/TCP                      26m
 ```
 
-For testing purposes in KIND ONLY, we will simply setup port-forwarding
-If you are running in the cloud, you will get a real IP address.
+Output should show something like:
 
 ```
+NAME                         TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+ingress-nginx-controller     LoadBalancer   10.96.130.21   <pending>     80:31011/TCP,443:31772/TCP   26m
+```
+
+> ⚠️ In `kind`, LoadBalancer will remain `<pending>` since it doesn't support real LoadBalancer by default.
+
+Use port-forwarding instead:
+
+```bash
 kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 8000:80
 ```
 
-We can reach our controller on https://localhost:8000/
+You can now access the Ingress Controller at:
+➡️ [http://localhost:8000/](http://localhost:8000/)
 
-### Step 4: If Runner Image isn't deployed on any Container Registery
-We can load a docker image from our local system to the Kind cluster using
+---
+
+### Step 4: (Kind only) Load Local Docker Image into the Cluster
+
+If your runner-service image is not pushed to a remote registry (DockerHub, GitHub, etc), load it manually:
+
+```bash
+kind load docker-image runner-service:latest
 ```
-kind load docker-image <image-name>
+
+> ✅ Skip this step if you're pulling the image from a container registry.
+
+---
+
+### Step 5: (Required) Add Secrets for DigitalOcean Spaces Access
+
+To allow the `s3-downloader` init container to fetch files from **DigitalOcean Spaces**, create a Kubernetes secret with your Spaces credentials:
+
+```bash
+kubectl create secret generic aws-creds \
+  --from-literal=access_key=<YOUR_DO_SPACES_ACCESS_KEY> \
+  --from-literal=secret_key=<YOUR_DO_SPACES_SECRET_KEY>
 ```
 
-note: If the runner-service image is deployed at a Registery, then we dont need to do this
+> 🔐 This secret is mounted as environment variables in the `s3-downloader` container using `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
 
-#### Congrats, We are good to go now
+Also ensure your S3 commands in the init container include the proper endpoint
+
+---
+
+### ✅ Congrats! Your K8s Cluster is Ready
+
+You can now deploy workloads like REPLs, services, and ingress configurations.
