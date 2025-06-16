@@ -10,7 +10,8 @@ Your System should have installed
 Cloned this project
 docker
 kubectl
-helm
+kind (For Local Testing only)
+helm (You can skip this, as we have already generated this ingress-controller.yaml file)
 ```
 
 Following are the steps for setting up the k8s Cluster.
@@ -50,6 +51,7 @@ helm install ingress-nginx ingress-nginx \
 ```
 - helm template
 ```
+(Note: you can skip this test, and directly use this ingress-controller.yaml file)
 helm template ingress-nginx ingress-nginx \
 --repo https://kubernetes.github.io/ingress-nginx \
 --namespace ingress-nginx \
