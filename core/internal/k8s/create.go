@@ -5,37 +5,19 @@ import (
 	"fmt"
 	"log"
 
-	"path/filepath"
-
+	"github.com/parthkapoor-dev/core/pkg/dotenv"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 )
-
-// Initializes the K8s client
-func getClientSet() *kubernetes.Clientset {
-	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		log.Fatalf("Failed to load kubeconfig: %v", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("Failed to create clientset: %v", err)
-	}
-
-	return clientset
-}
 
 func CreateReplDeploymentAndService(userName, replId string) error {
 	clientset := getClientSet()
 	ctx := context.Background()
+
+	region := dotenv.EnvString("SPACES_REGION", "blr1")
+	bucket := dotenv.EnvString("SPACES_BUCKET", "devex")
 
 	labels := map[string]string{
 		"app": replId,
@@ -70,7 +52,7 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 							Image:   "amazon/aws-cli",
 							Command: []string{"sh", "-c"},
 							Args: []string{
-								fmt.Sprintf(`aws s3 cp s3://devex/repl/%s/%s/ /workspaces --recursive --endpoint-url https://%s.digitaloceanspaces.com && echo "Resources copied from DO Spaces";`, userName, replId, "blr1"),
+								fmt.Sprintf(`aws s3 cp s3://%s/repl/%s/%s/ /workspaces --recursive --endpoint-url https://%s.digitaloceanspaces.com && echo "Resources copied from DO Spaces";`, bucket, userName, replId, region),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -173,48 +155,4 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 
 	log.Printf("✅ Deployment and Service for repl %s created.\n", replId)
 	return nil
-}
-
-// Utility functions
-func int32Ptr(i int32) *int32 {
-	return &i
-}
-
-func intstrFromInt(i int) intstr.IntOrString {
-	return intstr.IntOrString{Type: intstr.Int, IntVal: int32(i)}
-}
-
-func pathTypePtr(pt networkingv1.PathType) *networkingv1.PathType {
-	return &pt
-}
-
-func strPtr(s string) *string {
-	return &s
-}
-
-func awsEnvVars() []corev1.EnvVar {
-	return []corev1.EnvVar{
-		{
-			Name: "AWS_ACCESS_KEY_ID",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "aws-creds",
-					},
-					Key: "access_key",
-				},
-			},
-		},
-		{
-			Name: "AWS_SECRET_ACCESS_KEY",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "aws-creds",
-					},
-					Key: "secret_key",
-				},
-			},
-		},
-	}
 }
