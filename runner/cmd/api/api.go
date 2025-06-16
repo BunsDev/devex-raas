@@ -1,9 +1,11 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/parthkapoor-dev/runner/pkg/json"
 	"github.com/parthkapoor-dev/runner/services/repl"
 	"github.com/rs/cors"
 )
@@ -23,6 +25,10 @@ func (api *APIServer) Run() error {
 	router := http.NewServeMux()
 
 	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler()))
+	router.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("testing")
+		json.WriteJSON(w, http.StatusOK, "we are getting successful")
+	})
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"}, // TODO: Update to frontend URL in prod

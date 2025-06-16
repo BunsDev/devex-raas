@@ -9,11 +9,6 @@ import (
 	"github.com/parthkapoor-dev/core/pkg/json"
 )
 
-type Repl struct {
-	UserName string `json:"userName"`
-	Template string `json:"template"`
-}
-
 func NewHandler(s3Client *s3.S3Client) http.Handler {
 	mux := http.NewServeMux()
 
@@ -29,7 +24,7 @@ func NewHandler(s3Client *s3.S3Client) http.Handler {
 func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client) {
 	log.Println("POST /repl/new")
 
-	var repl *Repl
+	var repl *newReplRequest
 	if err := json.ReadJSON(r, &repl); err != nil {
 		json.WriteError(w, http.StatusBadRequest, err.Error())
 		return
