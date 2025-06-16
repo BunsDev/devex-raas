@@ -17,8 +17,8 @@ type FetchContentRequest struct {
 }
 
 type UpdateContentRequest struct {
-	Path    string `json:"path"`
-	Content string `json:"content"`
+	Path  string `json:"path"`
+	Patch string `json:"patch"`
 }
 
 type TerminalDataRequest struct {

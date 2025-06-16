@@ -37,6 +37,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
     `// Welcome to Devex: your Cloud IDE Editor`,
   );
   const [fileType, setFileType] = useState<string>("js");
+  const [filePath, setFilePath] = useState<string>("");
   const { isConnected, emit, on, off } = useRunnerSocket(slug as string);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
     on("fetchContentResponse", (data) => {
       console.log("📄 File contents:", data);
       setCode(data.content);
+      setFilePath(data.path);
       setFileType(data.path.split(".").pop()?.toLowerCase() || "txt");
     });
 
@@ -88,6 +90,8 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   // Editor Helpers
   const fetchDir = async (path: string) => emit("fetchDir", { Dir: path });
   const fetchContent = async (path: string) => emit("fetchContent", { path });
+  const updateContent = async (patch: string) =>
+    emit("updateContent", { path: filePath, patch });
 
   // Terminal Helpers
   const handleTerminalSendData = (data: string) =>
@@ -95,6 +99,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   const handleRequestTerminal = () => emit("requestTerminal");
   const handleTerminalResize = () => {};
 
+  // Handle terminal ready
   const handleTerminalReady = useCallback(() => {
     terminalRef.current?.writeData(
       "Terminal initialized. Connecting to server...\r\n",
@@ -312,7 +317,12 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                   tabIndex={-1}
                   className="h-full focus:outline-none"
                 >
-                  <Editor code={code} setCode={setCode} fileType={fileType} />
+                  <Editor
+                    sendDiff={updateContent}
+                    code={code}
+                    setCode={setCode}
+                    fileType={fileType}
+                  />
                 </div>
               </ResizablePanel>
 

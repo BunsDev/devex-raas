@@ -3,6 +3,8 @@ package fs
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 func FetchDir(basePath, relativePath string) ([]DirEntry, error) {
@@ -27,6 +29,30 @@ func FetchFileContent(fullPath string) (string, error) {
 	return string(bytes), err
 }
 
-func SaveFile(fullPath, content string) error {
-	return os.WriteFile(fullPath, []byte(content), 0644)
+func SaveFileDiffs(fullPath, patch string) error {
+	currentBytes, err := os.ReadFile(fullPath)
+	if err != nil {
+		return err
+	}
+
+	currentText := string(currentBytes)
+	dmp := diffmatchpatch.New()
+	patches, err := dmp.PatchFromText(patch)
+	if err != nil {
+		return err
+	}
+	newText, results := dmp.PatchApply(patches, currentText)
+
+	for _, result := range results {
+		if !result {
+			return err
+		}
+	}
+
+	if err := os.WriteFile(fullPath, []byte(newText), 0644); err != nil {
+		return err
+	}
+
+	return nil
+
 }

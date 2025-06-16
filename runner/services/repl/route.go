@@ -92,12 +92,12 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty
 
 	// Handle updateContent event
 	OnTyped(ws, "updateContent", func(req UpdateContentRequest) {
-		fullPath := fmt.Sprintf("/workspace/%s", req.Path)
+		fullPath := fmt.Sprintf("/workspaces/%s", req.Path)
 
 		// Save file locally
-		err := fs.SaveFile(fullPath, req.Content)
+		err := fs.SaveFileDiffs(fullPath, req.Patch)
 		if err != nil {
-			log.Fatal("Error saving file: %v", err)
+			log.Fatalf("Error saving file: %v", err)
 			ws.Emit("updateContentResponse", map[string]any{
 				"error": err.Error(),
 			})

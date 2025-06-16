@@ -17,6 +17,8 @@ import React, {
   useState,
 } from "react";
 
+import { diff_match_patch } from "diff-match-patch";
+
 // Dynamically import Monaco Editor (SSR disabled)
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -32,14 +34,17 @@ const Editor = ({
   code,
   setCode,
   fileType,
+  sendDiff,
 }: {
   code: string;
   setCode: React.Dispatch<React.SetStateAction<string>>;
   fileType: string;
+  sendDiff: (patch: string) => void;
 }) => {
   const editorRef = useRef<any>(null);
   const [language, setLanguage] = useState<string>("javascript");
   const [theme, setTheme] = useState<string>("vs-dark");
+  const prevCodeRef = useRef<string>(code);
   const [fontSize, setFontSize] = useState<number>(14);
   const [editor, setEditor] = useState<any>(null);
   const [wordWrap, setWordWrap] = useState<"off" | "on" | "wordWrapColumn">(
@@ -108,6 +113,8 @@ const Editor = ({
     }),
     [fontSize, wordWrap, minimap],
   );
+
+  // Handlers
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     if (file) {
@@ -128,6 +135,20 @@ const Editor = ({
       reader.readAsText(file);
     }
   };
+
+  function handleCodeChange(newValue: string) {
+    const currentCode = newValue || "";
+
+    const dmp = new diff_match_patch();
+    const diffs = dmp.diff_main(prevCodeRef.current, currentCode);
+    const patchList = dmp.patch_make(prevCodeRef.current, diffs);
+    const patchText = dmp.patch_toText(patchList);
+
+    if (patchText.trim()) {
+      sendDiff(patchText);
+      prevCodeRef.current = currentCode;
+    }
+  }
 
   const getFileExtension = (lang: string): string => {
     const extensions: Record<string, string> = {
@@ -403,7 +424,7 @@ const Editor = ({
           language={language}
           theme={theme}
           value={code}
-          onChange={(newValue) => setCode(newValue || "")}
+          onChange={(newValue) => handleCodeChange(newValue || "")}
           options={editorOptions}
           onMount={handleEditorMount}
         />
