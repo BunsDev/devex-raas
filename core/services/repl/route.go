@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -30,10 +31,13 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client) {
 		return
 	}
 
+	userName := repl.UserName
+	replID := "repl-235"
+
 	// TODO: Create a new replId
 	// TODO: Copy to this path: repl/userName/replId
-
-	if err := s3Client.CopyFolder(repl.Template, "repl/base0/"); err != nil {
+	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
+	if err := s3Client.CopyFolder(repl.Template, destinationPrefix); err != nil {
 		log.Fatal("S3 CopyTemplate is giving Err: ", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -52,7 +56,7 @@ func startRepl(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Check whether replId exists or not?
 
-	if err := k8s.CreateReplDeploymentAndService(replId); err != nil {
+	if err := k8s.CreateReplDeploymentAndService(userName, replId); err != nil {
 		log.Fatal("K8s Deployment Failed", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return

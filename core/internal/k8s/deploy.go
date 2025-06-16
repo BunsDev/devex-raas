@@ -33,7 +33,7 @@ func getClientSet() *kubernetes.Clientset {
 	return clientset
 }
 
-func CreateReplDeploymentAndService(replId string) error {
+func CreateReplDeploymentAndService(userName, replId string) error {
 	clientset := getClientSet()
 	ctx := context.Background()
 
@@ -56,11 +56,42 @@ func CreateReplDeploymentAndService(replId string) error {
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "workspace-vol",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "s3-downloader",
+							Image:   "amazon/aws-cli",
+							Command: []string{"sh", "-c"},
+							Args: []string{
+								fmt.Sprintf(`aws s3 cp s3://devex/repl/%s/%s/ /workspaces --recursive --endpoint-url https://%s.digitaloceanspaces.com && echo "Resources copied from DO Spaces";`, userName, replId, "blr1"),
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "workspace-vol",
+									MountPath: "/workspaces",
+								},
+							},
+							Env: awsEnvVars(),
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:            "runner",
 							Image:           "runner-service:latest",
 							ImagePullPolicy: corev1.PullNever,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "workspace-vol",
+									MountPath: "/workspaces",
+								},
+							},
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 8081,
@@ -100,11 +131,11 @@ func CreateReplDeploymentAndService(replId string) error {
 		return fmt.Errorf("failed to create service: %w", err)
 	}
 
+	// 3. Ingress
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: replId + "-ingress",
 			Annotations: map[string]string{
-				// Fix 1: Capture path segment for rewriting
 				"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
 			},
 		},
@@ -116,7 +147,6 @@ func CreateReplDeploymentAndService(replId string) error {
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{
 								{
-									// Fix 2: Use regex to capture subpaths
 									Path:     "/" + replId + "(/|$)(.*)",
 									PathType: pathTypePtr(networkingv1.PathTypeImplementationSpecific),
 									Backend: networkingv1.IngressBackend{
@@ -160,4 +190,31 @@ func pathTypePtr(pt networkingv1.PathType) *networkingv1.PathType {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+func awsEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "AWS_ACCESS_KEY_ID",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "aws-creds",
+					},
+					Key: "access_key",
+				},
+			},
+		},
+		{
+			Name: "AWS_SECRET_ACCESS_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "aws-creds",
+					},
+					Key: "secret_key",
+				},
+			},
+		},
+	}
 }
