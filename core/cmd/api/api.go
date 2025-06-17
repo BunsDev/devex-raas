@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/parthkapoor-dev/core/internal/s3"
-	"github.com/parthkapoor-dev/core/services/auth"
+	"github.com/parthkapoor-dev/core/services/auth/github"
 	"github.com/parthkapoor-dev/core/services/repl"
+	"github.com/rs/cors"
 )
 
 type APIServer struct {
@@ -24,12 +25,23 @@ func (api *APIServer) Run() error {
 	router := http.NewServeMux()
 	s3Client := s3.NewS3Client()
 
-	router.Handle("/api/v1/auth/", http.StripPrefix("/api/v1/auth", auth.NewHandler()))
-	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler(s3Client)))
+	// Github Auth Routes
+	router.Handle("/auth/github/", http.StripPrefix("/auth/github", github.NewHandler()))
+
+	// Protected Repl Routes
+	router.Handle("/api/v1/repl/", AuthMiddleware(
+		http.StripPrefix("/api/v1/repl", repl.NewHandler(s3Client))))
+
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"}, // TODO: Update to frontend URL in prod
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+	})
 
 	server := http.Server{
 		Addr:    api.addr,
-		Handler: router,
+		Handler: c.Handler(router),
 	}
 
 	log.Println("Server has started at ", api.addr)

@@ -13,6 +13,11 @@ import (
 func NewHandler(s3Client *s3.S3Client) http.Handler {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /test", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("The Protected Route is Accessed")
+		json.WriteJSON(w, http.StatusOK, "Success")
+	})
+
 	mux.HandleFunc("POST /new", func(w http.ResponseWriter, r *http.Request) {
 		newRepl(w, r, s3Client)
 	})

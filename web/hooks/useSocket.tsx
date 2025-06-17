@@ -24,7 +24,10 @@ export function useRunnerSocket(replId: string) {
   const listenersRef = useRef<Record<string, EventHandler[]>>({});
 
   useEffect(() => {
-    const socket: Socket = new WebSocket("ws://localhost:8081/api/v1/repl/ws");
+    const localTestingUrl = "ws://localhost:8081/api/v1/repl/ws";
+    const k8sTestingUrl = `ws://localhost:8000/${replId}/api/v1/repl/ws`;
+
+    const socket: Socket = new WebSocket(k8sTestingUrl);
 
     // Extend native WebSocket with .emit/.on/.off
     socket.emit = (event: string, data: any) => {
