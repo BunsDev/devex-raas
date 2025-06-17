@@ -1,4 +1,5 @@
 import { AuthStatus, User } from "@/types/auth";
+import axios from "axios";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_CORE_API_URL || "http://localhost:8080";
@@ -31,6 +32,12 @@ export class CoreService {
 
     return fetch(`${API_BASE_URL}${url}`, defaultOptions);
   }
+
+  // async getRepls() {
+  //   try {
+  //     const response = await axios
+  //   } catch (error) {}
+  // }
 }
 
 class GithubService {

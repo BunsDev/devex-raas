@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/parthkapoor-dev/core/cmd/middleware"
+	"github.com/parthkapoor-dev/core/internal/redis"
 	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/services/auth/github"
 	"github.com/parthkapoor-dev/core/services/repl"
@@ -24,13 +26,14 @@ func (api *APIServer) Run() error {
 
 	router := http.NewServeMux()
 	s3Client := s3.NewS3Client()
+	rds := redis.NewRedisStore()
 
 	// Github Auth Routes
 	router.Handle("/auth/github/", http.StripPrefix("/auth/github", github.NewHandler()))
 
 	// Protected Repl Routes
-	router.Handle("/api/v1/repl/", AuthMiddleware(
-		http.StripPrefix("/api/v1/repl", repl.NewHandler(s3Client))))
+	router.Handle("/api/v1/repl/", middleware.AuthMiddleware(
+		http.StripPrefix("/api/v1/repl", repl.NewHandler(s3Client, rds))))
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"}, // TODO: Update to frontend URL in prod

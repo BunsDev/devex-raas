@@ -485,112 +485,86 @@ const TerminalInterface = ({ userName }: { userName: string }) => {
   }, [input]);
 
   return (
-    <div className="h-full bg-black border border-gray-800 rounded-lg overflow-hidden shadow-2xl">
-      {/* Terminal Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-700">
-        <div className="flex items-center gap-3">
-          <Terminal className="w-5 h-5 text-emerald-400" />
-          <span className="text-sm font-semibold text-gray-200">
-            devX Terminal
-          </span>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Activity className="w-3 h-3" />
-            <span>Live</span>
+    <div
+      ref={terminalRef}
+      className="flex-1 p-4 font-mono text-sm overflow-y-auto bg-black"
+      style={{ height: "calc(100% - 70px)" }}
+    >
+      {history.map((entry, index) => (
+        <div
+          key={index}
+          className={`mb-2 leading-relaxed ${getTypeColor(entry.type)}`}
+        >
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <pre className="whitespace-pre-wrap font-mono">
+                {entry.content}
+              </pre>
+            </div>
+            {entry.timestamp && (
+              <span className="text-xs text-gray-600 mt-1 shrink-0">
+                {entry.timestamp}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Clock className="w-3 h-3" />
-            <span>{new Date().toLocaleTimeString()}</span>
-          </div>
-          <div className="flex gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-          </div>
-        </div>
-      </div>
+      ))}
 
-      {/* Terminal Body */}
+      {/* Command Input */}
       <div
-        ref={terminalRef}
-        className="flex-1 p-4 font-mono text-sm overflow-y-auto bg-black"
-        style={{ height: "calc(100% - 70px)" }}
+        className="flex items-center gap-2 mt-4"
+        onClick={() => inputRef.current?.focus()}
       >
-        {history.map((entry, index) => (
-          <div
-            key={index}
-            className={`mb-2 leading-relaxed ${getTypeColor(entry.type)}`}
-          >
-            <div className="flex items-start gap-2">
-              <div className="flex-1">
-                <pre className="whitespace-pre-wrap font-mono">
-                  {entry.content}
-                </pre>
-              </div>
-              {entry.timestamp && (
-                <span className="text-xs text-gray-600 mt-1 shrink-0">
-                  {entry.timestamp}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {/* Command Input */}
-        <div className="flex items-center gap-2 mt-4">
-          <span className="text-emerald-400 font-bold">
-            ┌─ ${userName}@devX ~
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-emerald-400 font-bold">└─$</span>
-          <div className="flex-1 relative">
-            <input
-              ref={inputRef}
-              id="terminal-input-div"
-              type="text"
-              value={input}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setInput(e.target.value)
-              }
-              onKeyDown={handleKeyDown}
-              // className=" leading-6 w-full bg-transparent text-gray-200 outline-none font-mono text-sm"
-              placeholder="Type a command..."
-              autoFocus
-              className="flex-grow bg-transparent text-green-400 outline-none border-none p-0 m-0 caret-transparent w-full"
-            />
-            {/* Custom Block Caret */}
-            <div
-              ref={caretRef}
-              className={`absolute right-0 top-0 text-emerald-400 ${isTyping ? "opacity-100" : "opacity-0"} transition-opacity`}
-            >
-              ▋
-            </div>
-          </div>
-        </div>
-
-        {/* Suggestions */}
-        {showSuggestions && suggestions.length > 0 && (
-          <div className="mt-3 p-3 bg-gray-900 border border-gray-700 rounded-lg">
-            <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-              <Search className="w-3 h-3" />
-              Tab Completions:
-            </div>
-            <div className="grid grid-cols-2 gap-1">
-              {suggestions.map((suggestion, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="text-sm text-emerald-400 cursor-pointer hover:bg-gray-800 px-2 py-1 rounded transition-colors"
-                >
-                  {suggestion}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <span className="text-emerald-400 font-bold">
+          ┌─ ${userName}@devX ~
+        </span>
       </div>
+      <div className="flex items-center gap-2">
+        <span className="text-emerald-400 font-bold">└─$</span>
+        <div className="flex-1 relative">
+          <input
+            ref={inputRef}
+            id="terminal-input-div"
+            type="text"
+            value={input}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setInput(e.target.value)
+            }
+            onKeyDown={handleKeyDown}
+            placeholder="Type a command..."
+            autoFocus
+            className="flex-grow bg-transparent text-gray-200 text-sm outline-none border-none p-0 m-0 caret-transparent w-full font-mono"
+          />
+          {/* Custom Block Caret */}
+          <div
+            ref={caretRef}
+            className={`absolute right-0 top-0 text-emerald-400 ${isTyping ? "opacity-100" : "opacity-0"} transition-opacity`}
+          >
+            ▋
+          </div>
+        </div>
+      </div>
+
+      {/* Suggestions */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="mt-3 p-3 bg-gray-900 border border-gray-700 rounded-lg">
+          <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+            <Search className="w-3 h-3" />
+            Tab Completions:
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            {suggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="text-sm text-emerald-400 cursor-pointer hover:bg-gray-800 px-2 py-1 rounded transition-colors"
+              >
+                {suggestion}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

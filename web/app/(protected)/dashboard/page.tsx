@@ -2,9 +2,10 @@
 
 import { ProtectedRoute } from "@/components/Auth/ProtectedRoute";
 import TerminalInterface from "@/components/dashboard/TerminalInterface";
+import { Button } from "@/components/ui/button";
 import LetterGlitch from "@/components/ui/letter-glitch";
 import { useAuth } from "@/contexts/AuthContext";
-import { Code, Terminal, Zap } from "lucide-react";
+import { Activity, Clock, Code, Terminal, Zap } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 export default function Dashboard() {
@@ -14,7 +15,7 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen text-gray-200">
+      <div className=" text-gray-200">
         <LetterGlitch
           glitchSpeed={50}
           centerVignette={true}
@@ -22,66 +23,61 @@ export default function Dashboard() {
           smooth={true}
         />
         <div className="max-w-7xl mx-auto p-6">
-          {/* <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} /> */}
-
           <div className=" gap-6 mb-8">
             {/* Terminal/Content Area */}
             <div className="">
-              <div className="h-[600px]">
-                {activeTab === "terminal" && (
-                  <TerminalInterface userName={user?.name || "developer"} />
-                )}
-                {activeTab === "ui" && (
-                  <div className="flex items-center justify-center h-full bg-gray-900 border border-gray-700 rounded-lg">
-                    <div className="text-center">
-                      <div className="p-4 bg-yellow-500/10 rounded-full w-16 h-16 mx-auto mb-4">
-                        <Zap className="w-8 h-8 text-yellow-400 mx-auto" />
+              <div className="h-[650px]">
+                <div className="h-full bg-black border border-gray-800 rounded-lg overflow-hidden shadow-2xl">
+                  {/* Terminal Header */}
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <NavigationTabs
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date().toLocaleTimeString()}</span>
                       </div>
-                      <h3 className="text-xl font-bold text-gray-200 mb-2">
-                        GUI Mode (Beta)
-                      </h3>
-                      <p className="text-gray-400 max-w-md">
-                        The visual interface is currently in development. Switch
-                        back to Terminal mode for full functionality.
-                      </p>
-                      <button
-                        onClick={() => setActiveTab("terminal")}
-                        className="mt-6 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors flex items-center gap-2 mx-auto"
-                      >
-                        <Terminal className="w-4 h-4" />
-                        Switch to Terminal
-                      </button>
+                      <div className="flex gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      </div>
                     </div>
                   </div>
-                )}
+
+                  {activeTab === "terminal" && (
+                    <TerminalInterface userName={user?.name || "developer"} />
+                  )}
+                  {activeTab === "ui" && (
+                    <div className="flex items-center justify-center h-full bg-gray-900 border border-gray-700 rounded-lg">
+                      <div className="text-center">
+                        <div className="p-4 bg-yellow-500/10 rounded-full w-16 h-16 mx-auto mb-4">
+                          <Zap className="w-8 h-8 text-yellow-400 mx-auto" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-200 mb-2">
+                          GUI Mode (Beta)
+                        </h3>
+                        <p className="text-gray-400 max-w-md">
+                          The visual interface is currently in development.
+                          Switch back to Terminal mode for full functionality.
+                        </p>
+                        <button
+                          onClick={() => setActiveTab("terminal")}
+                          className="mt-6 px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors flex items-center gap-2 mx-auto"
+                        >
+                          <Terminal className="w-4 h-4" />
+                          Switch to Terminal
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-
-            {/* Sidebar Stats */}
-            {/* <div className="lg:col-span-1 space-y-6">
-              <StatsCard
-                icon={<Folder className="w-5 h-5" />}
-                title="Projects"
-                value={3}
-                subtitle="Active"
-                color="bg-emerald-500/10"
-              />
-              <StatsCard
-                icon={<Cpu className="w-5 h-5" />}
-                title="CPU"
-                value="23%"
-                subtitle="Utilization"
-                color="bg-blue-500/10"
-              />
-              <StatsCard
-                icon={<HardDrive className="w-5 h-5" />}
-                title="Storage"
-                value="128GB"
-                subtitle="of 512GB"
-                color="bg-purple-500/10"
-              />
-              <SystemMonitor />
-            </div> */}
           </div>
         </div>
       </div>
@@ -97,22 +93,28 @@ const NavigationTabs = ({
   setActiveTab: Dispatch<SetStateAction<"terminal" | "ui">>;
 }) => {
   return (
-    <div className="mb-6">
-      <div className="flex space-x-1 bg-gray-900 border border-gray-700 rounded-lg p-1">
-        <button
-          onClick={() => setActiveTab("terminal")}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+    <div className="">
+      <div className="flex gap-5 bg-gray-900 rounded-lg">
+        <Button
+          className={`flex gap-3 justify-center items-center         ${
             activeTab === "terminal"
               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
               : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
           }`}
+          onClick={() => setActiveTab("terminal")}
         >
-          <Terminal className="w-4 h-4" />
-          Terminal Interface
-        </button>
-        <button
+          <Terminal className="w-5 h-5 text-emerald-400" />
+          <span className="text-sm font-semibold text-gray-200">
+            devX Terminal
+          </span>
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <Activity className="w-3 h-3" />
+            <span>Live</span>
+          </div>
+        </Button>
+        <Button
           onClick={() => setActiveTab("ui")}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+          className={`flex-1 flex items-center justify-center gap-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
             activeTab === "ui"
               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
               : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
@@ -123,7 +125,7 @@ const NavigationTabs = ({
           <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
             Beta
           </span>
-        </button>
+        </Button>
       </div>
     </div>
   );

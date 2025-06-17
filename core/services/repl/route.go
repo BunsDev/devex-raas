@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
+	"strings"
 
+	"github.com/parthkapoor-dev/core/cmd/middleware"
 	"github.com/parthkapoor-dev/core/internal/k8s"
+	"github.com/parthkapoor-dev/core/internal/redis"
 	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/pkg/json"
 )
 
-func NewHandler(s3Client *s3.S3Client) http.Handler {
+func NewHandler(s3Client *s3.S3Client, rds *redis.Redis) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /test", func(w http.ResponseWriter, r *http.Request) {
@@ -19,15 +23,19 @@ func NewHandler(s3Client *s3.S3Client) http.Handler {
 	})
 
 	mux.HandleFunc("POST /new", func(w http.ResponseWriter, r *http.Request) {
-		newRepl(w, r, s3Client)
+		newRepl(w, r, s3Client, rds)
 	})
-	mux.HandleFunc("GET /{userName}/{replId}", startRepl)
-	mux.HandleFunc("DELETE /{userName}/{replId}", deleteRepl)
+	mux.HandleFunc("GET /{replId}", func(w http.ResponseWriter, r *http.Request) {
+		startReplSession(w, r, rds)
+	})
+	mux.HandleFunc("DELETE /{replId}", func(w http.ResponseWriter, r *http.Request) {
+		endReplSession(w, r, rds)
+	})
 
 	return mux
 }
 
-func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client) {
+func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds *redis.Redis) {
 	log.Println("POST /repl/new")
 
 	var repl *newReplRequest
@@ -36,12 +44,26 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client) {
 		return
 	}
 
-	userName := repl.UserName
-	replID := "repl-125"
+	// Get User from auth
+	user, _ := middleware.GetUserFromContext(r.Context())
+	userName := strings.ToLower(user.Login)
 
-	// TODO: Create a new replId
-	// TODO: Copy to this path: repl/userName/replId
+	// Create Repl ID
+	uuid, err := exec.Command("uuidgen").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	replID := string(uuid)
+
+	// Create Repl in Store
+	if err := rds.CreateRepl(userName, repl.ReplName, replID); err != nil {
+		json.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
+	log.Println(destinationPrefix)
+
 	if err := s3Client.CopyFolder(repl.Template, destinationPrefix); err != nil {
 		log.Fatal("S3 CopyTemplate is giving Err: ", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -49,17 +71,28 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client) {
 	}
 
 	json.WriteJSON(w, http.StatusOK, "Success")
-
 }
 
-func startRepl(w http.ResponseWriter, r *http.Request) {
+func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 
-	userName := r.PathValue("userName")
+	user, _ := middleware.GetUserFromContext(r.Context())
+	userName := strings.ToLower(user.Login)
+
 	replId := r.PathValue("replId")
 
-	log.Println(userName, replId)
+	repl, err := rds.GetRepl(replId)
+	if err != nil {
+		json.WriteError(w, http.StatusBadRequest, "This Repl Id doesn't exists")
+		return
+	}
+	if repl.User != userName {
+		json.WriteError(w, http.StatusUnauthorized, "This User doesn't have access to this Repl")
+		return
+	}
 
-	// TODO: Check whether replId exists or not?
+	if err := rds.CreateReplSession(replId); err != nil {
+		json.WriteError(w, http.StatusInternalServerError, "Unable to Create Repl Session")
+	}
 
 	if err := k8s.CreateReplDeploymentAndService(userName, replId); err != nil {
 		log.Fatal("K8s Deployment Failed", err)
@@ -67,19 +100,29 @@ func startRepl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Copy Files from S3 to Runner
-
 	json.WriteJSON(w, http.StatusOK, "Success")
 }
 
-func deleteRepl(w http.ResponseWriter, r *http.Request) {
+func endReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 
-	userName := r.PathValue("userName")
+	user, _ := middleware.GetUserFromContext(r.Context())
+	userName := strings.ToLower(user.Login)
+
 	replId := r.PathValue("replId")
 
-	log.Println(userName, replId)
+	repl, err := rds.GetRepl(replId)
+	if err != nil {
+		json.WriteError(w, http.StatusBadRequest, "This Repl Id doesn't exists")
+		return
+	}
+	if repl.User != userName {
+		json.WriteError(w, http.StatusUnauthorized, "This User doesn't have access to this Repl")
+		return
+	}
 
-	// TODO: Check whether replId exists or not?
+	if val, err := rds.DeleteReplSession(replId); err != nil || val == 0 {
+		json.WriteError(w, http.StatusInternalServerError, "Unable to Create Repl Session")
+	}
 
 	if err := k8s.DeleteReplDeploymentAndService(userName, replId); err != nil {
 		log.Fatal("k8s Repl Deletion Failed", err)
