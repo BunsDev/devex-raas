@@ -2,7 +2,6 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginButton } from "@/components/Auth/LoginButton";
-import { UserProfile } from "@/components/Auth/UserProfile";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -28,7 +27,6 @@ export default function HomePage() {
 
               {isAuthenticated ? (
                 <div className="space-y-4">
-                  <UserProfile />
                   <div>
                     <Link
                       href="/dashboard"
