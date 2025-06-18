@@ -13,8 +13,8 @@ export interface HistoryEntry {
 }
 
 export interface CommandContext {
-  repls: Repl[];
-  setRepls: React.Dispatch<React.SetStateAction<Repl[]>>;
+  repls: StoredRepl[];
+  setRepls: React.Dispatch<React.SetStateAction<StoredRepl[]>>;
   setHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
 }
 

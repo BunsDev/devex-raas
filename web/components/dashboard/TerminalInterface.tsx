@@ -48,7 +48,7 @@ const generateCmds = (
 ): Commands => {
   const COMMANDS: Commands = {
     help: {
-      description: "Show available commands",
+      description: "Show available commands and getting started guide",
       usage: "help",
       execute: () => {
         const commands = Object.keys(COMMANDS)
@@ -59,12 +59,24 @@ const generateCmds = (
 ╰─────────────────────────────────────────╯
 ${commands}
 
+╭─────────────────────────────────────────╮
+│             GETTING STARTED             │
+╰─────────────────────────────────────────╯
+🚀 Quick Start Guide:
+1. Create a new repl: repl create <name> <template>
+2. Start your repl: repl start <name>
+3. List all repls: repl list
+
+💡 Example workflow:
+   repl create my-app node-js
+   repl start my-app
+
 Type <command> --help for detailed usage information.`;
       },
     },
 
     version: {
-      description: "Show application version",
+      description: "Show application version and system information",
       usage: "version",
       execute: () => `╭─────────────────────────────────────────╮
 │             SYSTEM INFO                 │
@@ -75,7 +87,7 @@ Status: Online ✓`,
     },
 
     status: {
-      description: "Show system status",
+      description: "Display comprehensive system status and metrics",
       usage: "status",
       execute: async (args, context) => {
         const uptime = Math.floor(Math.random() * 72) + 1;
@@ -88,12 +100,14 @@ Status: Online ✓`,
 💾 Memory:     ${Math.floor(Math.random() * 40) + 20}%
 💿 Storage:    ${Math.floor(Math.random() * 60) + 15}%
 ⏱️ Uptime:     ${uptime}h ${Math.floor(Math.random() * 60)}m
-📊 Repls:      ${repls.length} active`;
+📊 Repls:      ${repls.length} active
+
+💡 Use 'repl list' to see all your repls`;
       },
     },
 
     templates: {
-      description: "Show available templates",
+      description: "Show available templates for creating new repls",
       usage: "templates",
       execute: () => {
         const templateList = Object.entries(templates)
@@ -104,165 +118,58 @@ Status: Online ✓`,
 ╰─────────────────────────────────────────╯
 ${templateList}
 
-Use these template names with create-repl command.`;
+💡 Usage: repl create <name> <template>
+   Example: repl create my-app node-js`;
       },
     },
 
-    "create-repl": {
-      description: "Create a new repl",
-      usage: "create-repl <name> <template>",
-      execute: async (args, context) => {
-        if (args.length < 2) {
-          const templateList = Object.keys(templates).join(", ");
-          return `❌ Error: Both name and template are required
-Usage: create-repl <name> <template>
-Available templates: ${templateList}
-Use 'templates' command to see all available templates.`;
-        }
-
-        const [name, templateKey] = args;
-
-        // Validate template
-        if (!templates[templateKey as keyof typeof templates]) {
-          const templateList = Object.keys(templates).join(", ");
-          return `❌ Error: Invalid template "${templateKey}"
-Available templates: ${templateList}
-Use 'templates' command to see all available templates.`;
-        }
-
-        try {
-          const template = templates[templateKey as keyof typeof templates];
-          await createRepl(template.key, name);
-          return `✅ Successfully created repl "${name}"
-   Template: ${template.name}
-   Key: ${template.key}
-   Status: Ready`;
-        } catch (error: any) {
-          return `❌ Error creating repl: ${error.message || "Unknown error"}`;
-        }
-      },
-    },
-
-    "list-repls": {
-      description: "List all repls",
-      usage: "list-repls [--detailed]",
-      execute: async (args, context) => {
-        try {
-          const repls = await getRepls();
-
-          if (repls.length === 0) {
-            return '📭 No repls found.\nUse "create-repl <name> <template>" to create one.';
-          }
-
-          const detailed = args.includes("--detailed");
-          if (detailed) {
-            const header = `╭─────────────────────────────────────────╮
-│               REPL DETAILS              │
-╰─────────────────────────────────────────╯`;
-            const replList = repls
-              .map(
-                (repl) =>
-                  `📁 ${repl.name} (ID: ${repl.id})
-   👤 User: ${repl.user}
-   ⚡ Status: Active`,
-              )
-              .join("\n\n");
-            return `${header}\n${replList}`;
-          }
-
-          const header = `╭─────────────────────────────────────────╮
-│               ACTIVE REPLS              │
-╰─────────────────────────────────────────╯`;
-          return `${header}\n${repls.map((repl, i) => `${i + 1}. 📁 ${repl.name} (${repl.id})`).join("\n")}`;
-        } catch (error: any) {
-          return `❌ Error fetching repls: ${error.message || "Unknown error"}`;
-        }
-      },
-    },
-
-    "search-repls": {
-      description: "Search repls by name",
-      usage: "search-repls <query>",
+    repl: {
+      description: "Manage repls - create, start, delete, and list repls",
+      usage: "repl <subcommand> [options]",
       execute: async (args, context) => {
         if (args.length === 0) {
-          return "❌ Error: Search query is required\nUsage: search-repls <query>";
+          return `╭─────────────────────────────────────────╮
+│               REPL MANAGER              │
+╰─────────────────────────────────────────╯
+Available subcommands:
+  create <name> <template>  - Create a new repl
+  start <name>             - Start an existing repl
+  delete <name>            - Delete a repl
+  list [--detailed]        - List all repls
+  search <query>           - Search repls by name
+
+💡 Examples:
+   repl create my-app node-js
+   repl start my-app
+   repl delete old-project
+   repl list --detailed
+
+Use 'templates' to see available templates.`;
         }
 
-        try {
-          const query = args.join(" ").toLowerCase();
-          const repls = await getRepls();
-          const matches = repls.filter((repl) =>
-            repl.name.toLowerCase().includes(query),
-          );
+        const [subcommand, ...subArgs] = args;
 
-          if (matches.length === 0) {
-            return `🔍 No repls found matching "${query}"`;
-          }
-
-          const header = `╭─────────────────────────────────────────╮
-│             SEARCH RESULTS              │
-╰─────────────────────────────────────────╯`;
-          return `${header}\n🔍 Found ${matches.length} repl(s) matching "${query}":\n${matches.map((repl, i) => `${i + 1}. 📁 ${repl.name} (${repl.id})`).join("\n")}`;
-        } catch (error: any) {
-          return `❌ Error searching repls: ${error.message || "Unknown error"}`;
-        }
-      },
-    },
-
-    "start-repl": {
-      description: "Start a repl by name",
-      usage: "start-repl <repl-name>",
-      execute: async (args, context) => {
-        if (args.length === 0) {
-          return "❌ Error: Repl name is required\nUsage: start-repl <repl-name>";
-        }
-
-        const replName = args[0].toLowerCase();
-
-        try {
-          const repls = await getRepls();
-          const repl = repls.find((r) => r.name.toLowerCase() === replName);
-
-          if (!repl) {
-            return `❌ Error: Repl with name "${replName}" not found. Use 'list-repls' to see available repls.`;
-          }
-
-          await startRepl(repl.id);
-          return `🚀 Successfully started repl "${repl.name}"`;
-        } catch (error: any) {
-          return `❌ Error starting repl: ${error.message || "Unknown error"}`;
-        }
-      },
-    },
-
-    "delete-repl": {
-      description: "Delete a repl by name",
-      usage: "delete-repl <repl-name>",
-      execute: async (args, context) => {
-        if (args.length === 0) {
-          return "❌ Error: Repl name is required\nUsage: delete-repl <repl-name>";
-        }
-
-        const replName = args[0].toLowerCase();
-
-        try {
-          const repls = await getRepls();
-          const repl = repls.find((r) => r.name.toLowerCase() === replName);
-
-          if (!repl) {
-            return `❌ Error: Repl with name "${replName}" not found. Use 'list-repls' to see available repls.`;
-          }
-
-          await deleteRepl(repl.id);
-          return `🗑️ Successfully deleted repl "${repl.name}"`;
-        } catch (error: any) {
-          return `❌ Error deleting repl: ${error.message || "Unknown error"}`;
+        switch (subcommand) {
+          case "create":
+            return await handleReplCreate(subArgs, context);
+          case "start":
+            return await handleReplStart(subArgs, context);
+          case "delete":
+            return await handleReplDelete(subArgs, context);
+          case "list":
+            return await handleReplList(subArgs, context);
+          case "search":
+            return await handleReplSearch(subArgs, context);
+          default:
+            return `❌ Unknown repl subcommand: ${subcommand}
+Available subcommands: create, start, delete, list, search
+Use 'repl --help' for more information.`;
         }
       },
     },
 
     clear: {
-      description: "Clear the terminal",
+      description: "Clear the terminal screen and reset history",
       usage: "clear",
       execute: (args, context) => {
         context.setHistory([
@@ -277,7 +184,7 @@ Use 'templates' command to see all available templates.`;
     },
 
     whoami: {
-      description: "Display current user information",
+      description: "Display current user information and session details",
       usage: "whoami",
       execute: () => {
         return `╭─────────────────────────────────────────╮
@@ -286,18 +193,20 @@ Use 'templates' command to see all available templates.`;
 👤 User:       ${userName}
 🏠 Home:       /home/${userName}
 🐚 Shell:      devX Terminal v2.0.0
-🌐 Session:    ${new Date().toLocaleString()}`;
+🌐 Session:    ${new Date().toLocaleString()}
+
+💡 Try 'repl create <name> <template>' to get started!`;
       },
     },
 
     ls: {
-      description: "Alias for list-repls",
+      description: "List all repls (alias for 'repl list')",
       usage: "ls [--detailed]",
-      execute: (args, context) => COMMANDS["list-repls"].execute(args, context),
+      execute: (args, context) => handleReplList(args, context),
     },
 
     neofetch: {
-      description: "Display system information",
+      description: "Display system information in a stylized format",
       usage: "neofetch",
       execute: () => {
         return `                    ╭───────────────────────╮
@@ -307,10 +216,189 @@ Use 'templates' command to see all available templates.`;
     │  ████████   │   │ Shell: Advanced CLI       │
     │  ████████   │   │ Theme: Dark Terminal      │
     ╰─────────────╯   │ Uptime: Online            │
-                    ╰───────────────────────╯`;
+                    ╰───────────────────────╯
+
+💡 Ready to code! Try 'repl create <name> <template>'`;
       },
     },
   };
+
+  // Repl subcommand handlers
+  async function handleReplCreate(args: string[], context: CommandContext) {
+    if (args.length < 2) {
+      const templateList = Object.keys(templates).join(", ");
+      return `❌ Error: Both name and template are required
+Usage: repl create <name> <template>
+Available templates: ${templateList}
+
+💡 Use 'templates' command to see all available templates.
+   Example: repl create my-app node-js`;
+    }
+
+    const [name, templateKey] = args;
+
+    // Validate template
+    if (!templates[templateKey as keyof typeof templates]) {
+      const templateList = Object.keys(templates).join(", ");
+      return `❌ Error: Invalid template "${templateKey}"
+Available templates: ${templateList}
+
+💡 Use 'templates' command to see all available templates.`;
+    }
+
+    try {
+      const template = templates[templateKey as keyof typeof templates];
+      await createRepl(template.key, name);
+      return `✅ Successfully created repl "${name}"
+   Template: ${template.name}
+   Key: ${template.key}
+   Status: Ready
+
+🚀 Next step: Start your repl with 'repl start ${name}'`;
+    } catch (error: any) {
+      return `❌ Error creating repl: ${error.message || "Unknown error"}`;
+    }
+  }
+
+  async function handleReplStart(args: string[], context: CommandContext) {
+    if (args.length === 0) {
+      return `❌ Error: Repl name is required
+Usage: repl start <repl-name>
+
+💡 Use 'repl list' to see available repls.`;
+    }
+
+    const replName = args[0].toLowerCase();
+
+    try {
+      const repls = await getRepls();
+      const repl = repls.find((r) => r.name.toLowerCase() === replName);
+
+      if (!repl) {
+        const availableRepls = repls.map((r) => r.name).join(", ");
+        return `❌ Error: Repl with name "${replName}" not found.
+${repls.length > 0 ? `Available repls: ${availableRepls}` : "No repls found."}
+
+💡 Use 'repl list' to see all repls or 'repl create <name> <template>' to create one.`;
+      }
+
+      await startRepl(repl.id);
+      return `🚀 Successfully started repl "${repl.name}"
+   Status: Running
+   ID: ${repl.id}`;
+    } catch (error: any) {
+      return `❌ Error starting repl: ${error.message || "Unknown error"}`;
+    }
+  }
+
+  async function handleReplDelete(args: string[], context: CommandContext) {
+    if (args.length === 0) {
+      return `❌ Error: Repl name is required
+Usage: repl delete <repl-name>
+
+💡 Use 'repl list' to see available repls.
+⚠️  Warning: This action cannot be undone.`;
+    }
+
+    const replName = args[0].toLowerCase();
+
+    try {
+      const repls = await getRepls();
+      const repl = repls.find((r) => r.name.toLowerCase() === replName);
+
+      if (!repl) {
+        const availableRepls = repls.map((r) => r.name).join(", ");
+        return `❌ Error: Repl with name "${replName}" not found.
+${repls.length > 0 ? `Available repls: ${availableRepls}` : "No repls found."}
+
+💡 Use 'repl list' to see all available repls.`;
+      }
+
+      await deleteRepl(repl.id);
+      return `🗑️ Successfully deleted repl "${repl.name}"
+   ID: ${repl.id}
+
+💡 Use 'repl create <name> <template>' to create a new repl.`;
+    } catch (error: any) {
+      return `❌ Error deleting repl: ${error.message || "Unknown error"}`;
+    }
+  }
+
+  async function handleReplList(args: string[], context: CommandContext) {
+    try {
+      const repls = await getRepls();
+
+      if (repls.length === 0) {
+        return `📭 No repls found.
+
+🚀 Get started by creating your first repl:
+   repl create my-app node-js
+   repl start my-app
+
+💡 Use 'templates' to see available templates.`;
+      }
+
+      const detailed = args.includes("--detailed");
+      if (detailed) {
+        const header = `╭─────────────────────────────────────────╮
+│               REPL DETAILS              │
+╰─────────────────────────────────────────╯`;
+        const replList = repls
+          .map(
+            (repl) =>
+              `📁 ${repl.name} (ID: ${repl.id})
+   👤 User: ${repl.user}
+   ⚡ Status: Active
+   🚀 Start: repl start ${repl.name}`,
+          )
+          .join("\n\n");
+        return `${header}\n${replList}
+
+💡 Use 'repl start <name>' to start any repl.`;
+      }
+
+      const header = `╭─────────────────────────────────────────╮
+│               ACTIVE REPLS              │
+╰─────────────────────────────────────────╯`;
+      return `${header}\n${repls.map((repl, i) => `${i + 1}. 📁 ${repl.name} (${repl.id})`).join("\n")}
+
+💡 Use 'repl start <name>' to start a repl or 'repl list --detailed' for more info.`;
+    } catch (error: any) {
+      return `❌ Error fetching repls: ${error.message || "Unknown error"}`;
+    }
+  }
+
+  async function handleReplSearch(args: string[], context: CommandContext) {
+    if (args.length === 0) {
+      return `❌ Error: Search query is required
+Usage: repl search <query>
+
+💡 Example: repl search my-app`;
+    }
+
+    try {
+      const query = args.join(" ").toLowerCase();
+      const repls = await getRepls();
+      const matches = repls.filter((repl) =>
+        repl.name.toLowerCase().includes(query),
+      );
+
+      if (matches.length === 0) {
+        return `🔍 No repls found matching "${query}"
+
+💡 Use 'repl list' to see all repls or 'repl create <name> <template>' to create one.`;
+      }
+
+      const header = `╭─────────────────────────────────────────╮
+│             SEARCH RESULTS              │
+╰─────────────────────────────────────────╯`;
+      return `${header}\n🔍 Found ${matches.length} repl(s) matching "${query}":\n${matches.map((repl, i) => `${i + 1}. 📁 ${repl.name} (${repl.id})`).join("\n")}
+
+💡 Use 'repl start <name>' to start any of these repls.`;
+    } catch (error: any) {
+      return `❌ Error searching repls: ${error.message || "Unknown error"}`;
+    }
+  }
 
   return COMMANDS;
 };
@@ -348,6 +436,7 @@ const TerminalInterface = ({
     startRepl,
     deleteRepl,
   );
+
   const [history, setHistory] = useState<HistoryEntry[]>([
     {
       type: "success",
@@ -362,21 +451,23 @@ const TerminalInterface = ({
     {
       type: "info",
       content:
-        '💡 Type "help" to see available commands or "templates" to see available templates',
+        '💡 Type "help" to see available commands or "repl create <name> <template>" to get started',
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);
+
   const [input, setInput] = useState<string>("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [repls, setRepls] = useState<Repl[]>([]);
+  const [repls, setRepls] = useState<StoredRepl[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLDivElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback((): void => {
     if (terminalRef.current) {
@@ -385,6 +476,18 @@ const TerminalInterface = ({
       }, 50);
     }
   }, []);
+
+  const keepInputFocused = useCallback(() => {
+    if (inputRef.current && document.activeElement !== inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  // Keep input focused at all times
+  useEffect(() => {
+    const intervalId = setInterval(keepInputFocused, 100);
+    return () => clearInterval(intervalId);
+  }, [keepInputFocused]);
 
   useEffect(() => {
     scrollToBottom();
@@ -397,11 +500,25 @@ const TerminalInterface = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Enhanced suggestion logic for templates and commands
+  // Load repls when component mounts
+  useEffect(() => {
+    const loadRepls = async () => {
+      try {
+        const storedRepls = await getRepls();
+        setRepls(storedRepls as StoredRepl[]);
+      } catch (error) {
+        console.error("Failed to load repls:", error);
+      }
+    };
+    loadRepls();
+  }, [getRepls]);
+
+  // Enhanced suggestion logic for repl subcommands
   const getSuggestions = (currentInput: string): string[] => {
     const parts = currentInput.trim().split(" ");
     const command = parts[0];
-    const args = parts.slice(1);
+    const subcommand = parts[1];
+    const args = parts.slice(2);
 
     // Command suggestions
     if (parts.length === 1) {
@@ -410,18 +527,27 @@ const TerminalInterface = ({
       );
     }
 
-    // Template suggestions for create-repl command
-    if (command === "create-repl" && args.length === 2) {
+    // Repl subcommand suggestions
+    if (command === "repl" && parts.length === 2) {
+      const subcommands = ["create", "start", "delete", "list", "search"];
+      return subcommands.filter((sub) =>
+        sub.startsWith(subcommand.toLowerCase()),
+      );
+    }
+
+    // Template suggestions for repl create command
+    if (command === "repl" && subcommand === "create" && parts.length === 4) {
       const templateQuery = args[1].toLowerCase();
       return Object.keys(templates).filter((template) =>
         template.startsWith(templateQuery),
       );
     }
 
-    // Repl Name suggestions
+    // Repl name suggestions for repl start/delete commands
     if (
-      (command === "start-repl" || command === "delete-repl") &&
-      args.length === 1
+      command === "repl" &&
+      (subcommand === "start" || subcommand === "delete") &&
+      parts.length === 3
     ) {
       const replNameQuery = args[0].toLowerCase();
       return repls
@@ -454,8 +580,7 @@ const TerminalInterface = ({
             ...prev,
             {
               type: "command",
-              content: `┌─ ${userName}@devX ~
-└─$ ${commandLine}`,
+              content: `┌─ ${userName}@devX ~\n└─$ ${commandLine}`,
               timestamp,
             },
             { type: "output", content: helpText, timestamp },
@@ -473,8 +598,7 @@ const TerminalInterface = ({
               ...prev,
               {
                 type: "command",
-                content: `┌─ ${userName}@devX ~
-└─$ ${commandLine}`,
+                content: `┌─ ${userName}@devX ~\n└─$ ${commandLine}`,
                 timestamp,
               },
               { type: "output", content: result, timestamp },
@@ -484,8 +608,7 @@ const TerminalInterface = ({
               ...prev,
               {
                 type: "command",
-                content: `┌─ ${userName}@devX ~
-└─$ ${commandLine}`,
+                content: `┌─ ${userName}@devX ~\n└─$ ${commandLine}`,
                 timestamp,
               },
             ]);
@@ -495,8 +618,7 @@ const TerminalInterface = ({
             ...prev,
             {
               type: "command",
-              content: `┌─ ${userName}@devX ~
-└─$ ${commandLine}`,
+              content: `┌─ ${userName}@devX ~\n└─$ ${commandLine}`,
               timestamp,
             },
             { type: "error", content: `💥 Error: ${error.message}`, timestamp },
@@ -507,8 +629,7 @@ const TerminalInterface = ({
           ...prev,
           {
             type: "command",
-            content: `┌─ ${userName}@devX ~
-└─$ ${commandLine}`,
+            content: `┌─ ${userName}@devX ~\n└─$ ${commandLine}`,
             timestamp,
           },
           {
@@ -518,8 +639,18 @@ const TerminalInterface = ({
           },
         ]);
       }
+
+      // Refresh repls after commands that might change them
+      if (command === "repl" && ["create", "delete"].includes(args[0])) {
+        try {
+          const updatedRepls = await getRepls();
+          setRepls(updatedRepls as StoredRepl[]);
+        } catch (error) {
+          console.error("Failed to refresh repls:", error);
+        }
+      }
     },
-    [repls, setRepls, COMMANDS, userName],
+    [repls, setRepls, COMMANDS, userName, getRepls],
   );
 
   const handleInputChange = (value: string): void => {
@@ -570,8 +701,23 @@ const TerminalInterface = ({
         if (parts.length === 1) {
           // Complete command
           setInput(currentSuggestions[0] + " ");
-        } else if (parts[0] === "create-repl" && parts.length === 3) {
-          // Complete template
+        } else if (parts[0] === "repl" && parts.length === 2) {
+          // Complete repl subcommand
+          setInput(`repl ${currentSuggestions[0]} `);
+        } else if (
+          parts[0] === "repl" &&
+          parts[1] === "create" &&
+          parts.length === 4
+        ) {
+          // Complete template for repl create
+          const newCommand = `${parts[0]} ${parts[1]} ${parts[2]} ${currentSuggestions[0]} `;
+          setInput(newCommand);
+        } else if (
+          parts[0] === "repl" &&
+          (parts[1] === "start" || parts[1] === "delete") &&
+          parts.length === 3
+        ) {
+          // Complete repl name for repl start/delete
           const newCommand = `${parts[0]} ${parts[1]} ${currentSuggestions[0]} `;
           setInput(newCommand);
         }
@@ -587,25 +733,34 @@ const TerminalInterface = ({
   const handleSuggestionClick = (suggestion: string): void => {
     const parts = input.trim().split(" ");
     const command = parts[0];
+    const subcommand = parts[1];
 
     if (parts.length === 1) {
       // Complete command
       setInput(suggestion + " ");
-    } else if (command === "create-repl" && parts.length === 3) {
-      // Complete template for create-repl
-      const newCommand = `${parts[0]} ${parts[1]} ${suggestion} `;
+    } else if (command === "repl" && parts.length === 2) {
+      // Complete repl subcommand
+      setInput(`repl ${suggestion} `);
+    } else if (
+      command === "repl" &&
+      subcommand === "create" &&
+      parts.length === 4
+    ) {
+      // Complete template for repl create
+      const newCommand = `${parts[0]} ${parts[1]} ${parts[2]} ${suggestion} `;
       setInput(newCommand);
     } else if (
-      (command === "start-repl" || command === "delete-repl") &&
-      parts.length === 2
+      command === "repl" &&
+      (subcommand === "start" || subcommand === "delete") &&
+      parts.length === 3
     ) {
-      // Complete repl name for start-repl or delete-repl
-      const newCommand = `${parts[0]} ${suggestion} `;
+      // Complete repl name for repl start/delete
+      const newCommand = `${parts[0]} ${parts[1]} ${suggestion} `;
       setInput(newCommand);
     }
 
     setShowSuggestions(false);
-    inputRef.current?.focus();
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const getTypeColor = (type: string) => {
@@ -623,126 +778,175 @@ const TerminalInterface = ({
     }
   };
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  // Determine suggestion label based on context
+  const getSuggestionLabel = (currentInput: string) => {
+    const parts = currentInput.trim().split(" ");
+    const command = parts[0];
+    const subcommand = parts[1];
 
-  // Update caret position on input change
-  useEffect(() => {
-    if (inputRef.current && caretRef.current) {
-      const charWidth =
-        parseFloat(getComputedStyle(inputRef.current).fontSize) * 0.6;
-      const caretLeft = input.length * charWidth;
-
-      caretRef.current.style.left = `${caretLeft}px`;
+    if (command === "repl" && subcommand === "create" && parts.length === 4) {
+      return "Available Templates:";
+    } else if (
+      command === "repl" &&
+      (subcommand === "start" || subcommand === "delete") &&
+      parts.length === 3
+    ) {
+      return "Available Repls:";
+    } else if (command === "repl" && parts.length === 2) {
+      return "Repl Subcommands:";
     }
-  }, [input]);
+    return "Tab Completions:";
+  };
+
+  // Calculate suggestion box position to ensure visibility
+  const calculateSuggestionPosition = () => {
+    if (!inputRef.current || !suggestionsRef.current) return {};
+
+    const inputRect = inputRef.current.getBoundingClientRect();
+    const suggestionRect = suggestionsRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    // Check if suggestions would go below viewport
+    const spaceBelow = viewportHeight - inputRect.bottom;
+    const suggestionHeight = suggestionRect.height || 200; // estimated height
+
+    if (spaceBelow < suggestionHeight + 20) {
+      // Show suggestions above input if not enough space below
+      return {
+        bottom: "100%",
+        marginBottom: "8px",
+        top: "auto",
+      };
+    }
+
+    return {
+      top: "100%",
+      marginTop: "8px",
+      bottom: "auto",
+    };
+  };
 
   return (
-    <div
-      ref={terminalRef}
-      className="flex-1 p-4 font-mono text-sm overflow-y-auto bg-black"
-      style={{ height: "calc(100% - 70px)" }}
-    >
-      {history.map((entry, index) => (
-        <div
-          key={index}
-          className={`mb-2 leading-relaxed ${getTypeColor(entry.type)}`}
-        >
-          <div className="flex items-start gap-2">
-            <div className="flex-1">
-              <pre className="whitespace-pre-wrap font-mono">
-                {entry.content}
-              </pre>
-            </div>
+    <div className="bg-gray-900 text-green-400 font-mono overflow-hidden flex flex-col h-full">
+      {/* Terminal Content */}
+      <div
+        ref={terminalRef}
+        className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {/* History */}
+        {history.map((entry, index) => (
+          <div key={index} className={`mb-2 ${getTypeColor(entry.type)}`}>
+            <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
+              {entry.content}
+            </pre>
             {entry.timestamp && (
-              <span className="text-xs text-gray-600 mt-1 shrink-0">
-                {entry.timestamp}
-              </span>
+              <div className="text-xs text-gray-500 mt-1">
+                [{entry.timestamp}]
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* Input Line */}
+        <div className="flex items-center mt-4 relative">
+          <span className="text-emerald-400 mr-2 whitespace-nowrap">
+            ┌─ {userName}@devX ~
+          </span>
+        </div>
+        <div className="flex items-center relative">
+          <span className="text-emerald-400 mr-2">└─$</span>
+          <div className="relative flex-1">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="bg-transparent border-none outline-none text-green-400 font-mono w-full"
+              autoFocus
+              autoComplete="off"
+              spellCheck="false"
+            />
+
+            {/* Blinking Cursor */}
+            <div
+              ref={caretRef}
+              className={`absolute top-0 w-2 h-5 bg-green-400 ${
+                isTyping ? "opacity-100" : "opacity-0"
+              } transition-opacity duration-100`}
+              style={{
+                left: `${input.length * 0.6}em`,
+              }}
+            />
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="absolute left-0 z-50 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto min-w-64"
+                style={calculateSuggestionPosition()}
+              >
+                <div className="px-3 py-2 bg-gray-700 border-b border-gray-600">
+                  <span className="text-xs text-gray-400 font-semibold">
+                    {getSuggestionLabel(input)}
+                  </span>
+                </div>
+                {suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-green-400 text-sm flex items-center transition-colors"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    <span className="text-gray-500 mr-2">▸</span>
+                    {suggestion}
+                  </div>
+                ))}
+                <div className="px-3 py-1 bg-gray-750 border-t border-gray-600">
+                  <span className="text-xs text-gray-500">
+                    ↹ Tab to complete • ↑↓ Navigate • Esc to close
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         </div>
-      ))}
+      </div>
 
-      {/* Command Input */}
+      {/* Status Bar */}
+      <div className="flex-shrink-0  bg-gray-800 px-4 py-2 border-t border-gray-700 flex items-center justify-between text-sm">
+        <div className="flex items-center space-x-4 text-gray-400">
+          <div className="flex items-center">
+            <Activity className="w-4 h-4 mr-1 text-green-500" />
+            <span>Ready</span>
+          </div>
+          <div className="flex items-center">
+            <Cpu className="w-4 h-4 mr-1" />
+            <span>CPU: {Math.floor(Math.random() * 30) + 10}%</span>
+          </div>
+          <div className="flex items-center">
+            <HardDrive className="w-4 h-4 mr-1" />
+            <span>Memory: {Math.floor(Math.random() * 40) + 20}%</span>
+          </div>
+          <div className="flex items-center">
+            <Folder className="w-4 h-4 mr-1" />
+            <span>Repls: {repls.length}</span>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2 text-gray-400">
+          <Wifi className="w-4 h-4 text-green-500" />
+          <span>Connected</span>
+        </div>
+      </div>
+
+      {/* Global click handler to maintain focus */}
       <div
-        className="flex items-center gap-2 mt-4"
-        onClick={() => inputRef.current?.focus()}
-      >
-        <span className="text-emerald-400 font-bold">
-          ┌─ ${userName}@devX ~
-        </span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-emerald-400 font-bold">└─$</span>
-        <div className="flex-1 relative">
-          <input
-            ref={inputRef}
-            id="terminal-input-div"
-            type="text"
-            value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleInputChange(e.target.value)
-            }
-            onKeyDown={handleKeyDown}
-            placeholder="Type a command..."
-            autoFocus
-            className="flex-grow bg-transparent text-gray-200 text-sm outline-none border-none p-0 m-0 caret-transparent w-full font-mono"
-          />
-          {/* Custom Block Caret */}
-          <div
-            ref={caretRef}
-            className={`absolute right-0 top-0 text-emerald-400 ${isTyping ? "opacity-100" : "opacity-0"} transition-opacity`}
-          >
-            ▋
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Suggestions */}
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="mt-3 p-3 bg-gray-900 border border-gray-700 rounded-lg">
-          <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-            <Search className="w-3 h-3" />
-            {input.includes("create-repl") && input.split(" ").length === 3
-              ? "Available Templates:"
-              : (input.includes("start-repl") ||
-                    input.includes("delete-repl")) &&
-                  input.split(" ").length === 2
-                ? "Available Repls:"
-                : "Tab Completions:"}
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            {suggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="text-sm text-emerald-400 cursor-pointer hover:bg-gray-800 px-2 py-1 rounded transition-colors flex items-center gap-2"
-              >
-                {input.includes("create-repl") &&
-                templates[suggestion as keyof typeof templates] ? (
-                  <>
-                    <Code className="w-3 h-3" />
-                    <span>{suggestion}</span>
-                    <span className="text-xs text-gray-500">
-                      ({templates[suggestion as keyof typeof templates].name})
-                    </span>
-                  </>
-                ) : (input.includes("start-repl") ||
-                    input.includes("delete-repl")) &&
-                  repls.find((r) => r.name === suggestion) ? (
-                  <>
-                    <Folder className="w-3 h-3" />
-                    <span>{suggestion}</span>
-                  </>
-                ) : (
-                  suggestion
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        className="fixed inset-0 pointer-events-none"
+        onClick={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+      />
     </div>
   );
 };

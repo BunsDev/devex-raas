@@ -58,8 +58,6 @@ func (r *Redis) GetRepl(replID string) (models.Repl, error) {
 		return models.Repl{}, err
 	}
 
-	log.Println(data)
-
 	if len(data) == 0 {
 		return models.Repl{}, errors.New("No such Repl Found")
 	}
