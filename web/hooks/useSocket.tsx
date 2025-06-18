@@ -17,6 +17,9 @@ interface Socket extends WebSocket {
   off?: (event: keyof Events) => void;
 }
 
+const RUNNER_WS_URL =
+  process.env.NEXT_PUBLIC_RUNNER_WS_URL || "ws://localhost:8000";
+
 export function useRunnerSocket(replId: string) {
   const socketRef = useRef<Socket | null>(null);
 
@@ -24,10 +27,9 @@ export function useRunnerSocket(replId: string) {
   const listenersRef = useRef<Record<string, EventHandler[]>>({});
 
   useEffect(() => {
-    const localTestingUrl = "ws://localhost:8081/api/v1/repl/ws";
-    const k8sTestingUrl = `ws://localhost:8000/${replId}/api/v1/repl/ws`;
+    const url = `${RUNNER_WS_URL}/${replId}/api/v1/repl/ws`;
 
-    const socket: Socket = new WebSocket(k8sTestingUrl);
+    const socket: Socket = new WebSocket(url);
 
     // Extend native WebSocket with .emit/.on/.off
     socket.emit = (event: string, data: any) => {

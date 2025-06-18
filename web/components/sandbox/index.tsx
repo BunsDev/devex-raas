@@ -38,7 +38,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   );
   const [fileType, setFileType] = useState<string>("js");
   const [filePath, setFilePath] = useState<string>("");
-  const { isConnected, emit, on, off } = useRunnerSocket("repl-125");
+  const { isConnected, emit, on, off } = useRunnerSocket(slug as string);
 
   useEffect(() => {
     if (!isConnected) return;

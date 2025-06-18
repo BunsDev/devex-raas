@@ -6,6 +6,13 @@ import {
   Save,
   Settings,
   Upload,
+  Code2,
+  FileText,
+  Zap,
+  Palette,
+  Type,
+  Monitor,
+  Eye,
 } from "lucide-react";
 import { editor } from "monaco-editor";
 import dynamic from "next/dynamic";
@@ -22,7 +29,14 @@ import { diff_match_patch } from "diff-match-patch";
 // Dynamically import Monaco Editor (SSR disabled)
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-gray-900" />,
+  loading: () => (
+    <div className="w-full h-full bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="w-16 h-16 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+        <p className="text-emerald-400 font-medium">Loading Editor...</p>
+      </div>
+    </div>
+  ),
 });
 
 interface Theme {
@@ -53,6 +67,8 @@ const Editor = ({
   const [minimap, setMinimap] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
     const detectedLang = detectLanguageFromExtension(fileType);
@@ -113,6 +129,29 @@ const Editor = ({
     }),
     [fontSize, wordWrap, minimap],
   );
+
+  // Language icon mapping
+  const getLanguageIcon = (lang: string) => {
+    const icons: Record<string, string> = {
+      javascript: "🟨",
+      typescript: "🔷",
+      python: "🐍",
+      java: "☕",
+      cpp: "⚡",
+      c: "⚡",
+      csharp: "🔷",
+      php: "🐘",
+      ruby: "💎",
+      go: "🐹",
+      rust: "🦀",
+      swift: "🍎",
+      kotlin: "🔥",
+      html: "🌐",
+      css: "🎨",
+      json: "📋",
+    };
+    return icons[lang] || "📄";
+  };
 
   // Handlers
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -217,18 +256,26 @@ const Editor = ({
     });
   }, []);
 
-  const handleSave = useCallback((): void => {
+  const handleSave = useCallback(async (): Promise<void> => {
+    setIsSaving(true);
     console.log("Saving file...", {
       language,
       code: code.substring(0, 100) + "...",
     });
+    // Simulate save delay
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    setIsSaving(false);
   }, [code, language]);
 
-  const handleRun = useCallback((): void => {
+  const handleRun = useCallback(async (): Promise<void> => {
+    setIsRunning(true);
     console.log("Running code...", {
       language,
       code: code.substring(0, 100) + "...",
     });
+    // Simulate run delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setIsRunning(false);
   }, [code, language]);
 
   const handleDownload = useCallback((): void => {
@@ -240,8 +287,6 @@ const Editor = ({
     a.click();
     URL.revokeObjectURL(url);
   }, [code, language]);
-
-  // Rest of helper functions (getFileExtension, detectLanguageFromExtension) remain the same
 
   const formatCode = useCallback((): void => {
     if (editorRef.current) {
@@ -255,182 +300,52 @@ const Editor = ({
 
   return (
     <div
-      className={`flex flex-col bg-gray-900 text-white border border-gray-700 rounded-lg overflow-hidden ${isFullscreen ? "fixed inset-0 z-50" : "h-full"}`}
+      className={`flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white border border-emerald-500/20  overflow-hidden shadow-2xl shadow-black/50 ${
+        isFullscreen ? "fixed inset-0 z-50 rounded-none" : "h-full"
+      }`}
     >
-      {/* Toolbar */}
-      <div className="flex items-center justify-between bg-gray-800 border-b border-gray-700 p-2">
-        <div className="flex items-center space-x-2">
-          <select
-            value={language}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setLanguage(e.target.value)
-            }
-            className="bg-gray-700 text-white px-2 py-1 rounded text-sm border border-gray-600 focus:border-blue-500 focus:outline-none"
-          >
-            {languages.map((lang) => (
-              <option key={lang} value={lang}>
-                {lang.charAt(0).toUpperCase() + lang.slice(1)}
-              </option>
-            ))}
-          </select>
+      {/* Enhanced Editor Container */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_1px_1px,_rgba(16,185,129,0.3)_1px,_transparent_0)] bg-[length:20px_20px]" />
 
-          <div className="h-4 w-px bg-gray-600"></div>
-
-          <button
-            onClick={handleRun}
-            className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-sm transition-colors"
-            title="Run Code (F5)"
-          >
-            <Play size={14} />
-            <span>Run</span>
-          </button>
-
-          <button
-            onClick={handleSave}
-            className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-sm transition-colors"
-            title="Save (Ctrl+S)"
-          >
-            <Save size={14} />
-            <span>Save</span>
-          </button>
-
-          <button
-            onClick={formatCode}
-            className="bg-gray-600 hover:bg-gray-700 px-2 py-1 rounded text-sm transition-colors"
-            title="Format Code (Shift+Alt+F)"
-          >
-            Format
-          </button>
+        {/* Editor */}
+        <div className="relative z-10 h-full">
+          <MonacoEditor
+            height="100%"
+            language={language}
+            theme={theme}
+            value={code}
+            onChange={(newValue) => handleCodeChange(newValue || "")}
+            options={editorOptions}
+            onMount={handleEditorMount}
+          />
         </div>
 
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handleDownload}
-            className="p-1 hover:bg-gray-700 rounded transition-colors"
-            title="Download"
-          >
-            <Download size={16} />
-          </button>
-
-          <label
-            className="p-1 hover:bg-gray-700 rounded transition-colors cursor-pointer"
-            title="Upload"
-          >
-            <Upload size={16} />
-            <input
-              type="file"
-              onChange={handleUpload}
-              className="hidden"
-              accept=".js,.ts,.py,.java,.cpp,.c,.cs,.php,.rb,.go,.rs,.swift,.kt,.html,.css,.json,.xml,.yml,.md,.txt"
-            />
-          </label>
-
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-1 hover:bg-gray-700 rounded transition-colors"
-            title="Settings"
-          >
-            <Settings size={16} />
-          </button>
-
-          <button
-            onClick={toggleFullscreen}
-            className="p-1 hover:bg-gray-700 rounded transition-colors"
-            title="Toggle Fullscreen"
-          >
-            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
-        </div>
+        {/* Corner accent */}
+        <div className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-emerald-500/10 to-transparent pointer-events-none" />
       </div>
 
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="bg-gray-800 border-b border-gray-700 p-3 space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs text-gray-300 mb-1">Theme</label>
-              <select
-                value={theme}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  setTheme(e.target.value)
-                }
-                className="w-full bg-gray-700 text-white px-2 py-1 rounded text-sm border border-gray-600 focus:border-blue-500 focus:outline-none"
-              >
-                {themes.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-300 mb-1">
-                Font Size
-              </label>
-              <input
-                type="range"
-                min="10"
-                max="24"
-                value={fontSize}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setFontSize(parseInt(e.target.value))
-                }
-                className="w-full"
-              />
-              <div className="text-xs text-gray-400 text-center">
-                {fontSize}px
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-300 mb-1">
-                Word Wrap
-              </label>
-              <select
-                value={wordWrap}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  setWordWrap(e.target.value as "off" | "on" | "wordWrapColumn")
-                }
-                className="w-full bg-gray-700 text-white px-2 py-1 rounded text-sm border border-gray-600 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="off">Off</option>
-                <option value="on">On</option>
-                <option value="wordWrapColumn">Viewport</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="flex items-center space-x-2 text-sm text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={minimap}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setMinimap(e.target.checked)
-                  }
-                  className="rounded"
-                />
-                <span>Minimap</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Editor */}
-      <div className="flex-1 relative">
-        <MonacoEditor
-          height="100%"
-          language={language}
-          theme={theme}
-          value={code}
-          onChange={(newValue) => handleCodeChange(newValue || "")}
-          options={editorOptions}
-          onMount={handleEditorMount}
-        />
-      </div>
-
-      {/* Status Bar - unchanged from original */}
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: #10b981;
+          cursor: pointer;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .slider::-moz-range-thumb {
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: #10b981;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+      `}</style>
     </div>
   );
 };
