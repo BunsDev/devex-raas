@@ -117,20 +117,21 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: replId + "-ingress",
-			Annotations: map[string]string{
-				"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
-			},
+			// Annotations: map[string]string{
+			// 	"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
+			// },
 		},
 		Spec: networkingv1.IngressSpec{
 			IngressClassName: strPtr("nginx"),
 			Rules: []networkingv1.IngressRule{
 				{
+					Host: replId + ".localhost",
 					IngressRuleValue: networkingv1.IngressRuleValue{
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{
 								{
-									Path:     "/" + replId + "(/|$)(.*)",
-									PathType: pathTypePtr(networkingv1.PathTypeImplementationSpecific),
+									Path:     "/",
+									PathType: pathTypePtr(networkingv1.PathTypePrefix),
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{
 											Name: replId,
