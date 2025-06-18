@@ -8,7 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User, AuthStatus } from "@/types/auth";
-import { CoreService } from "@/lib/auth";
+import { CoreService } from "@/lib/core";
 
 interface AuthContextType {
   user: User | null;

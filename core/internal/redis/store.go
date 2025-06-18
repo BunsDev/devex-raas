@@ -36,10 +36,10 @@ func NewRedisStore() *Redis {
 
 // Helper Functinos
 func (r *Redis) CreateRepl(username, replName, replID string) error {
-	if err := r.client.HSet(r.ctx, "repl:"+replID, models.Repl{
-		Id:   replID,
-		Name: replName,
-		User: username,
+	if err := r.client.HSet(r.ctx, "repl:"+replID, map[string]string{
+		"id":   replID,
+		"name": replName,
+		"user": username,
 	}).Err(); err != nil {
 		return err
 	}
@@ -58,14 +58,16 @@ func (r *Redis) GetRepl(replID string) (models.Repl, error) {
 		return models.Repl{}, err
 	}
 
+	log.Println(data)
+
 	if len(data) == 0 {
 		return models.Repl{}, errors.New("No such Repl Found")
 	}
 
 	repl := models.Repl{
 		Id:   replID,
-		Name: data["Name"],
-		User: data["User"],
+		Name: data["name"],
+		User: data["user"],
 	}
 
 	return repl, nil

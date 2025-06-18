@@ -1,4 +1,5 @@
 import { AuthStatus, User } from "@/types/auth";
+import { StoredRepl } from "@/types/dashboard";
 import axios from "axios";
 
 const API_BASE_URL =
@@ -10,6 +11,10 @@ export class CoreService {
 
   private constructor() {
     this.github = new GithubService();
+  }
+
+  private url(route: string) {
+    return `${API_BASE_URL}${route}`;
   }
 
   static getInstance(): CoreService {
@@ -33,11 +38,66 @@ export class CoreService {
     return fetch(`${API_BASE_URL}${url}`, defaultOptions);
   }
 
-  // async getRepls() {
-  //   try {
-  //     const response = await axios
-  //   } catch (error) {}
-  // }
+  async getRepls() {
+    try {
+      const response = await axios.get(this.url("/api/repl"), {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return (response.data as StoredRepl[]) || [];
+    } catch (error) {
+      console.log("error:", error);
+      throw error;
+    }
+  }
+
+  async newRepl(body: {
+    userName: string;
+    template: string;
+    replName: string;
+  }) {
+    try {
+      await axios.post(this.url("/api/repl/new"), body, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.log("error:", error);
+      throw error;
+    }
+  }
+
+  async startRepl(replName: string) {
+    try {
+      await axios.get(this.url(`/api/repl/${replName}`), {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.log("error:", error);
+      throw error;
+    }
+  }
+
+  async deleteRepl(replName: string) {
+    try {
+      await axios.delete(this.url(`/api/repl/${replName}`), {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.log("error:", error);
+      throw error;
+    }
+  }
 }
 
 class GithubService {

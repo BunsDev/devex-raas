@@ -11,6 +11,7 @@ import (
 	"github.com/parthkapoor-dev/core/internal/k8s"
 	"github.com/parthkapoor-dev/core/internal/redis"
 	"github.com/parthkapoor-dev/core/internal/s3"
+	"github.com/parthkapoor-dev/core/models"
 	"github.com/parthkapoor-dev/core/pkg/json"
 )
 
@@ -25,6 +26,9 @@ func NewHandler(s3Client *s3.S3Client, rds *redis.Redis) http.Handler {
 	mux.HandleFunc("POST /new", func(w http.ResponseWriter, r *http.Request) {
 		newRepl(w, r, s3Client, rds)
 	})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		getUserRepls(w, r, rds)
+	})
 	mux.HandleFunc("GET /{replId}", func(w http.ResponseWriter, r *http.Request) {
 		startReplSession(w, r, rds)
 	})
@@ -36,7 +40,6 @@ func NewHandler(s3Client *s3.S3Client, rds *redis.Redis) http.Handler {
 }
 
 func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds *redis.Redis) {
-	log.Println("POST /repl/new")
 
 	var repl *newReplRequest
 	if err := json.ReadJSON(r, &repl); err != nil {
@@ -53,17 +56,16 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 	if err != nil {
 		log.Fatal(err)
 	}
-	replID := string(uuid)
+	replID := strings.TrimSpace(string(uuid))
 
 	// Create Repl in Store
 	if err := rds.CreateRepl(userName, repl.ReplName, replID); err != nil {
+		log.Fatal(err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
-	log.Println(destinationPrefix)
-
 	if err := s3Client.CopyFolder(repl.Template, destinationPrefix); err != nil {
 		log.Fatal("S3 CopyTemplate is giving Err: ", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -71,6 +73,30 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 	}
 
 	json.WriteJSON(w, http.StatusOK, "Success")
+}
+
+func getUserRepls(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
+
+	user, _ := middleware.GetUserFromContext(r.Context())
+	userName := strings.ToLower(user.Login)
+
+	replIds, err := rds.GetUserRepls(userName)
+	if err != nil {
+		json.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	var repls []models.Repl
+	for _, id := range replIds {
+		repl, err := rds.GetRepl(id)
+		if err != nil {
+			log.Fatalf("This replId: %s doesn't exists for %s user", id, userName)
+			continue
+		}
+		repls = append(repls, repl)
+	}
+
+	json.WriteJSON(w, http.StatusOK, repls)
 }
 
 func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
@@ -82,6 +108,7 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 
 	repl, err := rds.GetRepl(replId)
 	if err != nil {
+		log.Fatal(err)
 		json.WriteError(w, http.StatusBadRequest, "This Repl Id doesn't exists")
 		return
 	}

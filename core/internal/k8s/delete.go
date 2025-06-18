@@ -137,7 +137,6 @@ func waitForEphemeralUpload(clientset *kubernetes.Clientset, podName string) err
 			}
 		}
 
-		log.Println(pod.Status.EphemeralContainerStatuses)
 		log.Println("⏳ Waiting for ephemeral uploader to complete...")
 		time.Sleep(interval)
 	}

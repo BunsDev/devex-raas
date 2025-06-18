@@ -5,6 +5,8 @@ import TerminalInterface from "@/components/dashboard/TerminalInterface";
 import { Button } from "@/components/ui/button";
 import LetterGlitch from "@/components/ui/letter-glitch";
 import { useAuth } from "@/contexts/AuthContext";
+import { CoreService } from "@/lib/core";
+import { create } from "domain";
 import { Activity, Clock, Code, Terminal, Zap } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
@@ -12,6 +14,15 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"terminal" | "ui">("terminal");
 
   const { user } = useAuth();
+  const userName = user?.login || "";
+
+  const core = CoreService.getInstance();
+
+  const getRepls = async () => await core.getRepls();
+  const createRepl = async (template: string, replName: string) =>
+    await core.newRepl({ template, replName, userName });
+  const startRepl = async (name: string) => await core.startRepl(name);
+  const deleteRepl = async (name: string) => await core.deleteRepl(name);
 
   return (
     <ProtectedRoute>
@@ -50,7 +61,13 @@ export default function Dashboard() {
                   </div>
 
                   {activeTab === "terminal" && (
-                    <TerminalInterface userName={user?.name || "developer"} />
+                    <TerminalInterface
+                      userName={user?.name || "developer"}
+                      getRepls={getRepls}
+                      createRepl={createRepl}
+                      startRepl={startRepl}
+                      deleteRepl={deleteRepl}
+                    />
                   )}
                   {activeTab === "ui" && (
                     <div className="flex items-center justify-center h-full bg-gray-900 border border-gray-700 rounded-lg">

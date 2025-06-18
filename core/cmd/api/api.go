@@ -32,12 +32,12 @@ func (api *APIServer) Run() error {
 	router.Handle("/auth/github/", http.StripPrefix("/auth/github", github.NewHandler()))
 
 	// Protected Repl Routes
-	router.Handle("/api/v1/repl/", middleware.AuthMiddleware(
-		http.StripPrefix("/api/v1/repl", repl.NewHandler(s3Client, rds))))
+	router.Handle("/api/repl/", middleware.AuthMiddleware(
+		http.StripPrefix("/api/repl", repl.NewHandler(s3Client, rds))))
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"}, // TODO: Update to frontend URL in prod
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
 	})
