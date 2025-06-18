@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className=" text-gray-200">
+      <div className=" pt-10 text-gray-200">
         <LetterGlitch
           glitchSpeed={50}
           centerVignette={true}
