@@ -95,7 +95,7 @@ export default function FileTree({ tree, fetchDir, fetchContent }: Props) {
         return (
           <div key={entryPath} className="group">
             <Folder
-              element={JSON.stringify(
+              element={
                 <div
                   className={cn(
                     "flex backdrop-blur-lg  items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 ease-in-out border border-transparent hover:border-emerald-500/30",
@@ -120,8 +120,8 @@ export default function FileTree({ tree, fetchDir, fetchContent }: Props) {
                                   ${isExpanded ? "bg-emerald-400 shadow-lg shadow-emerald-400/50" : "bg-gray-600"}
                                 `}
                   />
-                </div>,
-              )}
+                </div>
+              }
               value={entryPath}
               onClick={() => {
                 setActivePath(entryPath);

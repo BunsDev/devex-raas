@@ -5,6 +5,7 @@ import { FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
 import React, {
   createContext,
   forwardRef,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -206,7 +207,7 @@ interface FolderComponentProps
 
 type FolderProps = {
   expandedItems?: string[];
-  element: string;
+  element: ReactNode;
   isSelectable?: boolean;
   isSelect?: boolean;
 } & FolderComponentProps;

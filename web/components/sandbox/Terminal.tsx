@@ -6,11 +6,8 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from "react";
-import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
-import { WebLinksAddon } from "xterm-addon-web-links";
-import { SearchAddon } from "xterm-addon-search";
 import "xterm/css/xterm.css";
 
 interface TerminalProps {
@@ -121,16 +118,28 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
     ref,
   ) => {
     const terminalRef = useRef<HTMLDivElement>(null);
-    const xtermRef = useRef<Terminal | null>(null);
-    const fitAddonRef = useRef<FitAddon | null>(null);
-    const searchAddonRef = useRef<SearchAddon | null>(null);
+    const xtermRef = useRef<any>(null);
+    const fitAddonRef = useRef<any>(null);
+    const searchAddonRef = useRef<any>(null);
     const isInitializedRef = useRef(false);
+    const [isClient, setIsClient] = useState(false);
+
+    // Ensure we're on the client side
+    useEffect(() => {
+      setIsClient(true);
+    }, []);
 
     // Initialize terminal
-    const initializeTerminal = useCallback(() => {
-      if (!terminalRef.current || isInitializedRef.current) return;
+    const initializeTerminal = useCallback(async () => {
+      if (!terminalRef.current || isInitializedRef.current || !isClient) return;
 
       try {
+        // Dynamically import xterm modules
+        const { Terminal } = await import("xterm");
+        const { FitAddon } = await import("xterm-addon-fit");
+        const { WebLinksAddon } = await import("xterm-addon-web-links");
+        const { SearchAddon } = await import("xterm-addon-search");
+
         // Create terminal instance
         const terminal = new Terminal({
           cols,
@@ -194,19 +203,20 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
       onReady,
       onRequestTerminal,
       onError,
+      isClient,
     ]);
 
     // Setup event listeners
     const setupEventListeners = useCallback(
-      (terminal: Terminal) => {
+      (terminal: any) => {
         // Handle user input
-        terminal.onData((data) => {
+        terminal.onData((data: string) => {
           onSendData?.(data);
           onDataReceived?.(data);
         });
 
         // Handle terminal resize
-        terminal.onResize(({ cols, rows }) => {
+        terminal.onResize(({ cols, rows }: { cols: number; rows: number }) => {
           onTerminalResize?.(cols, rows);
         });
 
@@ -221,7 +231,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         });
 
         // Handle title change
-        terminal.onTitleChange((title) => {
+        terminal.onTitleChange((title: string) => {
           // Handle terminal title change if needed
           console.log("Terminal title changed:", title);
         });
@@ -259,7 +269,9 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
 
     // Initialize terminal on mount
     useEffect(() => {
-      initializeTerminal();
+      if (isClient) {
+        initializeTerminal();
+      }
 
       return () => {
         if (xtermRef.current) {
@@ -268,7 +280,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         }
         isInitializedRef.current = false;
       };
-    }, [initializeTerminal]);
+    }, [initializeTerminal, isClient]);
 
     // Expose terminal methods via ref
     useImperativeHandle(
@@ -367,6 +379,28 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
       }),
       [],
     );
+
+    // Show loading state during SSR or before client hydration
+    if (!isClient) {
+      return (
+        <div
+          className={`terminal-container ${className}`}
+          style={{
+            width: "100%",
+            height: "100%",
+            backgroundColor: defaultTheme.background,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: defaultTheme.foreground,
+            fontFamily,
+            ...style,
+          }}
+        >
+          Loading terminal...
+        </div>
+      );
+    }
 
     return (
       <div
