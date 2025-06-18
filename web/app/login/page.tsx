@@ -1,12 +1,13 @@
+// app/login/page.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginButton } from "@/components/Auth/LoginButton";
 import Squares from "@/components/ui/background-squares";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +28,7 @@ export default function LoginPage() {
   }
 
   if (isAuthenticated) {
-    return null; // Will redirect
+    return null;
   }
 
   const getErrorMessage = (errorCode: string) => {
@@ -48,16 +49,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center  justify-center min-h-screen ">
+    <div className="flex items-center justify-center min-h-screen">
       <Squares
         speed={0.5}
         squareSize={80}
-        direction="diagonal" // up, down, left, right, diagonal
+        direction="diagonal"
         borderColor="black"
         hoverFillColor="#222"
       />
       <div className="z-10 max-w-md w-full flex flex-col gap-8">
-        <div className="">
+        <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-200">
             Sign in to your account
           </h2>
@@ -77,5 +78,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
