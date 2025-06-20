@@ -1,0 +1,102 @@
+version:
+  "3.8" # Specify the Docker Compose file format version.
+  # Version 3.8 is recommended for Docker Swarm and supports 'secrets'.
+
+services:
+  core_service: # This is the name of your service within the Docker Swarm stack.
+    # Docker Swarm will create a service named <stack_name>_core_service.
+    image:
+      parthkapoor-dev/devx-core:latest # Replace with your Docker Hub username and image tag.
+      # Using 'latest' for convenience with CI/CD,
+      # but consider a specific version (e.g., commit SHA) for
+      # more precise control in production deployments.
+
+    ports:
+      - "80:8080" # Map host port 80 to container port 8080.
+        # Docker Swarm's routing mesh will handle this, making your service accessible on port 80
+        # of any Swarm node.
+
+    environment:
+      # Non-sensitive environment variables can be passed directly.
+      # Sensitive variables (keys, secrets) should ideally use Docker Secrets.
+      SPACES_REGION: "blr1"
+      SPACES_BUCKET: "devex"
+      SPACES_ENDPOINT: "https://blr1.digitaloceanspaces.com"
+
+      RUNNER_DOCKER_IMAGE: "parthkapoor-dev/devx-runner:latest"
+
+      KUBE_CONFIG_PATH: "/app/secrets/kubeconfig"
+
+      GITHUB_REDIRECT_URL: "http://api.devx.parthkapoor.me:80/auth/github/callback" # Replace with your actual domain
+      FRONTEND_URL: "http://devx.parthkapoor.me:80" # Replace with your actual domain
+
+      ENVIRONMENT: "production"
+      PORT: "8080" # Your app listens on this port inside the container
+
+    # --- Docker Secrets for Sensitive Data ---
+    # These secrets are mounted as files into the container by default.
+    # We will configure them to be exposed as environment variables or mounted directly as files.
+    secrets:
+      # Digital Ocean Spaces credentials
+      - source: spaces_access_key # Name of the Docker Swarm Secret (will create below)
+        target: SPACES_ACCESS_KEY # Name of the environment variable inside the container
+
+      - source: spaces_secret_key
+        target: SPACES_SECRET_KEY
+
+      # Redis Connection String
+      - source: redis_url
+        target: REDIS_URL
+
+      # GitHub Auth credentials
+      - source: github_client_id
+        target: GITHUB_CLIENT_ID
+
+      - source: github_client_secret
+        target: GITHUB_CLIENT_SECRET
+
+      - source: session_secret
+        target: SESSION_SECRET
+
+      # KubeConfig File for connecting to the external K8s cluster
+      - source: kubeconfig_file # Name of the Docker Swarm Secret
+        target:
+          /app/secrets/kubeconfig # Path where the secret file will be mounted inside the container.
+          # This path must match the KUBE_CONFIG_PATH in your Go code
+          # and the KUBE_CONFIG_PATH env var above.
+
+    deploy:
+      replicas:
+        1 # Number of container instances to run for this service.
+        # For a single VPS, 1 is typical. If you add more Swarm nodes,
+        # you could increase this for basic High Availability.
+      update_config:
+        parallelism: 1 # Update one replica at a time
+        delay: 10s # Wait 10 seconds between updates
+        order: start-first # Start new containers before stopping old ones (zero-downtime potential)
+        failure_action: rollback # If an update fails, automatically roll back to the previous version.
+      restart_policy:
+        condition: on-failure # Restart the container if it exits with a non-zero status
+        delay: 5s # Wait 5 seconds before attempting a restart
+        max_attempts: 3 # Try restarting up to 3 times
+        window: 120s # Consider restart attempts within a 120-second window
+
+# --- Define the Docker Swarm Secrets ---
+# These are references to actual Docker Swarm Secrets that must be created
+# *before* you deploy the stack.
+# We use 'external: true' to indicate that these secrets are expected to exist
+# in the Swarm, rather than being created by the 'docker stack deploy' command
+# from local files. This is a common and secure practice for production.
+secrets:
+  spaces_access_key:
+    external: true
+  spaces_secret_key:
+    external: true
+  github_client_id:
+    external: true
+  github_client_secret:
+    external: true
+  session_secret:
+    external: true
+  kubeconfig_file:
+    external: true # This secret will contain the content of your kubeconfig.yaml file

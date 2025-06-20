@@ -23,6 +23,9 @@
 # Environment variables
 */.env
 
+# Secrets
+*/secrets
+
 # Logs and temporary files
 *.log
 */tmp/

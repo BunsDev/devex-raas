@@ -4,11 +4,13 @@ import (
 	"log"
 
 	"github.com/parthkapoor-dev/core/cmd/api"
+	"github.com/parthkapoor-dev/core/pkg/dotenv"
 )
 
 func main() {
 
-	server := api.NewAPIServer(":8080")
+	port := dotenv.EnvString("PORT", "8080")
+	server := api.NewAPIServer(":" + port)
 
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
