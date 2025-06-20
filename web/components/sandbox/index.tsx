@@ -208,7 +208,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   }
 
   return (
-    <div className="h-screen w-full bg-gray-100 flex flex-col">
+    <div className="h-screen w-full bg-gray-800 flex flex-col pt-12">
       {/* Top bar with controls */}
       <div className="h-10 bg-gray-800 border-b border-gray-600 flex items-center px-3 space-x-2">
         <Button

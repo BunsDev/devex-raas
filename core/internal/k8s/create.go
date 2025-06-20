@@ -12,6 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var RUNNER_DOCKER_IMAGE = dotenv.EnvString("RUNNER_DOCKER_IMAGE", "parthkapoor-dev/devx-runner:latest")
+
 func CreateReplDeploymentAndService(userName, replId string) error {
 	clientset := getClientSet()
 	ctx := context.Background()
@@ -66,7 +68,7 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 					Containers: []corev1.Container{
 						{
 							Name:            "runner",
-							Image:           "runner-service:latest",
+							Image:           RUNNER_DOCKER_IMAGE,
 							ImagePullPolicy: corev1.PullNever,
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -117,9 +119,6 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: replId + "-ingress",
-			// Annotations: map[string]string{
-			// 	"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
-			// },
 		},
 		Spec: networkingv1.IngressSpec{
 			IngressClassName: strPtr("nginx"),
