@@ -5,6 +5,7 @@ import (
 
 	"path/filepath"
 
+	"github.com/parthkapoor-dev/core/pkg/dotenv"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -13,9 +14,11 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+var KUBE_CONFIG_PATH = dotenv.EnvString("KUBE_CONFIG_PATH", filepath.Join(homedir.HomeDir(), ".kube", "config"))
+
 // Initializes the K8s client
 func getClientSet() *kubernetes.Clientset {
-	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	kubeconfig := KUBE_CONFIG_PATH
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		log.Fatalf("Failed to load kubeconfig: %v", err)
