@@ -1,0 +1,53 @@
+name: Core Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "core/**" # Only trigger if something in core/ changes
+      - ".github/workflows/**" # Also trigger if the workflow itself changes
+
+permissions:
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./core
+          push: true
+          tags: |
+            ghcr.io/parthkapoor-dev/devex/core-service:latest
+            ghcr.io/parthkapoor-dev/devex/core-service:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: SSH Deploy - Docker Stack
+        uses: cssnr/stack-deploy-action@v1
+        with:
+          name: devex
+          file: core/docker-stack.yaml
+          host: api.devx.parthkapoor.me
+          user: deploy
+          ssh_key: ${{ secrets.VPS_SSH_PVT_KEY }}

@@ -1,6 +1,6 @@
 # Stage 1: Build the Go application
 # Use a Go official image with Alpine Linux for a smaller build environment
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Set the working directory inside the container to the root of your Go module
 WORKDIR /app

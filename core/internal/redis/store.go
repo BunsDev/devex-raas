@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"log"
-	"os"
 
 	"github.com/parthkapoor-dev/core/models"
+	"github.com/parthkapoor-dev/core/pkg/dotenv"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -15,10 +15,12 @@ type Redis struct {
 	ctx    context.Context
 }
 
+var REDIS_URL = dotenv.EnvString("REDIS_URL", "")
+
 func NewRedisStore() *Redis {
 
 	ctx := context.Background()
-	opt, _ := redis.ParseURL(os.Getenv("REDIS_URL"))
+	opt, _ := redis.ParseURL(REDIS_URL)
 	client := redis.NewClient(opt)
 
 	_, err := client.Ping(ctx).Result()
