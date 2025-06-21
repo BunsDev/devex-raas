@@ -13,10 +13,9 @@ var (
 	GithubOauthConfig = &oauth2.Config{
 		ClientID:     dotenv.EnvString("GITHUB_CLIENT_ID", ""),
 		ClientSecret: dotenv.EnvString("GITHUB_CLIENT_SECRET", ""),
-		// TODO: put url in env
-		RedirectURL: "http://localhost:8080/auth/github/callback",
-		Scopes:      []string{"read:user", "user:email"},
-		Endpoint:    github.Endpoint,
+		RedirectURL:  dotenv.EnvString("GITHUB_REDIRECT_URL", "http://localhost:8080/auth/github/callback"),
+		Scopes:       []string{"read:user", "user:email"},
+		Endpoint:     github.Endpoint,
 	}
 
 	// A random string for CSRF protection
