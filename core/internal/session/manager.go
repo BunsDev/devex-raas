@@ -20,7 +20,6 @@ func init() {
 		MaxAge:   86400 * 7, // 7 days
 		HttpOnly: true,
 		Secure:   dotenv.EnvString("ENVIRONMENT", "development") == "production",
-		// SameSite: http.SameSiteStrictMode,
 		SameSite: http.SameSiteLaxMode,
 	}
 }

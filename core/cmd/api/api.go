@@ -8,6 +8,7 @@ import (
 	"github.com/parthkapoor-dev/core/internal/redis"
 	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"github.com/parthkapoor-dev/core/pkg/json"
 	"github.com/parthkapoor-dev/core/services/auth/github"
 	"github.com/parthkapoor-dev/core/services/repl"
 	"github.com/rs/cors"
@@ -30,6 +31,12 @@ func (api *APIServer) Run() error {
 	router := http.NewServeMux()
 	s3Client := s3.NewS3Client()
 	rds := redis.NewRedisStore()
+
+	// Test Route
+	router.HandleFunc("GET /test", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("The Protected Route is Accessed")
+		json.WriteJSON(w, http.StatusOK, "Success")
+	})
 
 	// Github Auth Routes
 	router.Handle("/auth/github/", http.StripPrefix("/auth/github", github.NewHandler()))
