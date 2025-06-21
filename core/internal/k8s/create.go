@@ -9,10 +9,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var RUNNER_DOCKER_IMAGE = dotenv.EnvString("RUNNER_DOCKER_IMAGE", "parthkapoor-dev/devx-runner:latest")
+var RUNNER_CLUSTER_IP = dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost")
 
 func CreateReplDeploymentAndService(userName, replId string) error {
 	clientset := getClientSet()
@@ -69,7 +71,7 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 						{
 							Name:            "runner",
 							Image:           RUNNER_DOCKER_IMAGE,
-							ImagePullPolicy: corev1.PullNever,
+							ImagePullPolicy: corev1.PullAlways,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "workspace-vol",
@@ -79,6 +81,17 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 8081,
+								},
+							},
+
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("250m"),  // 0.25 CPU
+									corev1.ResourceMemory: resource.MustParse("512Mi"), // 512 MB RAM
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("750m"), // 0.5 CPU max
+									corev1.ResourceMemory: resource.MustParse("1Gi"),  // 1 GB RAM max
 								},
 							},
 						},
@@ -124,7 +137,7 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 			IngressClassName: strPtr("nginx"),
 			Rules: []networkingv1.IngressRule{
 				{
-					Host: replId + ".localhost",
+					Host: fmt.Sprintf("%s.%s", replId, RUNNER_CLUSTER_IP),
 					IngressRuleValue: networkingv1.IngressRuleValue{
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{

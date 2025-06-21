@@ -24,6 +24,7 @@ services:
       SPACES_ENDPOINT: "https://blr1.digitaloceanspaces.com"
 
       RUNNER_DOCKER_IMAGE: "ghcr.io/parthkapoor-dev/devex/runner-service:latest"
+      RUNNER_CLUSTER_IP: "repl.parthkapoor.me"
 
       KUBE_CONFIG_PATH: "/app/secrets/kubeconfig"
 
