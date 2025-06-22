@@ -26,12 +26,13 @@ func NewHandler() http.Handler {
 	})
 	return mux
 }
+
 func generateSessionID() string {
 	bytes := make([]byte, 8)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
-
 }
+
 func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty.PTYManager) {
 
 	if err := ws.Init(w, r); err != nil {

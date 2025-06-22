@@ -11,14 +11,12 @@ Please read the [Contribution Guide](./CONTRIBUTING.md) before sending PR reques
 Your system should have the following installed:
 
 ```
-
 * This project cloned
 * Docker
 * kubectl
 * kind (For Local Testing only)
 * helm (Optional — already included via pre-generated ingress-controller.yaml)
-
-````
+```
 
 ---
 
@@ -30,9 +28,9 @@ To create a local Kind cluster:
 
 ```bash
 kind create cluster --name devex-cluster
-````
+```
 
-To check if the cluster is running:
+To verify the cluster is running:
 
 ```bash
 kubectl get nodes
@@ -41,35 +39,30 @@ kubectl get nodes
 Sample output:
 
 ```
-NAME                        STATUS   ROLES           AGE   VERSION
+NAME                          STATUS   ROLES           AGE   VERSION
 devex-cluster-control-plane   Ready    control-plane   45m   v1.33.1
 ```
-
-> 📝 By default, Kind creates a single-node cluster. To create multiple nodes, define a Kind config file.
 
 ---
 
 ### Step 2: Install NGINX Ingress Controller
 
-You can use Helm (recommended) or apply the generated YAML.
+You can use Helm (recommended) or apply a pre-generated YAML manifest.
 
-**Add Helm repo and create namespace:**
+**Create the ingress-nginx namespace:**
 
 ```bash
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm search repo ingress-nginx --versions
-
 kubectl create namespace ingress-nginx
 ```
 
 #### Option 1: Install using Helm
 
 ```bash
-helm install ingress-nginx ingress-nginx \
-  --namespace ingress-nginx
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm install ingress-nginx ingress-nginx --namespace ingress-nginx
 ```
 
-#### Option 2: Use pre-generated template
+#### Option 2: Use pre-generated YAML
 
 > Skip if you've already installed via Helm.
 
@@ -85,53 +78,41 @@ kubectl apply -f ./ingress-controller.yaml
 
 ### Step 3: (Kind only) Port Forwarding for Local Testing
 
-Check if NGINX Ingress Controller is running:
+In `kind`, LoadBalancer services do not work out of the box. Use port forwarding instead.
+
+Check if NGINX is running:
 
 ```bash
 kubectl -n ingress-nginx get pods
-```
-
-Check services:
-
-```bash
 kubectl -n ingress-nginx get svc
 ```
 
-Output should show something like:
-
-```
-NAME                         TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
-ingress-nginx-controller     LoadBalancer   10.96.130.21   <pending>     80:31011/TCP,443:31772/TCP   26m
-```
-
-> ⚠️ In `kind`, LoadBalancer will remain `<pending>` since it doesn't support real LoadBalancer by default.
-
-Use port-forwarding instead:
+Forward traffic to your local machine:
 
 ```bash
 kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 8000:80
 ```
 
-You can now access the Ingress Controller at:
+Now access Ingress at:
 ➡️ [http://localhost:8000/](http://localhost:8000/)
 
 ---
 
-### Step 4: (Kind only) Load Local Docker Image into the Cluster
+### Step 4: Load Local Docker Image into the Cluster (If Needed)
 
-If your runner-service image is not pushed to a remote registry (DockerHub, GitHub, etc), load it manually:
+If you're not using a remote registry for your `runner-service` image:
 
 ```bash
 kind load docker-image runner-service:latest
 ```
 
-> ✅ Skip this step if you're pulling the image from a container registry.
+Skip if the image is pulled from DockerHub or GHCR.
 
 ---
 
-### Step 5: (Required) Add Secrets for DigitalOcean Spaces Access
+### Step 5: Add Secrets for DigitalOcean Spaces Access
 
-To allow the `s3-downloader` init container to fetch files from **DigitalOcean Spaces**, create a Kubernetes secret with your Spaces credentials:
+For the `s3-downloader` init container to fetch workspace files:
 
 ```bash
 kubectl create secret generic aws-creds \
@@ -139,12 +120,73 @@ kubectl create secret generic aws-creds \
   --from-literal=secret_key=<YOUR_DO_SPACES_SECRET_KEY>
 ```
 
-> 🔐 This secret is mounted as environment variables in the `s3-downloader` container using `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
-
-Also ensure your S3 commands in the init container include the proper endpoint
+These are mounted into the Pod as `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
 
 ---
 
-### ✅ Congrats! Your K8s Cluster is Ready
+### Step 6: Install cert-manager and Let’s Encrypt Issuer
 
-You can now deploy workloads like REPLs, services, and ingress configurations.
+We use **cert-manager** to automatically provision TLS certificates using **Let’s Encrypt**.
+
+* cert-manager handles:
+
+  * Creating ACME challenges via Ingress
+  * Issuing certificates
+  * Storing them in a Kubernetes `Secret`
+  * Automatically renewing them before expiry
+
+#### 1. Install cert-manager
+
+```bash
+kubectl apply -f ./cert-manager.yaml
+```
+
+This installs the CRDs and core cert-manager components.
+
+#### 2. Create Let's Encrypt ClusterIssuer
+
+```bash
+kubectl apply -f ./cert-issuer-nginx-ingress.yaml
+```
+
+This file defines a `ClusterIssuer` named `letsencrypt-cluster-issuer`. It uses HTTP-01 challenge via the Ingress controller (`nginx`) to verify ownership of the domain.
+
+#### 3. Secret: tls-secret
+
+Certificates are issued and saved in a secret named `tls-secret`. This is referenced in your Ingress definitions:
+
+```yaml
+tls:
+  - hosts:
+      - repl.parthkapoor.me
+    secretName: tls-secret
+```
+
+cert-manager automatically renews certificates before expiration.
+
+---
+
+### 🔐 Important TLS Notes
+
+* Make sure your domain (`repl.parthkapoor.me`) points to your Ingress controller’s external IP via an `A` record.
+* Ensure port `80` and `443` are open on your VPS/cluster node.
+* The ACME challenge requires access to `/.well-known/acme-challenge/...` via HTTP.
+* You must configure `ingress-nginx` with:
+
+  ```yaml
+  strict-validate-path-type: "false"
+  ```
+
+  in the `ingress-nginx` ConfigMap to allow `pathType: Exact`.
+
+---
+
+### ✅ Congrats! Your K8s Cluster is Ready for TLS-enabled REPLs
+
+You can now:
+
+* Create dynamic workloads (`/repl-id`)
+* Access them via `https://repl.parthkapoor.me/repl-id`
+* Get certificates managed and auto-renewed via cert-manager
+
+---

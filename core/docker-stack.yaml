@@ -1,118 +1,284 @@
+# ==============================================================================
+# DEVEX CORE-BACKEND DOCKER STACK
+# ==============================================================================
+# This Docker Swarm stack deploys the complete DevEx platform consisting of:
+# 1. Traefik reverse proxy with automatic HTTPS
+# 2. Core backend service with GitHub OAuth integration
+#
+# DEPLOYMENT COMMANDS:
+# - Deploy: docker stack deploy -c docker-stack.yaml devex
+# - Update: docker service update devex_<service_name>
+# - Remove: docker stack rm devex
+# - Logs: docker service logs -f devex_<service_name>
+# ==============================================================================
+
 version: "3.8"
 
+# ==============================================================================
+# NETWORKS CONFIGURATION
+# ==============================================================================
 networks:
   traefik:
+    # Overlay network enables communication across Docker Swarm nodes
     driver: overlay
+    # Attachable allows standalone containers to connect to this network
+    # Useful for debugging and one-off containers
     attachable: true
 
+# ==============================================================================
+# SERVICES CONFIGURATION
+# ==============================================================================
 services:
+  # ============================================================================
+  # TRAEFIK REVERSE PROXY SERVICE
+  # ============================================================================
+  # Handles:
+  # - Automatic service discovery via Docker labels
+  # - SSL/TLS termination with Let's Encrypt
+  # - HTTP to HTTPS redirection
+  # - Load balancing and routing
+  # ============================================================================
   reverse-proxy:
     image: traefik:v3.4
+
+    # Traefik Configuration Commands
     command:
-      - "--providers.docker=true"
-      - "--api.insecure=true" # Enable dashboard for debugging
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=devex_traefik"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.traefik.address=:8081" # Add a new entrypoint for the dashboard
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=parthkapoor.coder@gmail.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--log.level=DEBUG"
-      - "--accesslog=true"
-      - "--accesslog.format=json"
+      # ---- DOCKER PROVIDER CONFIGURATION ----
+      - "--providers.docker=true" # Enable Docker provider for service discovery
+      - "--providers.docker.exposedbydefault=false" # Services must explicitly set traefik.enable=true
+      - "--providers.docker.network=devex_traefik" # Network to use for backend connections
+
+      # ---- API/DASHBOARD CONFIGURATION ----
+      - "--api.insecure=true" # Enable dashboard (SECURITY: Only for debugging!)
+
+      # ---- ENTRYPOINTS (LISTENERS) CONFIGURATION ----
+      - "--entrypoints.web.address=:80" # HTTP listener on port 80
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure" # Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https" # Use HTTPS scheme for redirects
+      - "--entrypoints.websecure.address=:443" # HTTPS listener on port 443
+      - "--entrypoints.traefik.address=:8081" # Dashboard listener on port 8081
+
+      # ---- SSL/TLS CONFIGURATION ----
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true" # Use TLS-ALPN-01 challenge
+      - "--certificatesresolvers.myresolver.acme.email=parthkapoor.coder@gmail.com" # Let's Encrypt account email
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json" # Certificate storage location
+
+      # ---- LOGGING CONFIGURATION ----
+      - "--log.level=DEBUG" # Log level (DEBUG/INFO/WARN/ERROR)
+      - "--accesslog=true" # Enable access logs
+      - "--accesslog.format=json" # JSON format for structured logging
+
+    # Port Mappings
     ports:
-      - "80:80"
-      - "443:443"
-      - "8000:8081"
+      - "80:80" # HTTP traffic
+      - "443:443" # HTTPS traffic
+      - "8000:8081" # Traefik dashboard (mapped to host port 8000)
+
+    # Volume Mounts
     volumes:
+      # Docker socket for service discovery (read-only for security)
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persistent storage for SSL certificates
       - traefik-certificates:/letsencrypt
+
+    # Network Configuration
     networks:
       - traefik
+
+    # Docker Swarm Deployment Configuration
     deploy:
+      # Placement Constraints
       placement:
         constraints:
+          # Run only on manager nodes (required for Docker socket access)
           - node.role == manager
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: start-first
-        failure_action: rollback
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
 
+      # Update Strategy
+      update_config:
+        parallelism: 1 # Update one replica at a time
+        delay: 10s # Wait 10s between updates
+        order: start-first # Start new container before stopping old one (zero-downtime)
+        failure_action: rollback # Rollback on failure
+
+      # Restart Policy
+      restart_policy:
+        condition: on-failure # Only restart on failure (not on success exit)
+        delay: 5s # Wait 5s before restarting
+        max_attempts: 3 # Maximum restart attempts
+        window: 120s # Time window for restart attempts
+
+  # ============================================================================
+  # CORE SERVICE (BACKEND API)
+  # ============================================================================
+  # Main application backend that handles:
+  # - User authentication via GitHub OAuth
+  # - REPL management and orchestration
+  # - File operations with DigitalOcean Spaces (S3-compatible)
+  # - Kubernetes cluster communication
+  # ============================================================================
   core_service:
     image: ghcr.io/parthkapoor-dev/devex/core-service:latest
+
+    # Traefik Labels for Service Discovery and Routing
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.core.rule=Host(`api.devx.parthkapoor.me`)"
-      - "traefik.http.routers.core.entrypoints=websecure"
-      - "traefik.http.routers.core.tls.certresolver=myresolver"
-      - "traefik.http.services.core.loadbalancer.server.port=8080"
-      - "traefik.docker.network=devex_traefik"
+      - "traefik.enable=true" # Enable Traefik for this service
+      - "traefik.http.routers.core.rule=Host(`api.devx.parthkapoor.me`)" # Route requests for this domain
+      - "traefik.http.routers.core.entrypoints=websecure" # Use HTTPS entrypoint
+      - "traefik.http.routers.core.tls.certresolver=myresolver" # Use Let's Encrypt for SSL
+      - "traefik.http.services.core.loadbalancer.server.port=8080" # Backend service port
+      - "traefik.docker.network=devex_traefik" # Traefik network for backend communication
+
+    # Environment Variables Configuration
     environment:
-      SPACES_REGION: "blr1"
-      SPACES_BUCKET: "devex"
-      SPACES_ENDPOINT: "https://blr1.digitaloceanspaces.com"
-      RUNNER_DOCKER_IMAGE: "ghcr.io/parthkapoor-dev/devex/runner-service:latest"
-      RUNNER_CLUSTER_IP: "repl.parthkapoor.me"
-      KUBE_CONFIG_PATH: "/app/secrets/kubeconfig"
-      GITHUB_REDIRECT_URL: "https://api.devx.parthkapoor.me/auth/github/callback"
-      FRONTEND_URL: "https://devx.parthkapoor.me"
-      ENVIRONMENT: "production"
-      PORT: "8080"
+      # ---- DIGITALOCEAN SPACES CONFIGURATION ----
+      SPACES_REGION: "blr1" # Bangalore region
+      SPACES_BUCKET: "devex" # Bucket name for file storage
+      SPACES_ENDPOINT: "https://blr1.digitaloceanspaces.com" # S3-compatible endpoint
+
+      # ---- KUBERNETES CONFIGURATION ----
+      RUNNER_DOCKER_IMAGE: "ghcr.io/parthkapoor-dev/devex/runner-service:latest" # Container image for REPLs
+      RUNNER_CLUSTER_IP: "repl.parthkapoor.me" # Kubernetes ingress domain for REPLs
+      KUBE_CONFIG_PATH: "/app/secrets/kubeconfig" # Path to Kubernetes config file
+
+      # ---- AUTHENTICATION CONFIGURATION ----
+      GITHUB_REDIRECT_URL: "https://api.devx.parthkapoor.me/auth/github/callback" # OAuth callback URL
+
+      # ---- APPLICATION CONFIGURATION ----
+      FRONTEND_URL: "https://devx.parthkapoor.me" # Frontend application URL (for CORS)
+      ENVIRONMENT: "production" # Runtime environment
+      PORT: "8080" # Application listen port
+
+    # Docker Secrets Configuration
+    # Secrets are stored externally in Docker Swarm and mounted securely
     secrets:
+      # DigitalOcean Spaces credentials (S3-compatible storage)
       - source: spaces_access_key
         target: SPACES_ACCESS_KEY
       - source: spaces_secret_key
         target: SPACES_SECRET_KEY
+
+      # Redis connection URL for session storage and caching
       - source: redis_url
         target: REDIS_URL
+
+      # GitHub OAuth application credentials
       - source: github_client_id
         target: GITHUB_CLIENT_ID
       - source: github_client_secret
         target: GITHUB_CLIENT_SECRET
+
+      # Session encryption secret key
       - source: session_secret
         target: SESSION_SECRET
+
+      # Kubernetes cluster access configuration
       - source: kubeconfig_file
         target: /app/secrets/kubeconfig
+
+    # Network Configuration
     networks:
       - traefik
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: start-first
-        failure_action: rollback
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
 
+    # Docker Swarm Deployment Configuration
+    deploy:
+      replicas: 1 # Single replica (can be scaled up later)
+
+      # Update Strategy
+      update_config:
+        parallelism: 1 # Update one replica at a time
+        delay: 10s # Wait between updates
+        order: start-first # Zero-downtime deployment
+        failure_action: rollback # Rollback on failure
+
+      # Restart Policy
+      restart_policy:
+        condition: on-failure # Restart only on failure
+        delay: 5s # Wait before restart
+        max_attempts: 3 # Maximum restart attempts
+        window: 120s # Time window for attempts
+
+# ==============================================================================
+# VOLUMES CONFIGURATION
+# ==============================================================================
 volumes:
+  # Persistent storage for Traefik SSL certificates
+  # This volume persists Let's Encrypt certificates across container restarts
   traefik-certificates:
 
+# ==============================================================================
+# SECRETS CONFIGURATION
+# ==============================================================================
+# All secrets are external and must be created before stack deployment
+#
+# CREATE SECRETS USING:
+# echo "secret_value" | docker secret create secret_name -
+#
+# LIST SECRETS:
+# docker secret ls
+#
+# REMOVE SECRETS:
+# docker secret rm secret_name
+# ==============================================================================
 secrets:
+  # DigitalOcean Spaces (S3-compatible) credentials
   spaces_access_key:
-    external: true
+    external: true # Must be created externally: docker secret create spaces_access_key -
   spaces_secret_key:
-    external: true
+    external: true # Must be created externally: docker secret create spaces_secret_key -
+
+  # Redis connection configuration
   redis_url:
-    external: true
+    external: true # Format: redis://user:password@host:port/db
+
+  # GitHub OAuth application credentials
   github_client_id:
-    external: true
+    external: true # GitHub OAuth App Client ID
   github_client_secret:
-    external: true
+    external: true # GitHub OAuth App Client Secret
+
+  # Application session encryption key
   session_secret:
-    external: true
+    external: true # Random string for session encryption (use: openssl rand -hex 32)
+
+  # Kubernetes cluster access configuration
   kubeconfig_file:
-    external: true
+    external: true # Kubernetes config file for cluster access
+
+# ==============================================================================
+# TROUBLESHOOTING GUIDE
+# ==============================================================================
+#
+# COMMON ISSUES AND SOLUTIONS:
+#
+# 1. SSL Certificate Issues:
+#    - Check Traefik logs: docker service logs devex_reverse-proxy
+#    - Verify domain DNS points to server
+#    - Check rate limits: https://letsencrypt.org/docs/rate-limits/
+#
+# 2. Service Discovery Issues:
+#    - Verify service labels are correct
+#    - Check network connectivity: docker network ls
+#    - Inspect Traefik dashboard: http://server-ip:8000
+#
+# 3. Authentication Issues:
+#    - Verify GitHub OAuth app configuration
+#    - Check callback URL matches GitHub settings
+#    - Verify secrets are properly created and accessible
+#
+# 4. File Storage Issues:
+#    - Test DigitalOcean Spaces connectivity
+#    - Verify spaces credentials and permissions
+#    - Check bucket exists and is accessible
+#
+# 5. Kubernetes Issues:
+#    - Verify kubeconfig file is valid
+#    - Test cluster connectivity from container
+#    - Check RBAC permissions for service account
+#
+# USEFUL COMMANDS:
+# - View service status: docker service ls
+# - Check service logs: docker service logs -f devex_<service>
+# - Scale service: docker service scale devex_core_service=3
+# - Update service: docker service update --image new_image devex_core_service
+# - Inspect service: docker service inspect devex_<service>
+# ==============================================================================
