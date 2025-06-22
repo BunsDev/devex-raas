@@ -46,7 +46,7 @@ func (api *APIServer) Run() error {
 		http.StripPrefix("/api/repl", repl.NewHandler(s3Client, rds))))
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{FRONTEND_URL, "http://localhost:3000"}, // TODO: Update to frontend URL in prod
+		AllowedOrigins:   []string{FRONTEND_URL, "http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,

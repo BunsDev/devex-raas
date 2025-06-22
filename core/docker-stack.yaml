@@ -1,137 +1,106 @@
-version:
-  "3.8" # Specify the Docker Compose file format version.
-  # Version 3.8 is recommended for Docker Swarm and supports 'secrets'.
+version: "3.8"
+
+networks:
+  traefik:
+    driver: overlay
+    attachable: true
 
 services:
   reverse-proxy:
     image: traefik:v3.4
     command:
       - "--providers.docker=true"
+      - "--api.insecure=true" # Enable dashboard for debugging
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=devex_traefik"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.traefik.address=:8081" # Add a new entrypoint for the dashboard
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=parthkapoor.coder@gmail.com" # CHANGE THIS
+      - "--certificatesresolvers.myresolver.acme.email=parthkapoor.coder@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--log.level=INFO"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
     ports:
       - "80:80"
       - "443:443"
+      - "8000:8081"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-certificates:/letsencrypt
+    networks:
+      - traefik
     deploy:
       placement:
         constraints:
           - node.role == manager
-      labels:
-        - "traefik.enable=true"
-        # - "traefik.http.routers.api.rule=Host(`api.devx.parthkapoor.me`)"
-        - "traefik.http.routers.api.entrypoints=websecure"
-        - "traefik.http.routers.api.tls.certresolver=myresolver"
-        - "traefik.http.services.api.loadbalancer.server.port=8080"
       update_config:
-        parallelism: 1 # Update one replica at a time
-        delay: 10s # Wait 10 seconds between updates
-        order: start-first # Start new containers before stopping old ones (zero-downtime potential)
-        failure_action: rollback # If an update fails, automatically roll back to the previous version.
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
       restart_policy:
-        condition: on-failure # Restart the container if it exits with a non-zero status
-        delay: 5s # Wait 5 seconds before attempting a restart
-        max_attempts: 3 # Try restarting up to 3 times
-        window: 120s # Consider restart attempts within a 120-second window
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
-  core_service: # This is the name of your service within the Docker Swarm stack.
-    # Docker Swarm will create a service named <stack_name>_core_service.
-    image:
-      ghcr.io/parthkapoor-dev/devex/core-service:latest
-      # Using 'latest' for convenience with CI/CD,
-      # but consider a specific version (e.g., commit SHA) for
-      # more precise control in production deployments.
-
+  core_service:
+    image: ghcr.io/parthkapoor-dev/devex/core-service:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core.rule=Host(`api.devx.parthkapoor.me`)"
+      - "traefik.http.routers.core.entrypoints=websecure"
+      - "traefik.http.routers.core.tls.certresolver=myresolver"
+      - "traefik.http.services.core.loadbalancer.server.port=8080"
+      - "traefik.docker.network=devex_traefik"
     environment:
-      # Non-sensitive environment variables can be passed directly.
-      # Sensitive variables (keys, secrets) should ideally use Docker Secrets.
       SPACES_REGION: "blr1"
       SPACES_BUCKET: "devex"
       SPACES_ENDPOINT: "https://blr1.digitaloceanspaces.com"
-
       RUNNER_DOCKER_IMAGE: "ghcr.io/parthkapoor-dev/devex/runner-service:latest"
       RUNNER_CLUSTER_IP: "repl.parthkapoor.me"
-
       KUBE_CONFIG_PATH: "/app/secrets/kubeconfig"
-
-      GITHUB_REDIRECT_URL: "https://api.devx.parthkapoor.me/auth/github/callback" # Replace with your actual domain
+      GITHUB_REDIRECT_URL: "https://api.devx.parthkapoor.me/auth/github/callback"
       FRONTEND_URL: "https://devx.parthkapoor.me"
-
       ENVIRONMENT: "production"
-      PORT: "8080" # Your app listens on this port inside the container
-
-    # --- Docker Secrets for Sensitive Data ---
-    # These secrets are mounted as files into the container by default.
-    # We will configure them to be exposed as environment variables or mounted directly as files.
+      PORT: "8080"
     secrets:
-      # Digital Ocean Spaces credentials
-      - source: spaces_access_key # Name of the Docker Swarm Secret (will create below)
-        target: SPACES_ACCESS_KEY # Name of the environment variable inside the container
-
+      - source: spaces_access_key
+        target: SPACES_ACCESS_KEY
       - source: spaces_secret_key
         target: SPACES_SECRET_KEY
-
-      # Redis Connection String
       - source: redis_url
         target: REDIS_URL
-
-      # GitHub Auth credentials
       - source: github_client_id
         target: GITHUB_CLIENT_ID
-
       - source: github_client_secret
         target: GITHUB_CLIENT_SECRET
-
       - source: session_secret
         target: SESSION_SECRET
-
-      # KubeConfig File for connecting to the external K8s cluster
-      - source: kubeconfig_file # Name of the Docker Swarm Secret
-        target:
-          /app/secrets/kubeconfig # Path where the secret file will be mounted inside the container.
-          # This path must match the KUBE_CONFIG_PATH in your Go code
-          # and the KUBE_CONFIG_PATH env var above.
-
+      - source: kubeconfig_file
+        target: /app/secrets/kubeconfig
+    networks:
+      - traefik
     deploy:
-      replicas:
-        1 # Number of container instances to run for this service.
-        # For a single VPS, 1 is typical. If you add more Swarm nodes,
-        # you could increase this for basic High Availability.
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.core.rule=Host(`api.devx.parthkapoor.me`)"
-        - "traefik.http.routers.core.entrypoints=websecure"
-        - "traefik.http.routers.core.tls.certresolver=myresolver"
-        - "traefik.http.services.core.loadbalancer.server.port=8080"
+      replicas: 1
       update_config:
-        parallelism: 1 # Update one replica at a time
-        delay: 10s # Wait 10 seconds between updates
-        order: start-first # Start new containers before stopping old ones (zero-downtime potential)
-        failure_action: rollback # If an update fails, automatically roll back to the previous version.
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
       restart_policy:
-        condition: on-failure # Restart the container if it exits with a non-zero status
-        delay: 5s # Wait 5 seconds before attempting a restart
-        max_attempts: 3 # Try restarting up to 3 times
-        window: 120s # Consider restart attempts within a 120-second window
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
 volumes:
   traefik-certificates:
 
-# --- Define the Docker Swarm Secrets ---
-# These are references to actual Docker Swarm Secrets that must be created
-# *before* you deploy the stack.
-# We use 'external: true' to indicate that these secrets are expected to exist
-# in the Swarm, rather than being created by the 'docker stack deploy' command
-# from local files. This is a common and secure practice for production.
 secrets:
   spaces_access_key:
     external: true
@@ -146,4 +115,4 @@ secrets:
   session_secret:
     external: true
   kubeconfig_file:
-    external: true # This secret will contain the content of your kubeconfig.yaml file
+    external: true
