@@ -54,10 +54,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 ```mermaid
 graph LR
 A[HTTP Request] -->|Upgrade| B[WebSocket]
-B --> C[Init()]
+B --> C["Init()"]
 C --> D{readLoop + writeLoop}
-D -->|incoming msg| E[On(event)]
-D -->|outgoing msg| F[Emit(event)]
+D -->|incoming msg| E["On(event)"]
+D -->|outgoing msg| F["Emit(event)"]
 ```
 
 * Messages are JSON with structure:

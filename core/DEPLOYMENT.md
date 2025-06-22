@@ -60,7 +60,25 @@ docker swarm init
 
 ---
 
-### 3️⃣ Deploy Stack
+### 3️⃣ Initialize Swarm
+
+Add Secrets using docker secrets
+
+```bash
+docker secret create spaces_access_key ./secrets/spaces_access_key.txt
+docker secret create spaces_secret_key ./secrets/spaces_secret_key.txt
+docker secret create redis_url ./secrets/redis_url.txt
+docker secret create github_client_id ./secrets/github_client_id.txt
+docker secret create github_client_secret ./secrets/github_client_secret.txt
+docker secret create session_secret ./secrets/session_secret.txt
+docker secret create kubeconfig_file ./secrets/kubeconfig.yaml
+```
+
+> ℹ️ If you want to add more nodes, Docker will provide a token and command to join them.
+
+---
+
+### 4️⃣ Deploy Stack
 
 Deploy your service using the `docker-stack.yaml` file:
 
@@ -72,7 +90,7 @@ This will spin up the defined services under the stack name `devex`.
 
 ---
 
-### 4️⃣ Monitor Services
+### 5️⃣ Monitor Services
 
 To list running services:
 
