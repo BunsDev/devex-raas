@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: repl-root-certificate
+  namespace: default
+spec:
+  secretName: tls-secret
+  issuerRef:
+    name: letsencrypt-cluster-issuer
+    kind: ClusterIssuer
+  commonName: repl.parthkapoor.me
+  dnsNames:
+    - repl.parthkapoor.me
