@@ -135,7 +135,8 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: replId + "-ingress",
 			Annotations: map[string]string{
-				"nginx.ingress.kubernetes.io/rewrite-target":     "/",
+				"nginx.ingress.kubernetes.io/use-regex":          "true",
+				"nginx.ingress.kubernetes.io/rewrite-target":     "/$1",
 				"nginx.ingress.kubernetes.io/websocket-services": replId,
 				"nginx.ingress.kubernetes.io/ssl-redirect":       "false", // disable for now
 				"nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
@@ -157,8 +158,8 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{
 								{
-									Path:     "/" + replId,
-									PathType: pathTypePtr(networkingv1.PathTypePrefix),
+									Path:     fmt.Sprintf("/%s/(.*)", replId),
+									PathType: pathTypePtr(networkingv1.PathTypeImplementationSpecific),
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{
 											Name: replId,
