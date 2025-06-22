@@ -128,21 +128,36 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 		return fmt.Errorf("failed to create service: %w", err)
 	}
 
-	// 3. Ingress
+	const tlsSecretName = "tls-secret"
+
+	// 3. Ingress (path-based, using repl.parthkapoor.me/repl-id)
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: replId + "-ingress",
+			Annotations: map[string]string{
+				"nginx.ingress.kubernetes.io/rewrite-target":     "/",
+				"nginx.ingress.kubernetes.io/websocket-services": replId,
+				"nginx.ingress.kubernetes.io/ssl-redirect":       "false", // disable for now
+				"nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
+				"nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
+			},
 		},
 		Spec: networkingv1.IngressSpec{
 			IngressClassName: strPtr("nginx"),
+			TLS: []networkingv1.IngressTLS{
+				{
+					Hosts:      []string{RUNNER_CLUSTER_IP},
+					SecretName: "tls-secret",
+				},
+			},
 			Rules: []networkingv1.IngressRule{
 				{
-					Host: fmt.Sprintf("%s.%s", replId, RUNNER_CLUSTER_IP),
+					Host: RUNNER_CLUSTER_IP,
 					IngressRuleValue: networkingv1.IngressRuleValue{
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{
 								{
-									Path:     "/",
+									Path:     "/" + replId,
 									PathType: pathTypePtr(networkingv1.PathTypePrefix),
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{

@@ -27,7 +27,8 @@ export function useRunnerSocket(replId: string) {
   const listenersRef = useRef<Record<string, EventHandler[]>>({});
 
   useEffect(() => {
-    const url = `ws://${replId}.${RUNNER_DOMAIN_NAME}/api/v1/repl/ws`;
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const url = `${protocol}://${process.env.NEXT_PUBLIC_RUNNER_DOMAIN_NAME}/${replId}/api/v1/repl/ws`;
 
     const socket: Socket = new WebSocket(url);
 
