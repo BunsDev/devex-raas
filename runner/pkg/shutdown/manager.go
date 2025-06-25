@@ -32,8 +32,7 @@ func NewShutdownManager(replId string, callback ShutdownCallback) *ShutdownManag
 		shutdownCallback: callback,
 		ctx:              ctx,
 		cancel:           cancel,
-		// TODO: Make this 3 - 5 Minutes
-		inactivityPeriod: 30 * time.Second,
+		inactivityPeriod: 4 * time.Minute,
 		connectionActive: false,
 	}
 
