@@ -127,7 +127,10 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 		return
 	}
 
-	json.WriteJSON(w, http.StatusOK, "Success")
+	json.WriteJSON(w, http.StatusOK, map[string]string{
+		"replId":   replId,
+		"replName": repl.Name,
+	})
 }
 
 func endReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {

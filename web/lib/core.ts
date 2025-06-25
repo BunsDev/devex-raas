@@ -73,12 +73,14 @@ export class CoreService {
 
   async startRepl(replName: string) {
     try {
-      await axios.get(this.url(`/api/repl/${replName}`), {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return (
+        await axios.get(this.url(`/api/repl/${replName}`), {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+      ).data;
     } catch (error) {
       console.log("error:", error);
       throw error;

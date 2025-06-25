@@ -5,6 +5,7 @@ import GuiInterface from "@/components/dashboard/GuiInterface";
 import TerminalInterface from "@/components/dashboard/TerminalInterface";
 import { Button } from "@/components/ui/button";
 import LetterGlitch from "@/components/ui/letter-glitch";
+import StartReplCard from "@/components/ui/start-repl-card";
 import { useAuth } from "@/contexts/AuthContext";
 import { CoreService } from "@/lib/core";
 import { create } from "domain";
@@ -13,6 +14,9 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"terminal" | "ui">("terminal");
+  const [popup, setPopup] = useState<{ replName: string; link: string } | null>(
+    null,
+  );
 
   const { user } = useAuth();
   const userName = user?.login || "";
@@ -22,11 +26,23 @@ export default function Dashboard() {
   const getRepls = async () => await core.getRepls();
   const createRepl = async (template: string, replName: string) =>
     await core.newRepl({ template, replName, userName });
-  const startRepl = async (name: string) => await core.startRepl(name);
+  const startRepl = async (name: string) => {
+    try {
+      const response = await core.startRepl(name);
+      setPopup({
+        replName: response.replName,
+        link: `repl/${response.replId}`,
+      });
+      return response;
+    } catch (err) {
+      throw err;
+    }
+  };
   const deleteRepl = async (name: string) => await core.deleteRepl(name);
 
   return (
     <ProtectedRoute>
+      {popup && <StartReplCard replName={popup?.replName} link={popup.link} />}
       <div className=" pt-10 text-gray-200">
         <LetterGlitch
           glitchSpeed={50}

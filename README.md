@@ -212,7 +212,7 @@ sequenceDiagram
 
 ## 🌐 Demo & Links
 
-* 🧪 Live: `https://your-platform-domain.com`
+* 🧪 [Live](https://devx.parthkapoor.me)
 * 🧑‍💻 [Portfolio](https://parthkapoor.me)
 * 🐙 [GitHub Repo](https://github.com/ParthKapoor-dev/devex)
 
