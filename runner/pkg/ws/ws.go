@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/parthkapoor-dev/runner/pkg/shutdown"
 )
 
 // Message represents the structured message format for WebSocket communication
@@ -20,16 +21,18 @@ type EventHandler func(data any)
 
 // WSHandler handles WebSocket connections with Socket.IO-like functionality
 type WSHandler struct {
-	conn      *websocket.Conn
-	upgrader  websocket.Upgrader
-	handlers  map[string]EventHandler
-	mu        sync.RWMutex // multiple readers, single writer
-	writeChan chan Message
-	done      chan struct{}
+	conn            *websocket.Conn
+	upgrader        websocket.Upgrader
+	handlers        map[string]EventHandler
+	mu              sync.RWMutex // multiple readers, single writer
+	writeChan       chan Message
+	done            chan struct{}
+	shutdownManager *shutdown.ShutdownManager
+	replId          string
 }
 
 // NewWSHandler creates a new WSHandler instance
-func NewWSHandler() *WSHandler {
+func NewWSHandler(replId string, shutdownManager *shutdown.ShutdownManager) *WSHandler {
 	return &WSHandler{
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
@@ -37,9 +40,11 @@ func NewWSHandler() *WSHandler {
 				return true
 			},
 		},
-		handlers:  make(map[string]EventHandler),
-		writeChan: make(chan Message, 256),
-		done:      make(chan struct{}),
+		handlers:        make(map[string]EventHandler),
+		writeChan:       make(chan Message, 256),
+		done:            make(chan struct{}),
+		shutdownManager: shutdownManager,
+		replId:          replId,
 	}
 }
 
@@ -52,6 +57,11 @@ func (ws *WSHandler) Init(w http.ResponseWriter, r *http.Request) error {
 
 	ws.conn = conn
 
+	// Notify shutdown manager about connection establishment
+	if ws.shutdownManager != nil {
+		ws.shutdownManager.OnConnectionEstablished()
+	}
+
 	// Start goroutines for reading and writing
 	go ws.writeLoop()
 	go ws.readLoop()
@@ -59,6 +69,7 @@ func (ws *WSHandler) Init(w http.ResponseWriter, r *http.Request) error {
 	// Emit connect event
 	ws.triggerEvent("connect", nil)
 
+	log.Printf("WebSocket connection established for repl: %s", ws.replId)
 	return nil
 }
 
@@ -81,6 +92,8 @@ func (ws *WSHandler) Emit(event string, data any) error {
 		return nil
 	case <-ws.done:
 		return fmt.Errorf("connection closed")
+	case <-ws.shutdownManager.Context().Done():
+		return fmt.Errorf("repl shutting down")
 	default:
 		return fmt.Errorf("write channel full")
 	}
@@ -97,11 +110,14 @@ func (ws *WSHandler) readLoop() {
 		select {
 		case <-ws.done:
 			return
+		case <-ws.shutdownManager.Context().Done():
+			log.Printf("Repl %s is shutting down, closing WebSocket connection", ws.replId)
+			return
 		default:
 			var message Message
 			if err := ws.conn.ReadJSON(&message); err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Printf("WebSocket error: %v", err)
+					log.Printf("WebSocket error for repl %s: %v", ws.replId, err)
 				}
 				return
 			}
@@ -114,16 +130,26 @@ func (ws *WSHandler) readLoop() {
 
 // writeLoop continuously writes messages to the WebSocket connection
 func (ws *WSHandler) writeLoop() {
-	defer ws.conn.Close()
+	defer func() {
+		ws.conn.Close()
+		// Notify shutdown manager about connection closure
+		if ws.shutdownManager != nil {
+			ws.shutdownManager.OnConnectionClosed()
+		}
+		log.Printf("WebSocket connection closed for repl: %s", ws.replId)
+	}()
 
 	for {
 		select {
 		case message := <-ws.writeChan:
 			if err := ws.conn.WriteJSON(message); err != nil {
-				log.Printf("Write error: %v", err)
+				log.Printf("Write error for repl %s: %v", ws.replId, err)
 				return
 			}
 		case <-ws.done:
+			return
+		case <-ws.shutdownManager.Context().Done():
+			log.Printf("Repl %s is shutting down, closing write loop", ws.replId)
 			return
 		}
 	}
@@ -139,7 +165,7 @@ func (ws *WSHandler) triggerEvent(event string, data any) {
 		// Run handler in a separate goroutine to avoid blocking
 		go handler(data)
 	} else {
-		log.Printf("No handler registered for event: %s", event)
+		log.Printf("No handler registered for event: %s (repl: %s)", event, ws.replId)
 	}
 }
 
