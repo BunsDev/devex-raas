@@ -10,14 +10,15 @@ import (
 
 	"github.com/parthkapoor-dev/runner/pkg/fs"
 	"github.com/parthkapoor-dev/runner/pkg/pty"
+	"github.com/parthkapoor-dev/runner/pkg/shutdown"
 	"github.com/parthkapoor-dev/runner/pkg/ws"
 )
 
-func NewHandler() http.Handler {
+func NewHandler(sm *shutdown.ShutdownManager) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws := ws.NewWSHandler()
+		ws := ws.NewWSHandler(strings.Split(r.Host, ".")[0], sm)
 
 		pty := pty.NewPTYManager()
 		defer pty.Cleanup()
