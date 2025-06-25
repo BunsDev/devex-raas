@@ -72,6 +72,12 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 							Name:            "runner",
 							Image:           RUNNER_DOCKER_IMAGE,
 							ImagePullPolicy: corev1.PullAlways,
+							Env: []corev1.EnvVar{
+								{
+									Name:  "REPL_ID",
+									Value: replId,
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "workspace-vol",

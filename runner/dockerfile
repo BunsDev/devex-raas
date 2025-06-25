@@ -20,6 +20,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o runner ./cmd/main.go
 FROM debian:bookworm-slim
 WORKDIR /app
 
+# ✅ Install CA certificates to verify HTTPS
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+
 # Copy binary from builder
 COPY --from=builder /app/runner .
 
