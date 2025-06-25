@@ -13,6 +13,6 @@ func main() {
 	server := api.NewAPIServer(":" + port)
 
 	if err := server.Run(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 }

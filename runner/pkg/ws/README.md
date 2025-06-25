@@ -23,7 +23,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
   err := socket.Init(w, r)
   if err != nil {
-    log.Fatal(err)
+    log.Println(err)
   }
 
   socket.On("Connection", func(data any) {

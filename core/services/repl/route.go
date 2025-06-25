@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os/exec"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/parthkapoor-dev/core/cmd/middleware"
 	"github.com/parthkapoor-dev/core/internal/k8s"
 	"github.com/parthkapoor-dev/core/internal/redis"
@@ -52,22 +52,19 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 	userName := strings.ToLower(user.Login)
 
 	// Create Repl ID
-	uuid, err := exec.Command("uuidgen").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	replID := strings.TrimSpace(string(uuid))
+	id := uuid.New()
+	replID := strings.TrimSpace(id.String())
 
 	// Create Repl in Store
 	if err := rds.CreateRepl(userName, repl.ReplName, replID); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
 	if err := s3Client.CopyFolder(repl.Template, destinationPrefix); err != nil {
-		log.Fatal("S3 CopyTemplate is giving Err: ", err)
+		log.Println("S3 CopyTemplate is giving Err: ", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -90,7 +87,7 @@ func getUserRepls(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 	for _, id := range replIds {
 		repl, err := rds.GetRepl(id)
 		if err != nil {
-			log.Fatalf("This replId: %s doesn't exists for %s user", id, userName)
+			log.Printf("This replId: %s doesn't exists for %s user", id, userName)
 			continue
 		}
 		repls = append(repls, repl)
@@ -108,7 +105,7 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 
 	repl, err := rds.GetRepl(replId)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		json.WriteError(w, http.StatusBadRequest, "This Repl Id doesn't exists")
 		return
 	}
@@ -122,7 +119,7 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 	}
 
 	if err := k8s.CreateReplDeploymentAndService(userName, replId); err != nil {
-		log.Fatal("K8s Deployment Failed", err)
+		log.Println("K8s Deployment Failed", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -155,7 +152,7 @@ func endReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 	}
 
 	if err := k8s.DeleteReplDeploymentAndService(userName, replId); err != nil {
-		log.Fatal("k8s Repl Deletion Failed", err)
+		log.Println("k8s Repl Deletion Failed", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

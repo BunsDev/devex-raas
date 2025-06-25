@@ -21,12 +21,12 @@ func getClientSet() *kubernetes.Clientset {
 	kubeconfig := KUBE_CONFIG_PATH
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		log.Fatalf("Failed to load kubeconfig: %v", err)
+		log.Printf("Failed to load kubeconfig: %v", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatalf("Failed to create clientset: %v", err)
+		log.Printf("Failed to create clientset: %v", err)
 	}
 
 	return clientset

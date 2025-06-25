@@ -36,13 +36,13 @@ func generateSessionID() string {
 func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty.PTYManager) {
 
 	if err := ws.Init(w, r); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	host := r.Host
 	replId := strings.Split(host, ".")[0]
 	if replId == "" {
-		log.Fatal("No repl ID found, closing connection")
+		log.Println("No repl ID found, closing connection")
 		return
 	}
 
@@ -98,7 +98,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty
 		// Save file locally
 		err := fs.SaveFileDiffs(fullPath, req.Patch)
 		if err != nil {
-			log.Fatalf("Error saving file: %v", err)
+			log.Printf("Error saving file: %v", err)
 			ws.Emit("updateContentResponse", map[string]any{
 				"error": err.Error(),
 			})

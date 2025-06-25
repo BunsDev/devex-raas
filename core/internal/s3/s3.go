@@ -36,7 +36,7 @@ func NewS3Client() *S3Client {
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(spacesAccessKey, spacesSecretKey, "")),
 	)
 	if err != nil {
-		log.Fatalf("❌ Failed to load config: %v", err)
+		log.Printf("❌ Failed to load config: %v", err)
 	}
 
 	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {

@@ -25,7 +25,7 @@ func NewRedisStore() *Redis {
 
 	_, err := client.Ping(ctx).Result()
 	if err != nil {
-		log.Fatalf("❌ Failed to connect to Redis: %v", err)
+		log.Printf("❌ Failed to connect to Redis: %v", err)
 	}
 
 	log.Println("✅ Connected to Redis")
