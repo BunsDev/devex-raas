@@ -11,6 +11,7 @@ import (
 	"github.com/parthkapoor-dev/core/pkg/json"
 	"github.com/parthkapoor-dev/core/services/auth/github"
 	"github.com/parthkapoor-dev/core/services/repl"
+	"github.com/parthkapoor-dev/core/services/runner"
 	"github.com/rs/cors"
 )
 
@@ -40,6 +41,9 @@ func (api *APIServer) Run() error {
 
 	// Github Auth Routes
 	router.Handle("/auth/github/", http.StripPrefix("/auth/github", github.NewHandler()))
+
+	// Runner Routes
+	router.Handle("/api/runner/", http.StripPrefix("/api/runner", runner.NewHandler(rds)))
 
 	// Protected Repl Routes
 	router.Handle("/api/repl/", middleware.AuthMiddleware(
