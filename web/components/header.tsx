@@ -76,7 +76,10 @@ export default function Header() {
           ))}
           <div className="flex w-full flex-col gap-4">
             <NavbarButton
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                router.push("/login");
+              }}
               variant="primary"
               className="w-full"
             >

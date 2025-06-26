@@ -17,7 +17,7 @@ export default function HeroSection() {
 
 function Component() {
   return (
-    <div>
+    <div className="max-md:pt-28">
       <GithubStarButton />
       {/* Badge */}
       <div className="flex justify-center mb-8">

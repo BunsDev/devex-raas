@@ -43,17 +43,17 @@ export default function Dashboard() {
   return (
     <ProtectedRoute>
       {popup && <StartReplCard replName={popup?.replName} link={popup.link} />}
-      <div className=" pt-10 text-gray-200">
+      <div className="min-h-screen pt-16 text-gray-200">
         <LetterGlitch
           glitchSpeed={50}
           centerVignette={true}
           outerVignette={true}
           smooth={true}
         />
-        <div className="max-w-7xl mx-auto p-6">
-          <div className=" gap-6 mb-8">
-            <div className="">
-              <div className="h-[650px] flex flex-col">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="mb-4 sm:mb-6 lg:mb-8">
+            <div className="w-full">
+              <div className="h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] lg:h-[650px] flex flex-col">
                 <div className="flex-1 flex flex-col bg-black border border-gray-800 rounded-lg overflow-hidden shadow-2xl">
                   <DashboardHeader
                     activeTab={activeTab}
@@ -96,36 +96,40 @@ const NavigationTabs = ({
   setActiveTab: Dispatch<SetStateAction<"terminal" | "ui">>;
 }) => {
   return (
-    <div className="">
-      <div className="flex gap-5 bg-gray-900 rounded-lg">
+    <div className="w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-5 bg-gray-900 rounded-lg p-2">
         <Button
-          className={`flex gap-3 justify-center items-center         ${
+          className={`flex gap-2 sm:gap-3 justify-center items-center px-3 sm:px-4 py-2 text-xs sm:text-sm ${
             activeTab === "terminal"
               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
               : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
           }`}
           onClick={() => setActiveTab("terminal")}
         >
-          <Terminal className="w-5 h-5 text-emerald-400" />
-          <span className="text-sm font-semibold text-gray-200">
+          <Terminal className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+          <span className="font-semibold text-gray-200 hidden sm:inline">
             devX Terminal
           </span>
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <span className="font-semibold text-gray-200 sm:hidden">
+            Terminal
+          </span>
+          <div className="hidden sm:flex items-center gap-1 text-xs text-gray-500">
             <Activity className="w-3 h-3" />
             <span>Live</span>
           </div>
         </Button>
         <Button
           onClick={() => setActiveTab("ui")}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
             activeTab === "ui"
               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
               : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
           }`}
         >
-          <Zap className="w-4 h-4" />
-          GUI Mode
-          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
+          <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">GUI Mode</span>
+          <span className="sm:hidden">GUI</span>
+          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 sm:px-2 py-0.5 rounded-full">
             Beta
           </span>
         </Button>
@@ -142,19 +146,27 @@ function DashboardHeader({
   setActiveTab: Dispatch<SetStateAction<"terminal" | "ui">>;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-700">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 px-3 sm:px-4 py-3 bg-gray-900 border-b border-gray-700">
+      <div className="w-full sm:w-auto">
         <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
         <div className="flex items-center gap-1 text-xs text-gray-500">
           <Clock className="w-3 h-3" />
-          <span>{new Date().toLocaleTimeString()}</span>
+          <span className="hidden sm:inline">
+            {new Date().toLocaleTimeString()}
+          </span>
+          <span className="sm:hidden">
+            {new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
         </div>
-        <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        <div className="flex gap-1.5 sm:gap-2">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500"></div>
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500"></div>
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>
         </div>
       </div>
     </div>
