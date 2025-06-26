@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "core/**" # Only trigger if something in core/ changes
-      - ".github/workflows/**" # Also trigger if the workflow itself changes
+      - ".github/workflows/core-pipeline.yaml" # Also trigger if the workflow itself changes
 
 permissions:
   packages: write
