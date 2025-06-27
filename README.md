@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/62031064/274037456-2a77cb87-b832-4c2c-bb82-d76f4c0a4c96.png" alt="Cloud Dev IDE Banner" />
+  <img src="./assets/devx.png" alt="Cloud Dev IDE Banner" />
 </p>
 
 <h1 align="center">🧠 DevEx Cloud Development IDE - REPL as a Service</h1>
