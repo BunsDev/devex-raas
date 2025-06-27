@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="./assets/devx.png" alt="Cloud Dev IDE Banner" />
-</p>
-
 <h1 align="center">🧠 DevEx Cloud Development IDE - REPL as a Service</h1>
 
 <p align="center">
@@ -19,6 +15,11 @@
   <a href="https://github.com/ParthKapoor-dev/devex/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/ParthKapoor-dev/devex?style=for-the-badge" />
   </a>
+</p>
+
+
+<p align="center">
+  <img src="./assets/devx.png" alt="Cloud Dev IDE Banner" />
 </p>
 
 ---
