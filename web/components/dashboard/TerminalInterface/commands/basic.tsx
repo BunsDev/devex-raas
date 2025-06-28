@@ -66,13 +66,20 @@ ${commandList}
 │             GETTING STARTED             │
 ╰─────────────────────────────────────────╯
 🚀 Quick Start Guide:
-1. Create a new repl: repl create <name> <template>
-2. Activate your repl: repl activate <name>
+1. Create a new repl: repl create <n> <template>
+2. Activate your repl: repl activate <n>
 3. List all repls: repl list
+4. List active repls: repl list --active
 
 💡 Example workflow:
    repl create my-app node-js
    repl activate my-app
+   ls --active
+
+💡 Useful commands:
+   repl list --detailed    - Show detailed repl info
+   ls --active            - Show only active repls
+   repl search <query>    - Search repls by name
 
 Type <command> --help for detailed usage information.`;
   },
@@ -99,6 +106,7 @@ export const statusCommand: Command = {
   execute: async (args, options, context) => {
     const uptime = Math.floor(Math.random() * 72) + 1;
     const repls = await context.getRepls();
+    const activeRepls = repls.filter((repl) => repl.isActive);
     return `╭─────────────────────────────────────────╮
 │             SYSTEM STATUS               │
 ╰─────────────────────────────────────────╯
@@ -107,9 +115,9 @@ export const statusCommand: Command = {
 💾 Memory:     ${Math.floor(Math.random() * 40) + 20}%
 💿 Storage:    ${Math.floor(Math.random() * 60) + 15}%
 ⏱️ Uptime:     ${uptime}h ${Math.floor(Math.random() * 60)}m
-📊 Repls:      ${repls.length} active
+📊 Repls:      ${repls.length} total (${activeRepls.length} active)
 
-💡 Use 'repl list' to see all your repls`;
+💡 Use 'repl list --active' to see active repls`;
   },
 };
 
@@ -126,7 +134,7 @@ export const templatesCommand: Command = {
 ╰─────────────────────────────────────────╯
 ${templateList}
 
-💡 Usage: repl create <name> <template>
+💡 Usage: repl create <n> <template>
    Example: repl create my-app node-js`;
   },
 };
@@ -160,26 +168,45 @@ export const whoamiCommand: Command = {
 🐚 Shell:      devX Terminal v2.0.0
 🌐 Session:    ${new Date().toLocaleString()}
 
-💡 Try 'repl create <name> <template>' to get started!`;
+💡 Try 'repl create <n> <template>' to get started!`;
   },
 };
 
 export const lsCommand: Command = {
   name: "ls",
   description: "List all repls (alias for 'repl list')",
-  usage: "ls [--detailed]",
+  usage: "ls [--detailed] [--active]",
   options: [
     {
       flag: "--detailed",
       description: "Show detailed information about each repl",
       type: "boolean",
     },
+    {
+      flag: "--active",
+      description: "Show only active repls",
+      type: "boolean",
+    },
   ],
   execute: async (args, options, context) => {
     try {
-      const repls = await context.getRepls();
+      const allRepls = await context.getRepls();
+
+      // Filter repls based on --active flag
+      const repls = options.active
+        ? allRepls.filter((repl) => repl.isActive)
+        : allRepls;
 
       if (repls.length === 0) {
+        if (options.active) {
+          return `📭 No active repls found.
+
+🚀 Get started by activating a repl:
+   ls
+   repl activate <n>
+
+💡 Or create a new repl: repl create my-app node-js`;
+        }
         return `📭 No repls found.
 
 🚀 Get started by creating your first repl:
@@ -189,27 +216,59 @@ export const lsCommand: Command = {
 💡 Use 'templates' to see available templates.`;
       }
 
+      // Sort repls: active ones first, then inactive
+      const sortedRepls = [...repls].sort((a, b) => {
+        const aActive = a.isActive ? 1 : 0;
+        const bActive = b.isActive ? 1 : 0;
+        return bActive - aActive;
+      });
+
       const detailed = options.detailed || options.d;
       if (detailed) {
-        const header = `╭─────────────────────────────────────────╮
-│               REPL DETAILS              │
-╰─────────────────────────────────────────╯`;
-        const replList = repls
-          .map(
-            (repl) =>
-              `📁 ${repl.name} (ID: ${repl.id})
+        const header = options.active
+          ? `╭─────────────────────────────────────────╮\n│            ACTIVE REPL DETAILS          │\n╰─────────────────────────────────────────╯`
+          : `╭─────────────────────────────────────────╮\n│               REPL DETAILS              │\n╰─────────────────────────────────────────╯`;
+
+        const replList = sortedRepls
+          .map((repl) => {
+            const isActive = repl.isActive;
+            const statusIcon = isActive ? "🟢" : "⚪";
+            const statusText = isActive ? "Running" : "Stopped";
+            const actionCommand = isActive
+              ? `🛑 Deactivate: repl deactivate ${repl.name}`
+              : `🚀 Activate: repl activate ${repl.name}`;
+
+            return `${statusIcon} ${repl.name} (ID: ${repl.id})
    👤 User: ${repl.user}
-   ⚡ Status: Active
-   🚀 Activate: repl activate ${repl.name}`,
-          )
+   ⚡ Status: ${statusText}
+   ${actionCommand}`;
+          })
           .join("\n\n");
-        return `${header}\n${replList}\n\n💡 Use 'repl activate <name>' to activate any repl.`;
+
+        const footerText = options.active
+          ? "💡 Use 'repl deactivate <n>' to stop any active repl."
+          : "💡 Use 'repl activate <n>' or 'repl deactivate <n>' to manage repls.";
+
+        return `${header}\n${replList}\n\n${footerText}`;
       }
 
-      const header = `╭─────────────────────────────────────────╮
-│               ACTIVE REPLS              │
-╰─────────────────────────────────────────╯`;
-      return `${header}\n${repls.map((repl, i) => `${i + 1}. 📁 ${repl.name} (${repl.id})`).join("\n")}\n\n💡 Use 'repl activate <name>' to activate a repl or 'repl list --detailed' for more info.`;
+      const header = options.active
+        ? `╭─────────────────────────────────────────╮\n│              ACTIVE REPLS               │\n╰─────────────────────────────────────────╯`
+        : `╭─────────────────────────────────────────╮\n│               ALL REPLS                 │\n╰─────────────────────────────────────────╯`;
+
+      const replList = sortedRepls
+        .map((repl, i) => {
+          const isActive = repl.isActive;
+          const statusIcon = isActive ? "🟢" : "⚪";
+          return `${i + 1}. ${statusIcon} 📁 ${repl.name} (${repl.id})`;
+        })
+        .join("\n");
+
+      const footerText = options.active
+        ? "💡 Use 'repl deactivate <n>' to stop any repl or 'ls --detailed --active' for more info."
+        : "💡 Use 'repl activate <n>' to activate a repl or 'ls --detailed' for more info.";
+
+      return `${header}\n${replList}\n\n${footerText}`;
     } catch (error: any) {
       return `❌ Error fetching repls: ${error.message || "Unknown error"}`;
     }
@@ -230,6 +289,6 @@ export const neofetchCommand: Command = {
     ╰─────────────╯   │ Uptime: Online            │
                     ╰───────────────────────╯
 
-💡 Ready to code! Try 'repl create <name> <template>'`;
+💡 Ready to code! Try 'repl create <n> <template>'`;
   },
 };

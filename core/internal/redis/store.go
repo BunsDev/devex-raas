@@ -39,9 +39,10 @@ func NewRedisStore() *Redis {
 // Helper Functinos
 func (r *Redis) CreateRepl(username, replName, replID string) error {
 	if err := r.client.HSet(r.ctx, "repl:"+replID, map[string]string{
-		"id":   replID,
-		"name": replName,
-		"user": username,
+		"id":       replID,
+		"name":     replName,
+		"user":     username,
+		"isActive": "false",
 	}).Err(); err != nil {
 		return err
 	}
@@ -65,9 +66,10 @@ func (r *Redis) GetRepl(replID string) (models.Repl, error) {
 	}
 
 	repl := models.Repl{
-		Id:   replID,
-		Name: data["name"],
-		User: data["user"],
+		Id:       replID,
+		Name:     data["name"],
+		User:     data["user"],
+		IsActive: data["isActive"] == "true",
 	}
 
 	return repl, nil
@@ -84,7 +86,11 @@ func (r *Redis) GetUserRepls(username string) ([]string, error) {
 
 // Repl Session
 func (r *Redis) CreateReplSession(replID string) error {
-	return r.client.SAdd(r.ctx, "sessions", replID).Err()
+	if err := r.client.SAdd(r.ctx, "sessions", replID).Err(); err != nil {
+		return err
+	}
+
+	return r.client.HSet(r.ctx, "repl:"+replID, "isActive", "true").Err()
 }
 
 func (r *Redis) GetReplSession(replID string) ([]string, error) {
@@ -92,5 +98,14 @@ func (r *Redis) GetReplSession(replID string) ([]string, error) {
 }
 
 func (r *Redis) DeleteReplSession(replID string) (int64, error) {
-	return r.client.SRem(r.ctx, "sessions", replID).Result()
+	val, err := r.client.SRem(r.ctx, "sessions", replID).Result()
+	if err != nil {
+		return val, err
+	}
+
+	if err := r.client.HSet(r.ctx, "repl:"+replID, "isActive", "false").Err(); err != nil {
+		return val, err
+	}
+
+	return val, nil
 }

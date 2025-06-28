@@ -48,7 +48,6 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, pty *pty
 	}
 
 	ws.On("Connection", func(data any) {
-		log.Println("we go connected")
 		rootContents, _ := fs.FetchDir("/workspaces", "")
 		ws.Emit("Loaded", map[string]any{
 			"rootContents": rootContents,

@@ -9,6 +9,7 @@ export interface StoredRepl {
   id: string;
   name: string;
   user: string;
+  isActive: bool;
   templateKey?: string;
 }
 
