@@ -25,7 +25,7 @@ func NewAPIServer(addr string) *APIServer {
 func (api *APIServer) Run() error {
 
 	router := http.NewServeMux()
-	sm := shutdown.NewShutdownManager(dotenv.EnvString("REPL_ID", ""), shutdownCallback)
+	sm := shutdown.NewShutdownManager(dotenv.EnvString("REPL_ID", "repl_id_not_found"), shutdownCallback)
 
 	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler(sm)))
 	router.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {

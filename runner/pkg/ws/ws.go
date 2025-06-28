@@ -141,16 +141,16 @@ func (ws *WSHandler) writeLoop() {
 
 	for {
 		select {
-		case message := <-ws.writeChan:
-			if err := ws.conn.WriteJSON(message); err != nil {
-				log.Printf("Write error for repl %s: %v", ws.replId, err)
-				return
-			}
 		case <-ws.done:
 			return
 		case <-ws.shutdownManager.Context().Done():
 			log.Printf("Repl %s is shutting down, closing write loop", ws.replId)
 			return
+		case message := <-ws.writeChan:
+			if err := ws.conn.WriteJSON(message); err != nil {
+				log.Printf("Write error for repl %s: %v", ws.replId, err)
+				return
+			}
 		}
 	}
 }

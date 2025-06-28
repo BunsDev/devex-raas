@@ -97,7 +97,7 @@ func (sm *ShutdownManager) OnConnectionClosed() {
 	sm.connectionActive = false
 
 	// Restart the shutdown timer since connection is closed
-	sm.startShutdownTimer()
+	go sm.startShutdownTimer()
 
 	log.Printf("Connection closed for repl: %s - shutdown timer restarted", sm.replId)
 }
