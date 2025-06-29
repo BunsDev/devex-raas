@@ -73,12 +73,16 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
   const [suggestionPosition, setSuggestionPosition] = useState<
     "above" | "below"
   >("below");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingAnimation, setLoadingAnimation] = useState<string>("|");
+  const [inputWidth, setInputWidth] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
+  const measurementRef = useRef<HTMLSpanElement>(null);
 
   const scrollToBottom = useCallback((): void => {
     if (terminalRef.current) {
@@ -110,6 +114,24 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (isLoading) {
+      const animationChars = ["|", "/", "-", "\\"];
+      let i = 0;
+      const interval = setInterval(() => {
+        setLoadingAnimation(animationChars[i]);
+        i = (i + 1) % animationChars.length;
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (measurementRef.current) {
+      setInputWidth(measurementRef.current.offsetWidth);
+    }
+  }, [input]);
 
   // Load repls when component mounts
   useEffect(() => {
@@ -177,7 +199,9 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
 
   const executeCommand = useCallback(
     async (commandLine: string): Promise<void> => {
+      setIsLoading(true);
       await commandExecutor.executeCommand(commandLine, executionContext);
+      setIsLoading(false);
     },
     [commandExecutor, executionContext],
   );
@@ -207,11 +231,12 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isLoading) {
       const commandLine = input;
       executeCommand(commandLine);
       setCommandHistory((prev) => [...prev, commandLine]);
       setInput("");
+      setInputWidth(0);
       setHistoryIndex(-1);
       setShowSuggestions(false);
     } else if (e.key === "ArrowUp") {
@@ -295,78 +320,95 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
         ))}
 
         {/* Input Line */}
-        <div className="flex items-center mt-4 relative">
-          <span className="text-emerald-400 mr-1 sm:mr-2 whitespace-nowrap text-xs sm:text-sm">
-            ┌─ {userName}@devX ~
-          </span>
-        </div>
-        <div ref={inputContainerRef} className="flex items-center relative">
-          <span className="text-emerald-400 mr-1 sm:mr-2 text-xs sm:text-sm">
-            └─$
-          </span>
-          <div className="relative flex-1">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="bg-transparent border-none outline-none text-green-400 font-mono w-full text-xs sm:text-sm"
-              autoFocus
-              autoComplete="off"
-              spellCheck="false"
-            />
-
-            {/* Blinking Cursor */}
-            <div
-              ref={caretRef}
-              className={`absolute top-0 w-1 sm:w-2 h-4 sm:h-5 bg-green-400 translate-y-[2px] ${
-                isTyping ? "opacity-100" : "opacity-0"
-              } transition-opacity duration-100`}
-              style={{
-                left: `${input.length * (window.innerWidth < 640 ? 0.45 : 0.525)}em`,
-              }}
-            />
-
-            {/* Suggestions Dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div
-                ref={suggestionsRef}
-                className={`absolute left-0 z-50 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-32 sm:max-h-48 overflow-y-auto min-w-48 sm:min-w-64 w-full max-w-xs sm:max-w-md ${
-                  suggestionPosition === "above"
-                    ? "bottom-full mb-2"
-                    : "top-full mt-2"
-                }`}
-              >
-                <div className="px-2 sm:px-3 py-1 sm:py-2 bg-gray-700 border-b border-gray-600">
-                  <span className="text-xs text-gray-400 font-semibold">
-                    {suggestionLabel}
-                  </span>
-                </div>
-                <div className="max-h-24 sm:max-h-36 overflow-y-auto">
-                  {suggestions.map((suggestion, index) => (
-                    <div
-                      key={index}
-                      className="px-2 sm:px-3 py-1 sm:py-2 hover:bg-gray-700 cursor-pointer text-green-400 text-xs sm:text-sm flex items-center transition-colors"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      <span className="text-gray-500 mr-1 sm:mr-2">▸</span>
-                      <span className="truncate">{suggestion}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-2 sm:px-3 py-1 bg-gray-750 border-t border-gray-600">
-                  <span className="text-xs text-gray-500">
-                    <span className="hidden sm:inline">
-                      ↹ Tab to complete • ↑↓ Navigate • Esc to close
-                    </span>
-                    <span className="sm:hidden">Tab • ↑↓ • Esc</span>
-                  </span>
-                </div>
-              </div>
-            )}
+        {isLoading ? (
+          <div className="flex items-center mt-4">
+            <span className="text-gray-400 text-xs sm:text-sm">
+              {loadingAnimation} Processing...
+            </span>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="flex items-center mt-4 relative">
+              <span className="text-emerald-400 mr-1 sm:mr-2 whitespace-nowrap text-xs sm:text-sm">
+                ┌─ {userName}@devX ~
+              </span>
+            </div>
+            <div ref={inputContainerRef} className="flex items-center relative">
+              <span className="text-emerald-400 mr-1 sm:mr-2 text-xs sm:text-sm">
+                └─$
+              </span>
+              <div className="relative flex-1">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="bg-transparent border-none outline-none text-green-400 font-mono w-full text-xs sm:text-sm"
+                  autoFocus
+                  autoComplete="off"
+                  spellCheck="false"
+                  disabled={isLoading}
+                />
+                <span
+                  ref={measurementRef}
+                  className="absolute invisible whitespace-pre -z-10 font-mono text-xs sm:text-sm"
+                >
+                  {input}
+                </span>
+
+                {/* Blinking Cursor */}
+                {!isLoading && (
+                  <div
+                    ref={caretRef}
+                    className={`absolute top-0 w-1 sm:w-2 h-4 sm:h-5 bg-green-400 translate-y-[2px] ${
+                      isTyping ? "opacity-100" : "opacity-0"
+                    } transition-opacity duration-100`}
+                    style={{ left: `${inputWidth}px` }}
+                  />
+                )}
+
+                {/* Suggestions Dropdown */}
+                {!isLoading && showSuggestions && suggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    className={`absolute left-0 z-50 bg-gray-800 border border-gray-600 rounded-md shadow-lg max-h-32 sm:max-h-48 overflow-y-auto min-w-48 sm:min-w-64 w-full max-w-xs sm:max-w-md ${
+                      suggestionPosition === "above"
+                        ? "bottom-full mb-2"
+                        : "top-full mt-2"
+                    }`}
+                  >
+                    <div className="px-2 sm:px-3 py-1 sm:py-2 bg-gray-700 border-b border-gray-600">
+                      <span className="text-xs text-gray-400 font-semibold">
+                        {suggestionLabel}
+                      </span>
+                    </div>
+                    <div className="max-h-24 sm:max-h-36 overflow-y-auto">
+                      {suggestions.map((suggestion, index) => (
+                        <div
+                          key={index}
+                          className="px-2 sm:px-3 py-1 sm:py-2 hover:bg-gray-700 cursor-pointer text-green-400 text-xs sm:text-sm flex items-center transition-colors"
+                          onClick={() => handleSuggestionClick(suggestion)}
+                        >
+                          <span className="text-gray-500 mr-1 sm:mr-2">▸</span>
+                          <span className="truncate">{suggestion}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-2 sm:px-3 py-1 bg-gray-750 border-t border-gray-600">
+                      <span className="text-xs text-gray-500">
+                        <span className="hidden sm:inline">
+                          ↹ Tab to complete • ↑↓ Navigate • Esc to close
+                        </span>
+                        <span className="sm:hidden">Tab • ↑↓ • Esc</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Status Bar */}
