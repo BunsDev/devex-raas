@@ -211,7 +211,10 @@ export const replCommand: Command = {
             .map((repl, i) => {
               const isActive = repl.isActive;
               const statusIcon = isActive ? "🟢" : "⚪";
-              return `${i + 1}. ${statusIcon} 📁 ${repl.name} (${repl.id})`;
+              const link = isActive
+                ? ` - <a href="/repl/${repl.id}" class="text-blue-400 underline">Open</a>`
+                : "";
+              return `${i + 1}. ${statusIcon} 📁 ${repl.name} (${repl.id})${link}`;
             })
             .join("\n");
 

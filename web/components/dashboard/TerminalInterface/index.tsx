@@ -297,6 +297,8 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
     }
   };
 
+  const parser = new DOMParser();
+
   return (
     <div className="bg-gray-900 text-green-400 font-mono overflow-hidden flex flex-col h-full">
       {/* Terminal Content */}
@@ -309,7 +311,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
         {history.map((entry, index) => (
           <div key={index} className={`mb-2 ${getTypeColor(entry.type)}`}>
             <pre className="whitespace-pre-wrap font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto">
-              {entry.content}
+              <div dangerouslySetInnerHTML={{ __html: entry.content }} />
             </pre>
             {entry.timestamp && (
               <div className="text-xs text-gray-500 mt-1">
