@@ -42,7 +42,13 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      {popup && <StartReplCard replName={popup?.replName} link={popup.link} />}
+      {popup && (
+        <StartReplCard
+          replName={popup?.replName}
+          link={popup.link}
+          onClose={() => setPopup(null)}
+        />
+      )}
       <div className="min-h-screen pt-16 text-gray-200">
         <LetterGlitch
           glitchSpeed={50}
