@@ -8,12 +8,16 @@ import LetterGlitch from "@/components/ui/letter-glitch";
 import StartReplCard from "@/components/ui/start-repl-card";
 import { useAuth } from "@/contexts/AuthContext";
 import { CoreService } from "@/lib/core";
-import { create } from "domain";
-import { Activity, Clock, Code, Terminal, Zap } from "lucide-react";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Activity, Clock, Terminal, Zap } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 
-export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"terminal" | "ui">("terminal");
+function DashboardComponent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("view") === "gui" ? "ui" : "terminal";
+
   const [popup, setPopup] = useState<{ replName: string; link: string } | null>(
     null,
   );
@@ -40,6 +44,18 @@ export default function Dashboard() {
   };
   const deleteRepl = async (name: string) => await core.deleteRepl(name);
 
+  useEffect(() => {
+    const isMobile = window.innerWidth < 640;
+    if (!searchParams.has("view") && isMobile) {
+      router.replace(`${pathname}?view=gui`);
+    }
+  }, [pathname, router, searchParams]);
+
+  const handleTabChange = (tab: "terminal" | "ui") => {
+    const view = tab === "ui" ? "gui" : "terminal";
+    router.push(`${pathname}?view=${view}`);
+  };
+
   return (
     <ProtectedRoute>
       {popup && (
@@ -63,7 +79,7 @@ export default function Dashboard() {
                 <div className="flex-1 flex flex-col bg-black border border-gray-800 rounded-lg overflow-hidden shadow-2xl">
                   <DashboardHeader
                     activeTab={activeTab}
-                    setActiveTab={setActiveTab}
+                    setActiveTab={handleTabChange}
                   />
 
                   {activeTab === "terminal" && (
@@ -94,12 +110,20 @@ export default function Dashboard() {
   );
 }
 
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardComponent />
+    </Suspense>
+  );
+}
+
 const NavigationTabs = ({
   activeTab,
   setActiveTab,
 }: {
   activeTab: "terminal" | "ui";
-  setActiveTab: Dispatch<SetStateAction<"terminal" | "ui">>;
+  setActiveTab: (tab: "terminal" | "ui") => void;
 }) => {
   return (
     <div className="w-full sm:w-auto">
@@ -149,7 +173,7 @@ function DashboardHeader({
   setActiveTab,
 }: {
   activeTab: "terminal" | "ui";
-  setActiveTab: Dispatch<SetStateAction<"terminal" | "ui">>;
+  setActiveTab: (tab: "terminal" | "ui") => void;
 }) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 px-3 sm:px-4 py-3 bg-gray-900 border-b border-gray-700">
