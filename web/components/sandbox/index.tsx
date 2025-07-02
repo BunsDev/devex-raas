@@ -13,6 +13,10 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  RotateCcw,
+  Search,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 import Editor from "./Editor";
@@ -38,6 +42,15 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   );
   const [fileType, setFileType] = useState<string>("js");
   const [filePath, setFilePath] = useState<string>("");
+
+  // Terminal-specific state
+  const [terminalSessionId, setTerminalSessionId] = useState<string>("");
+  const [terminalConnectionStatus, setTerminalConnectionStatus] = useState<
+    "disconnected" | "connecting" | "connected"
+  >("disconnected");
+  const [terminalError, setTerminalError] = useState<string | null>(null);
+  const [isTerminalMaximized, setIsTerminalMaximized] = useState(false);
+
   const { isConnected, emit, on, off } = useRunnerSocket(slug as string);
 
   useEffect(() => {
@@ -66,17 +79,39 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
       setFileType(data.path.split(".").pop()?.toLowerCase() || "txt");
     });
 
-    // Listen for terminal data
+    // Enhanced terminal event handlers
     on("terminalResponse", (data) => {
-      terminalRef.current?.writeData(data);
+      if (terminalRef.current?.isReady()) {
+        terminalRef.current.writeData(data);
+      }
       console.log("🖥️ Terminal output:", data);
     });
 
-    on("terminalClosed", (data) => {
+    on("terminalConnected", (data) => {
+      setTerminalSessionId(data.sessionId || "");
+      setTerminalConnectionStatus("connected");
+      setTerminalError(null);
       terminalRef.current?.writeData(
-        "\r\n\x1b[31mTerminal session closed\x1b[0m\r\n",
+        "\r\n\x1b[32m✓ Terminal connected successfully\x1b[0m\r\n",
       );
-      console.log("🖥️ Terminal Closed");
+      console.log("🖥️ Terminal Connected:", data);
+    });
+
+    on("terminalClosed", (data) => {
+      setTerminalConnectionStatus("disconnected");
+      terminalRef.current?.writeData(
+        "\r\n\x1b[31m✗ Terminal session closed\x1b[0m\r\n",
+      );
+      console.log("🖥️ Terminal Closed:", data);
+    });
+
+    on("terminalError", (data) => {
+      setTerminalError(data.error || "Unknown terminal error");
+      setTerminalConnectionStatus("disconnected");
+      terminalRef.current?.writeData(
+        `\r\n\x1b[31m✗ Terminal error: ${data.error}\x1b[0m\r\n`,
+      );
+      console.error("🖥️ Terminal Error:", data);
     });
 
     return () => {
@@ -84,6 +119,9 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
       off("fetchDirResponse");
       off("fetchContentResponse");
       off("terminalResponse");
+      off("terminalConnected");
+      off("terminalClosed");
+      off("terminalError");
     };
   }, [isConnected]);
 
@@ -93,34 +131,89 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   const updateContent = async (patch: string) =>
     emit("updateContent", { path: filePath, patch });
 
-  // Terminal Helpers
-  const handleTerminalSendData = (data: string) =>
-    emit("terminalInput", { data, terminalId: 12 });
-  const handleRequestTerminal = () => emit("requestTerminal");
-  const handleTerminalResize = () => {};
+  // Enhanced Terminal Helpers
+  const handleTerminalSendData = useCallback(
+    (data: string) => {
+      emit("terminalInput", {
+        data,
+        terminalId: terminalSessionId || 12,
+        sessionId: terminalSessionId,
+      });
+    },
+    [emit, terminalSessionId],
+  );
 
-  // Handle terminal ready
+  const handleRequestTerminal = useCallback(() => {
+    setTerminalConnectionStatus("connecting");
+    setTerminalError(null);
+    emit("requestTerminal", { sessionId: terminalSessionId });
+  }, [emit, terminalSessionId]);
+
+  const handleTerminalResize = useCallback(
+    (cols: number, rows: number) => {
+      emit("terminalResize", {
+        cols,
+        rows,
+        sessionId: terminalSessionId,
+      });
+    },
+    [emit, terminalSessionId],
+  );
+
+  // Enhanced terminal event handlers
   const handleTerminalReady = useCallback(() => {
-    terminalRef.current?.writeData(
-      "Terminal initialized. Connecting to server...\r\n",
-    );
+    setTerminalConnectionStatus("connected");
+    setTerminalError(null);
+    console.log("🖥️ Terminal ready");
   }, []);
 
-  // Handle terminal close
   const handleTerminalClose = useCallback(() => {
-    console.log("Close the Terminal");
+    setTerminalConnectionStatus("disconnected");
+    console.log("🖥️ Terminal closed by user");
   }, []);
 
-  // Handle terminal error
   const handleTerminalError = useCallback((error: string) => {
-    console.error("Terminal error:", error);
+    setTerminalError(error);
+    setTerminalConnectionStatus("disconnected");
+    console.error("🖥️ Terminal error:", error);
+  }, []);
+
+  // Terminal utility functions
+  const clearTerminal = useCallback(() => {
+    terminalRef.current?.clear();
+  }, []);
+
+  const resetTerminal = useCallback(() => {
+    terminalRef.current?.reset();
+    handleRequestTerminal();
+  }, [handleRequestTerminal]);
+
+  const reconnectTerminal = useCallback(() => {
+    terminalRef.current?.reconnect();
+  }, []);
+
+  const focusTerminal = useCallback(() => {
+    terminalRef.current?.focus();
+  }, []);
+
+  const scrollTerminalToBottom = useCallback(() => {
+    terminalRef.current?.scrollToBottom();
+  }, []);
+
+  // Search functionality for terminal
+  const [terminalSearchTerm, setTerminalSearchTerm] = useState("");
+  const searchInTerminal = useCallback((term: string) => {
+    if (term && terminalRef.current) {
+      return terminalRef.current.search(term);
+    }
+    return false;
   }, []);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<TerminalRef>(null);
 
-  // Keyboard shortcuts handler
+  // Enhanced keyboard shortcuts handler
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       const { ctrlKey, shiftKey, key, metaKey } = event;
@@ -150,6 +243,8 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
           const newValue = !prev;
           if (newValue) {
             setActiveBottomPanel("terminal");
+            // Focus terminal after showing
+            setTimeout(() => focusTerminal(), 100);
           }
           return newValue;
         });
@@ -169,10 +264,60 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
         return;
       }
 
+      // Ctrl+Shift+C: Clear terminal
+      if (
+        isCtrlOrCmd &&
+        shiftKey &&
+        key.toLowerCase() === "c" &&
+        activeBottomPanel === "terminal"
+      ) {
+        event.preventDefault();
+        clearTerminal();
+        return;
+      }
+
+      // Ctrl+Shift+R: Reset terminal
+      if (
+        isCtrlOrCmd &&
+        shiftKey &&
+        key.toLowerCase() === "r" &&
+        activeBottomPanel === "terminal"
+      ) {
+        event.preventDefault();
+        resetTerminal();
+        return;
+      }
+
+      // Ctrl+Shift+F: Search in terminal
+      if (
+        isCtrlOrCmd &&
+        shiftKey &&
+        key.toLowerCase() === "f" &&
+        activeBottomPanel === "terminal"
+      ) {
+        event.preventDefault();
+        const term = prompt("Search in terminal:");
+        if (term) {
+          searchInTerminal(term);
+        }
+        return;
+      }
+
       // Ctrl+1: Focus editor
       if (isCtrlOrCmd && key === "1") {
         event.preventDefault();
         editorRef.current?.focus();
+        return;
+      }
+
+      // Ctrl+2: Focus terminal
+      if (isCtrlOrCmd && key === "2") {
+        event.preventDefault();
+        if (!terminalVisible) {
+          setTerminalVisible(true);
+          setActiveBottomPanel("terminal");
+        }
+        setTimeout(() => focusTerminal(), 100);
         return;
       }
 
@@ -182,7 +327,15 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
         return;
       }
     },
-    [sidebarCollapsed],
+    [
+      sidebarCollapsed,
+      activeBottomPanel,
+      terminalVisible,
+      clearTerminal,
+      resetTerminal,
+      searchInTerminal,
+      focusTerminal,
+    ],
   );
 
   // Register keyboard shortcuts
@@ -195,6 +348,16 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
 
   // Calculate if bottom panel should be shown
   const showBottomPanel = terminalVisible || outputVisible;
+
+  // Auto-scroll terminal to bottom when new data arrives
+  useEffect(() => {
+    if (activeBottomPanel === "terminal" && terminalVisible) {
+      const timer = setTimeout(() => {
+        scrollTerminalToBottom();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeBottomPanel, terminalVisible, scrollTerminalToBottom]);
 
   if (!tree) {
     return (
@@ -225,6 +388,26 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
           )}
         </Button>
 
+        {/* Connection status indicator */}
+        <div className="flex items-center space-x-2 text-xs">
+          <div
+            className={`w-2 h-2 rounded-full ${
+              isConnected ? "bg-green-500" : "bg-red-500"
+            }`}
+            title={`Socket: ${isConnected ? "Connected" : "Disconnected"}`}
+          />
+          <div
+            className={`w-2 h-2 rounded-full ${
+              terminalConnectionStatus === "connected"
+                ? "bg-green-500"
+                : terminalConnectionStatus === "connecting"
+                  ? "bg-yellow-500"
+                  : "bg-red-500"
+            }`}
+            title={`Terminal: ${terminalConnectionStatus}`}
+          />
+        </div>
+
         <div className="flex items-center space-x-1 ml-auto">
           <Button
             variant={
@@ -239,6 +422,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
               } else {
                 setTerminalVisible(true);
                 setActiveBottomPanel("terminal");
+                setTimeout(() => focusTerminal(), 100);
               }
             }}
             className="h-6 px-2 text-xs text-gray-300 hover:text-white"
@@ -246,6 +430,9 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
           >
             <TerminalIcon className="h-3 w-3 mr-1" />
             Terminal
+            {terminalError && (
+              <span className="ml-1 text-red-400 text-xs">!</span>
+            )}
           </Button>
 
           <Button
@@ -308,8 +495,10 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
             <ResizablePanelGroup direction="vertical" className="h-full">
               {/* Code Editor */}
               <ResizablePanel
-                defaultSize={showBottomPanel ? 70 : 100}
-                minSize={30}
+                defaultSize={
+                  isTerminalMaximized ? 0 : showBottomPanel ? 70 : 100
+                }
+                minSize={isTerminalMaximized ? 0 : 30}
                 className="min-h-0"
               >
                 <div
@@ -331,9 +520,9 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                 <>
                   <ResizableHandle withHandle />
                   <ResizablePanel
-                    defaultSize={30}
+                    defaultSize={isTerminalMaximized ? 100 : 30}
                     minSize={15}
-                    maxSize={70}
+                    maxSize={isTerminalMaximized ? 100 : 70}
                     className="min-h-0"
                   >
                     <div className="h-full relative">
@@ -344,6 +533,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                             onClick={() => {
                               setActiveBottomPanel("terminal");
                               setTerminalVisible(true);
+                              setTimeout(() => focusTerminal(), 100);
                             }}
                             className={`px-3 py-1 text-xs rounded-t border-b-2 transition-colors ${
                               activeBottomPanel === "terminal" &&
@@ -354,6 +544,11 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                           >
                             <TerminalIcon className="h-3 w-3 mr-1 inline" />
                             Terminal
+                            {terminalError && (
+                              <span className="ml-1 text-red-500 text-xs">
+                                !
+                              </span>
+                            )}
                           </button>
                           <button
                             onClick={() => {
@@ -371,20 +566,74 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                           </button>
                         </div>
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (activeBottomPanel === "terminal") {
-                              setTerminalVisible(false);
-                            } else {
-                              setOutputVisible(false);
+                        {/* Terminal-specific controls */}
+                        {activeBottomPanel === "terminal" &&
+                          terminalVisible && (
+                            <div className="flex items-center space-x-1 ml-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearTerminal}
+                                className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                                title="Clear Terminal (Ctrl+Shift+C)"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={resetTerminal}
+                                className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                                title="Reset Terminal (Ctrl+Shift+R)"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const term = prompt("Search in terminal:");
+                                  if (term) searchInTerminal(term);
+                                }}
+                                className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                                title="Search in Terminal (Ctrl+Shift+F)"
+                              >
+                                <Search className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+
+                        <div className="flex items-center space-x-1 ml-auto">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setIsTerminalMaximized(!isTerminalMaximized)
                             }
-                          }}
-                          className="ml-auto h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+                            className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                            title={isTerminalMaximized ? "Restore" : "Maximize"}
+                          >
+                            {isTerminalMaximized ? (
+                              <Minimize2 className="h-3 w-3" />
+                            ) : (
+                              <Maximize2 className="h-3 w-3" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (activeBottomPanel === "terminal") {
+                                setTerminalVisible(false);
+                              } else {
+                                setOutputVisible(false);
+                              }
+                            }}
+                            className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
 
                       {/* Panel content */}
@@ -398,6 +647,15 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                               onReady={handleTerminalReady}
                               onClose={handleTerminalClose}
                               onError={handleTerminalError}
+                              sessionId={terminalSessionId}
+                              autoReconnect={true}
+                              theme={{
+                                background: "#1e1e1e",
+                                foreground: "#d4d4d4",
+                                cursor: "#d4d4d4",
+                                selection: "#264f78",
+                              }}
+                              fontSize={13}
                               ref={terminalRef}
                             />
                           )}

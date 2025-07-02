@@ -55,6 +55,10 @@ interface TerminalProps {
 
   className?: string;
   style?: React.CSSProperties;
+
+  // New props for better session management
+  sessionId?: string;
+  autoReconnect?: boolean;
 }
 
 export interface TerminalRef {
@@ -72,6 +76,8 @@ export interface TerminalRef {
   scrollToTop: () => void;
   reset: () => void;
   dispose: () => void;
+  reconnect: () => void;
+  isReady: () => boolean;
 }
 
 const defaultTheme = {
@@ -114,6 +120,8 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
       onDataReceived,
       className = "",
       style = {},
+      sessionId,
+      autoReconnect = true,
     },
     ref,
   ) => {
@@ -122,25 +130,53 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
     const fitAddonRef = useRef<any>(null);
     const searchAddonRef = useRef<any>(null);
     const isInitializedRef = useRef(false);
+    const isConnectedRef = useRef(false);
+    const pendingDataRef = useRef<string[]>([]);
+    const resizeTimeoutRef = useRef<NodeJS.Timeout>(undefined);
     const [isClient, setIsClient] = useState(false);
+    const [terminalReady, setTerminalReady] = useState(false);
+    const [connectionState, setConnectionState] = useState<
+      "disconnected" | "connecting" | "connected"
+    >("disconnected");
 
     // Ensure we're on the client side
     useEffect(() => {
       setIsClient(true);
     }, []);
 
+    // Process pending data when terminal becomes ready
+    useEffect(() => {
+      if (
+        terminalReady &&
+        isConnectedRef.current &&
+        pendingDataRef.current.length > 0
+      ) {
+        const pendingData = pendingDataRef.current.join("");
+        pendingDataRef.current = [];
+        if (xtermRef.current && pendingData) {
+          try {
+            xtermRef.current.write(pendingData);
+          } catch (error) {
+            console.warn("Failed to write pending data:", error);
+          }
+        }
+      }
+    }, [terminalReady, connectionState]);
+
     // Initialize terminal
     const initializeTerminal = useCallback(async () => {
       if (!terminalRef.current || isInitializedRef.current || !isClient) return;
 
       try {
+        setConnectionState("connecting");
+
         // Dynamically import xterm modules
         const { Terminal } = await import("xterm");
         const { FitAddon } = await import("xterm-addon-fit");
         const { WebLinksAddon } = await import("xterm-addon-web-links");
         const { SearchAddon } = await import("xterm-addon-search");
 
-        // Create terminal instance
+        // Create terminal instance with improved configuration
         const terminal = new Terminal({
           cols,
           rows,
@@ -157,6 +193,10 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
           rightClickSelectsWord: true,
           screenReaderMode: false,
           allowTransparency: true,
+          // Important: Enable proper terminal behavior
+          windowsMode: false,
+          altClickMovesCursor: false,
+          logLevel: "warn",
         });
 
         // Create addons
@@ -172,8 +212,14 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         // Open terminal in DOM
         terminal.open(terminalRef.current);
 
-        // Fit terminal to container
-        fitAddon.fit();
+        // Fit terminal to container with a small delay to ensure proper sizing
+        setTimeout(() => {
+          try {
+            fitAddon.fit();
+          } catch (error) {
+            console.warn("Initial fit failed:", error);
+          }
+        }, 100);
 
         // Store refs
         xtermRef.current = terminal;
@@ -184,14 +230,24 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         setupEventListeners(terminal);
 
         isInitializedRef.current = true;
+        setTerminalReady(true);
+        setConnectionState("connected");
+        isConnectedRef.current = true;
 
         // Call onReady callback
         onReady?.();
 
         // Request terminal session from backend
         onRequestTerminal?.();
+
+        // Write welcome message
+        terminal.write("\x1b[2J\x1b[H"); // Clear screen and move cursor to home
+        terminal.write(
+          "\x1b[32mTerminal initialized. Connecting to server...\x1b[0m\r\n",
+        );
       } catch (error) {
         console.error("Failed to initialize terminal:", error);
+        setConnectionState("disconnected");
         onError?.(`Failed to initialize terminal: ${error}`);
       }
     }, [
@@ -209,15 +265,24 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
     // Setup event listeners
     const setupEventListeners = useCallback(
       (terminal: any) => {
-        // Handle user input
+        // Handle user input with debouncing for better performance
+        let inputTimeout: NodeJS.Timeout;
         terminal.onData((data: string) => {
-          onSendData?.(data);
-          onDataReceived?.(data);
+          clearTimeout(inputTimeout);
+          inputTimeout = setTimeout(() => {
+            if (isConnectedRef.current) {
+              onSendData?.(data);
+              onDataReceived?.(data);
+            }
+          }, 10);
         });
 
-        // Handle terminal resize
+        // Handle terminal resize with debouncing
         terminal.onResize(({ cols, rows }: { cols: number; rows: number }) => {
-          onTerminalResize?.(cols, rows);
+          clearTimeout(resizeTimeoutRef.current);
+          resizeTimeoutRef.current = setTimeout(() => {
+            onTerminalResize?.(cols, rows);
+          }, 250);
         });
 
         // Handle selection change
@@ -235,87 +300,135 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
           // Handle terminal title change if needed
           console.log("Terminal title changed:", title);
         });
+
+        return () => {
+          clearTimeout(inputTimeout);
+          clearTimeout(resizeTimeoutRef.current);
+        };
       },
       [onSendData, onTerminalResize, onDataReceived],
     );
 
-    // Handle window resize
+    // Improved resize handler with debouncing
     const handleResize = useCallback(() => {
-      if (fitAddonRef.current && xtermRef.current) {
-        try {
-          fitAddonRef.current.fit();
-        } catch (error) {
-          console.warn("Failed to fit terminal:", error);
-        }
+      if (fitAddonRef.current && xtermRef.current && terminalReady) {
+        clearTimeout(resizeTimeoutRef.current);
+        resizeTimeoutRef.current = setTimeout(() => {
+          try {
+            fitAddonRef.current.fit();
+          } catch (error) {
+            console.warn("Failed to fit terminal:", error);
+          }
+        }, 150);
       }
-    }, []);
+    }, [terminalReady]);
 
     // Setup resize observer
     useEffect(() => {
       const resizeObserver = new ResizeObserver(() => {
-        // Debounce resize
-        const timeoutId = setTimeout(handleResize, 100);
-        return () => clearTimeout(timeoutId);
+        handleResize();
       });
 
       if (terminalRef.current) {
         resizeObserver.observe(terminalRef.current);
       }
 
+      // Also listen to window resize
+      window.addEventListener("resize", handleResize);
+
       return () => {
         resizeObserver.disconnect();
+        window.removeEventListener("resize", handleResize);
+        clearTimeout(resizeTimeoutRef.current);
       };
     }, [handleResize]);
 
     // Initialize terminal on mount
     useEffect(() => {
-      if (isClient) {
+      if (isClient && !isInitializedRef.current) {
         initializeTerminal();
       }
 
       return () => {
+        // Cleanup
         if (xtermRef.current) {
-          xtermRef.current.dispose();
+          try {
+            xtermRef.current.dispose();
+          } catch (error) {
+            console.warn("Error disposing terminal:", error);
+          }
           xtermRef.current = null;
         }
         isInitializedRef.current = false;
+        isConnectedRef.current = false;
+        setTerminalReady(false);
+        setConnectionState("disconnected");
+        pendingDataRef.current = [];
       };
     }, [initializeTerminal, isClient]);
+
+    // Handle session ID changes (reconnection)
+    useEffect(() => {
+      if (sessionId && terminalReady && autoReconnect) {
+        // Session changed, request new terminal
+        onRequestTerminal?.();
+      }
+    }, [sessionId, terminalReady, autoReconnect, onRequestTerminal]);
 
     // Expose terminal methods via ref
     useImperativeHandle(
       ref,
       () => ({
         writeData: (data: string) => {
-          if (xtermRef.current) {
-            xtermRef.current.write(data);
+          if (!data) return;
+
+          if (xtermRef.current && terminalReady && isConnectedRef.current) {
+            try {
+              // Process data to handle special characters properly
+              xtermRef.current.write(data);
+            } catch (error) {
+              console.warn("Failed to write data to terminal:", error);
+              // Store data for later if terminal is not ready
+              pendingDataRef.current.push(data);
+            }
+          } else {
+            // Store data for when terminal becomes ready
+            pendingDataRef.current.push(data);
           }
         },
 
         clear: () => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             xtermRef.current.clear();
           }
         },
 
         focus: () => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             xtermRef.current.focus();
           }
         },
 
         blur: () => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             xtermRef.current.blur();
           }
         },
 
         resize: (newCols?: number, newRows?: number) => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             if (newCols && newRows) {
-              xtermRef.current.resize(newCols, newRows);
+              try {
+                xtermRef.current.resize(newCols, newRows);
+              } catch (error) {
+                console.warn("Failed to resize terminal:", error);
+              }
             } else if (fitAddonRef.current) {
-              fitAddonRef.current.fit();
+              try {
+                fitAddonRef.current.fit();
+              } catch (error) {
+                console.warn("Failed to fit terminal:", error);
+              }
             }
           }
         },
@@ -325,59 +438,81 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         },
 
         selectAll: () => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             xtermRef.current.selectAll();
           }
         },
 
         search: (term: string) => {
-          if (searchAddonRef.current) {
+          if (searchAddonRef.current && terminalReady) {
             return searchAddonRef.current.findNext(term);
           }
           return false;
         },
 
         findNext: (term: string) => {
-          if (searchAddonRef.current) {
+          if (searchAddonRef.current && terminalReady) {
             return searchAddonRef.current.findNext(term);
           }
           return false;
         },
 
         findPrevious: (term: string) => {
-          if (searchAddonRef.current) {
+          if (searchAddonRef.current && terminalReady) {
             return searchAddonRef.current.findPrevious(term);
           }
           return false;
         },
 
         scrollToBottom: () => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             xtermRef.current.scrollToBottom();
           }
         },
 
         scrollToTop: () => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             xtermRef.current.scrollToTop();
           }
         },
 
         reset: () => {
-          if (xtermRef.current) {
+          if (xtermRef.current && terminalReady) {
             xtermRef.current.reset();
+            // Clear pending data
+            pendingDataRef.current = [];
           }
         },
 
         dispose: () => {
           if (xtermRef.current) {
-            xtermRef.current.dispose();
+            try {
+              xtermRef.current.dispose();
+            } catch (error) {
+              console.warn("Error disposing terminal:", error);
+            }
             xtermRef.current = null;
           }
           isInitializedRef.current = false;
+          isConnectedRef.current = false;
+          setTerminalReady(false);
+          setConnectionState("disconnected");
+          pendingDataRef.current = [];
+        },
+
+        reconnect: () => {
+          if (!isInitializedRef.current && isClient) {
+            initializeTerminal();
+          } else if (terminalReady) {
+            onRequestTerminal?.();
+          }
+        },
+
+        isReady: () => {
+          return terminalReady && isConnectedRef.current;
         },
       }),
-      [],
+      [terminalReady, isClient, initializeTerminal, onRequestTerminal],
     );
 
     // Show loading state during SSR or before client hydration
@@ -397,7 +532,39 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
             ...style,
           }}
         >
-          Loading terminal...
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+            <span>Loading terminal...</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Show connection state
+    if (!terminalReady || connectionState !== "connected") {
+      return (
+        <div
+          className={`terminal-container ${className}`}
+          style={{
+            width: "100%",
+            height: "100%",
+            backgroundColor: defaultTheme.background,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: defaultTheme.foreground,
+            fontFamily,
+            ...style,
+          }}
+        >
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+            <span>
+              {connectionState === "connecting"
+                ? "Connecting to terminal..."
+                : "Initializing terminal..."}
+            </span>
+          </div>
         </div>
       );
     }
@@ -408,6 +575,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         style={{
           width: "100%",
           height: "100%",
+          position: "relative",
           ...style,
         }}
       >

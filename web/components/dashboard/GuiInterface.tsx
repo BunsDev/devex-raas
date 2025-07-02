@@ -291,10 +291,12 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
                     <div className="md:col-span-3 flex justify-start md:justify-end items-center gap-2 pt-2 md:pt-0 border-t border-gray-800/50 md:border-none">
                       {isActive ? (
                         <>
-                          <Link href={`/repl/${repl.id}`} passHref>
-                            <a className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-md transition-colors duration-200 font-medium text-xs text-white">
-                              Open <ArrowRight className="w-3 h-3" />
-                            </a>
+                          <Link
+                            href={`/repl/${repl.id}`}
+                            passHref
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-md transition-colors duration-200 font-medium text-xs text-white"
+                          >
+                            Open <ArrowRight className="w-3 h-3" />
                           </Link>
                           <button
                             onClick={() => handleDeleteRepl(repl.id)}
