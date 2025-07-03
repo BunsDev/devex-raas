@@ -1,36 +1,53 @@
 # ---- Step 1: Build Stage ----
+# Use official Go image to build the binary
 FROM golang:1.24 AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy go.mod and go.sum first for dependency caching
+# ✅ Copy go.mod and go.sum first for better caching of dependencies
 COPY go.mod go.sum ./
 RUN go mod tidy
 
-# Copy the rest of the source code
+# ✅ Copy the rest of the application source code
 COPY . .
 
-# Build the binary
+# ✅ Build the Go binary (static binary)
 RUN CGO_ENABLED=0 GOOS=linux go build -o runner ./cmd/main.go
 
 
 # ---- Step 2: Final Runtime Stage ----
-# Use a minimal image with no shell
-FROM debian:bookworm-slim
+# ✅ Use a minimal Node.js image with Debian Slim as the base
+FROM node:20-slim
+
+# Set working directory
 WORKDIR /app
 
-# ✅ Install CA certificates to verify HTTPS
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+# ✅ Install essential packages:
+# - bash: for interactive shell
+# - curl: for downloading (e.g., starship)
+# - ca-certificates: for HTTPS support
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    bash \
+    curl \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy binary from builder
+
+# ✅  Install Starship prompt
+RUN curl -sS https://starship.rs/install.sh | sh -s -- -y && \
+    echo 'eval "$(starship init bash)"' >> /root/.bashrc
+
+
+# ✅ Copy the compiled Go binary from builder
 COPY --from=builder /app/runner .
 
-# Set permissions if needed (optional for distroless)
+# ✅ Set permissions if needed (e.g., make executable)
 # RUN chmod +x /app/runner
 
-# Port on which your service will run (optional doc)
+# ✅ Port on which your Go backend or other service runs
 EXPOSE 8080
 
-# Run the binary (this is the only process in container)
+# ✅ Default command: run the Go binary as the container entrypoint
 CMD ["/app/runner"]
