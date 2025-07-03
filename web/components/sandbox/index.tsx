@@ -44,7 +44,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
   const [filePath, setFilePath] = useState<string>("");
 
   // Terminal-specific state
-  const [terminalSessionId, setTerminalSessionId] = useState<string>("");
+  const terminalSessionIdRef = useRef<string>("");
   const [terminalConnectionStatus, setTerminalConnectionStatus] = useState<
     "disconnected" | "connecting" | "connected"
   >("disconnected");
@@ -88,7 +88,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
     });
 
     on("terminalConnected", (data) => {
-      setTerminalSessionId(data.sessionId || "");
+      terminalSessionIdRef.current = data.sessionId || "";
       setTerminalConnectionStatus("connected");
       setTerminalError(null);
       terminalRef.current?.writeData(
@@ -132,32 +132,28 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
     emit("updateContent", { path: filePath, patch });
 
   // Enhanced Terminal Helpers
-  const handleTerminalSendData = useCallback(
-    (data: string) => {
-      emit("terminalInput", {
-        data,
-        terminalId: terminalSessionId || 12,
-        sessionId: terminalSessionId,
-      });
-    },
-    [emit, terminalSessionId],
-  );
+  const handleTerminalSendData = (data: string) => {
+    emit("terminalInput", {
+      data,
+      sessionId: terminalSessionIdRef.current,
+    });
+  };
 
   const handleRequestTerminal = useCallback(() => {
     setTerminalConnectionStatus("connecting");
     setTerminalError(null);
-    emit("requestTerminal", { sessionId: terminalSessionId });
-  }, [emit, terminalSessionId]);
+    emit("requestTerminal", { sessionId: terminalSessionIdRef.current });
+  }, [emit, terminalSessionIdRef.current]);
 
   const handleTerminalResize = useCallback(
     (cols: number, rows: number) => {
       emit("terminalResize", {
         cols,
         rows,
-        sessionId: terminalSessionId,
+        sessionId: terminalSessionIdRef.current,
       });
     },
-    [emit, terminalSessionId],
+    [emit, terminalSessionIdRef.current],
   );
 
   // Enhanced terminal event handlers
@@ -647,7 +643,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                               onReady={handleTerminalReady}
                               onClose={handleTerminalClose}
                               onError={handleTerminalError}
-                              sessionId={terminalSessionId}
+                              sessionId={terminalSessionIdRef.current}
                               autoReconnect={true}
                               theme={{
                                 background: "#1e1e1e",

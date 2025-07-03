@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"sync"
+	"sync/atomic"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/creack/pty"
@@ -21,13 +24,15 @@ type PTYManager struct {
 
 // PTYSession represents a single PTY session
 type PTYSession struct {
-	ID      string
-	PTY     *os.File
-	CMD     *exec.Cmd
-	done    chan struct{}
-	mutex   sync.RWMutex
-	onData  func([]byte) // Callback for output data
-	onClose func()       // Callback when session closes
+	ID        string
+	PTY       *os.File
+	CMD       *exec.Cmd
+	done      chan struct{}
+	mutex     sync.RWMutex
+	onData    func([]byte) // Callback for output data
+	onClose   func()       // Callback when session closes
+	closeOnce sync.Once
+	isClosed  atomic.Bool
 }
 
 // PTYConfig holds configuration for PTY creation
@@ -73,12 +78,11 @@ func (pm *PTYManager) CreateSession(sessionID string, config *PTYConfig) (*PTYSe
 	// Create command
 	cmd := exec.Command(config.Shell)
 
-	// Set working directory - FIXED LOGIC
+	// Set working directory
 	if config.WorkingDir != "" {
 		cmd.Dir = config.WorkingDir
 	} else {
-		// Set default working directory
-		cmd.Dir = "/workspaces" // or whatever your default should be
+		cmd.Dir = "/workspaces"
 	}
 
 	// Set environment
@@ -89,7 +93,6 @@ func (pm *PTYManager) CreateSession(sessionID string, config *PTYConfig) (*PTYSe
 		fmt.Sprintf("LINES=%d", config.Rows),
 	)
 
-	// Add custom environment variables
 	for key, value := range config.Environment {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, value))
 	}
@@ -109,10 +112,10 @@ func (pm *PTYManager) CreateSession(sessionID string, config *PTYConfig) (*PTYSe
 		CMD:  cmd,
 		done: make(chan struct{}),
 	}
+	session.isClosed.Store(false)
 
 	pm.sessions[sessionID] = session
 
-	// Start the session handler
 	go session.start()
 
 	return session, nil
@@ -171,14 +174,16 @@ func (pm *PTYManager) Cleanup() {
 
 // start begins the PTY session lifecycle
 func (s *PTYSession) start() {
-	defer s.cleanup()
+	defer s.Close() // Ensure cleanup on exit
 
-	// Start reading from PTY
 	go s.readFromPTY()
 
-	// Wait for process to complete or session to be closed
-	s.CMD.Wait()
-	close(s.done)
+	err := s.CMD.Wait()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); !ok || !exitErr.Success() {
+			log.Printf("Command for session %s exited with error: %v", s.ID, err)
+		}
+	}
 }
 
 // readFromPTY continuously reads output from the PTY
@@ -192,10 +197,10 @@ func (s *PTYSession) readFromPTY() {
 		default:
 			n, err := s.PTY.Read(buffer)
 			if err != nil {
-				if err != io.EOF {
-					// PTY closed or error occurred
+				if err != io.EOF && !s.isClosed.Load() {
+					log.Printf("Error reading from PTY for session %s: %v", s.ID, err)
 				}
-				close(s.done)
+				s.Close()
 				return
 			}
 
@@ -203,7 +208,6 @@ func (s *PTYSession) readFromPTY() {
 				data := make([]byte, n)
 				copy(data, buffer[:n])
 
-				// Call the data callback if set
 				s.mutex.RLock()
 				if s.onData != nil {
 					s.onData(data)
@@ -216,12 +220,11 @@ func (s *PTYSession) readFromPTY() {
 
 // WriteInput writes input to the PTY
 func (s *PTYSession) WriteInput(data []byte) error {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
-	if s.PTY == nil {
+	if s.isClosed.Load() {
 		return fmt.Errorf("PTY is closed")
 	}
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	_, err := s.PTY.Write(data)
 	return err
@@ -234,12 +237,11 @@ func (s *PTYSession) WriteString(input string) error {
 
 // Resize changes the PTY size
 func (s *PTYSession) Resize(cols, rows int) error {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
-	if s.PTY == nil {
+	if s.isClosed.Load() {
 		return fmt.Errorf("PTY is closed")
 	}
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	return pty.Setsize(s.PTY, &pty.Winsize{
 		Rows: uint16(rows),
@@ -249,12 +251,11 @@ func (s *PTYSession) Resize(cols, rows int) error {
 
 // GetSize returns the current PTY size
 func (s *PTYSession) GetSize() (*pty.Winsize, error) {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
-	if s.PTY == nil {
+	if s.isClosed.Load() {
 		return nil, fmt.Errorf("PTY is closed")
 	}
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	size := &pty.Winsize{}
 	err := getSize(s.PTY, size)
@@ -297,7 +298,7 @@ func (s *PTYSession) GetStatus() map[string]interface{} {
 
 	status := map[string]interface{}{
 		"id":     s.ID,
-		"active": s.PTY != nil,
+		"active": !s.isClosed.Load(),
 	}
 
 	if s.CMD != nil && s.CMD.Process != nil {
@@ -305,8 +306,7 @@ func (s *PTYSession) GetStatus() map[string]interface{} {
 		status["processState"] = s.CMD.ProcessState
 	}
 
-	// Get terminal size if available
-	if s.PTY != nil {
+	if !s.isClosed.Load() {
 		if size, err := s.GetSize(); err == nil {
 			status["size"] = map[string]interface{}{
 				"cols": size.Cols,
@@ -320,13 +320,14 @@ func (s *PTYSession) GetStatus() map[string]interface{} {
 
 // IsActive returns whether the session is currently active
 func (s *PTYSession) IsActive() bool {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	return s.PTY != nil
+	return !s.isClosed.Load()
 }
 
 // SendSignal sends a signal to the PTY process
 func (s *PTYSession) SendSignal(sig os.Signal) error {
+	if s.isClosed.Load() {
+		return fmt.Errorf("session is closed")
+	}
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -339,30 +340,16 @@ func (s *PTYSession) SendSignal(sig os.Signal) error {
 
 // Kill forcefully terminates the PTY session
 func (s *PTYSession) Kill() error {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
-	if s.CMD == nil || s.CMD.Process == nil {
-		return fmt.Errorf("no process to kill")
-	}
-
-	return s.CMD.Process.Kill()
+	s.Close()
+	return nil
 }
 
 // Close gracefully closes the PTY session
 func (s *PTYSession) Close() {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	// Close done channel if not already closed
-	select {
-	case <-s.done:
-		// Already closed
-	default:
-		close(s.done)
-	}
-
-	s.cleanup()
+	s.closeOnce.Do(func() {
+		s.isClosed.Store(true)
+		s.cleanup()
+	})
 }
 
 // cleanup handles resource cleanup
@@ -370,33 +357,42 @@ func (s *PTYSession) cleanup() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// Close PTY
+	close(s.done)
+
+	if s.onClose != nil {
+		go s.onClose()
+	}
+
 	if s.PTY != nil {
 		s.PTY.Close()
 		s.PTY = nil
 	}
 
-	// Kill process if still running
-	if s.CMD != nil && s.CMD.Process != nil {
-		s.CMD.Process.Kill()
-		s.CMD.Wait() // Clean up zombie process
-	}
-
-	// Call close callback
-	if s.onClose != nil {
-		go s.onClose() // Call in goroutine to avoid deadlocks
+	if s.CMD != nil && s.CMD.Process != nil && s.CMD.ProcessState == nil {
+		s.CMD.Process.Signal(syscall.SIGTERM)
+		waitChan := make(chan struct{})
+		go func() {
+			s.CMD.Wait()
+			close(waitChan)
+		}()
+		select {
+		case <-waitChan:
+		case <-time.After(2 * time.Second):
+			log.Printf("Process for session %s did not exit gracefully, killing.", s.ID)
+			s.CMD.Process.Kill()
+			s.CMD.Wait()
+		}
 	}
 }
 
 // ExecuteCommand executes a single command and returns when complete
 func (s *PTYSession) ExecuteCommand(command string) error {
-	return s.WriteString(command + "\n")
+	return s.WriteString(command + `
+		`)
 }
 
 // ReadUntilPrompt reads output until a shell prompt appears (basic implementation)
 func (s *PTYSession) ReadUntilPrompt(timeout int) ([]byte, error) {
-	// This is a simplified implementation
-	// In production, you'd want more sophisticated prompt detection
 	buffer := make([]byte, 4096)
 	n, err := s.PTY.Read(buffer)
 	if err != nil {

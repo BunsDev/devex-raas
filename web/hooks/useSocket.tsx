@@ -7,6 +7,8 @@ export type Events = {
   updateContentResponse: (data: any) => void;
   terminalResponse: (data: any) => void;
   terminalClosed: (data: any) => void;
+  terminalConnected: (data: any) => void;
+  terminalError: (data: any) => void;
 };
 
 type EventHandler = (...args: any[]) => void;
@@ -29,6 +31,7 @@ export function useRunnerSocket(replId: string) {
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const url = `${protocol}://${process.env.NEXT_PUBLIC_RUNNER_DOMAIN_NAME}/${replId}/api/v1/repl/ws`;
+    const testingUrl = "ws://localhost:8081/api/v1/repl/ws";
 
     const socket: Socket = new WebSocket(url);
 

@@ -7,9 +7,8 @@ import (
 	"github.com/parthkapoor-dev/runner/pkg/ws"
 )
 
-// Request/Response structures for typed handlers
 type FetchDirRequest struct {
-	Dir string `json:"dir"`
+	Dir string `json:"Dir"`
 }
 
 type FetchContentRequest struct {
@@ -22,16 +21,14 @@ type UpdateContentRequest struct {
 }
 
 type TerminalDataRequest struct {
-	Data string `json:"data"`
+	Data      string `json:"data"`
+	SessionID string `json:"sessionId"`
 }
 
-type TerminalResponse struct {
-	Data []byte `json:"data"`
-}
-
-// EmitTyped sends a strongly-typed message
-func EmitTyped[T any](ws *ws.WSHandler, event string, data T) error {
-	return ws.Emit(event, data)
+type TerminalResizeRequest struct {
+	Cols      int    `json:"cols"`
+	Rows      int    `json:"rows"`
+	SessionID string `json:"sessionId"`
 }
 
 // OnTyped registers a strongly-typed event handler
