@@ -31,8 +31,6 @@ func pingRunner(url string) error {
 				log.Println("Error reading response:", err)
 				continue
 			}
-
-			// Directly compare with the expected string including quotes and newline
 			if string(body) == "\"pong\"\n" {
 				log.Println("Received 'pong' from", url)
 				return nil

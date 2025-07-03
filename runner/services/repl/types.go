@@ -20,6 +20,37 @@ type UpdateContentRequest struct {
 	Patch string `json:"patch"`
 }
 
+type CreateFolderRequest struct {
+	Path string `json:"path"`
+}
+
+type DeleteRequest struct {
+	Path string `json:"path"`
+}
+
+type RenameRequest struct {
+	OldPath string `json:"oldPath"`
+	NewPath string `json:"newPath"`
+}
+
+type CopyRequest struct {
+	SourcePath string `json:"sourcePath"`
+	TargetPath string `json:"targetPath"`
+}
+
+type CutRequest struct {
+	SourcePath string `json:"sourcePath"`
+}
+
+type PasteRequest struct {
+	TargetPath string `json:"targetPath"`
+}
+
+type CreateFileRequest struct {
+	Path string `json:"path"`
+	Name string `json:"name"`
+}
+
 type TerminalDataRequest struct {
 	Data      string `json:"data"`
 	SessionID string `json:"sessionId"`

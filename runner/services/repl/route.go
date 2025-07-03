@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -20,6 +21,7 @@ var (
 	once       sync.Once
 )
 
+// Existing request structures (assumed)
 func getPTYManager() *pty.PTYManager {
 	once.Do(func() {
 		ptyManager = pty.NewPTYManager()
@@ -30,7 +32,6 @@ func getPTYManager() *pty.PTYManager {
 func NewHandler(sm *shutdown.ShutdownManager) http.Handler {
 	mux := http.NewServeMux()
 	ptyManager = getPTYManager()
-
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		wsHandler := ws.NewWSHandler(strings.Split(r.Host, ".")[0], sm)
 		handleWs(w, r, wsHandler, ptyManager)
@@ -48,7 +49,6 @@ func generateSessionID() string {
 }
 
 func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, ptyManager *pty.PTYManager) {
-
 	if err := ws.Init(w, r); err != nil {
 		log.Printf("Failed to initialize websocket: %v", err)
 		return
@@ -65,6 +65,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, ptyManag
 		})
 	})
 
+	// File Tree Actions
 	OnTyped(ws, "fetchDir", func(req FetchDirRequest) {
 		contents, err := fs.FetchDir("/workspaces", req.Dir)
 		if err != nil {
@@ -97,6 +98,100 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, ptyManag
 		ws.Emit("updateContentResponse", map[string]any{"success": true})
 	})
 
+	OnTyped(ws, "createFile", func(req CreateFileRequest) {
+		fullPath := filepath.Join("/workspaces", req.Path)
+		err := fs.CreateFile(fullPath)
+		if err != nil {
+			log.Printf("Error creating file: %v", err)
+			ws.Emit("createFileResponse", map[string]any{"error": err.Error()})
+			return
+		}
+		ws.Emit("createFileResponse", map[string]any{"success": true, "path": req.Path})
+	})
+
+	OnTyped(ws, "createFolder", func(req CreateFolderRequest) {
+		fullPath := filepath.Join("/workspaces", req.Path)
+		err := fs.CreateFolder(fullPath)
+		if err != nil {
+			log.Printf("Error creating folder: %v", err)
+			ws.Emit("createFolderResponse", map[string]any{"error": err.Error()})
+			return
+		}
+		ws.Emit("createFolderResponse", map[string]any{"success": true, "path": req.Path})
+	})
+
+	OnTyped(ws, "delete", func(req DeleteRequest) {
+		fullPath := filepath.Join("/workspaces", req.Path)
+		err := fs.Delete(fullPath)
+		if err != nil {
+			log.Printf("Error deleting: %v", err)
+			ws.Emit("deleteResponse", map[string]any{"error": err.Error()})
+			return
+		}
+		ws.Emit("deleteResponse", map[string]any{"success": true, "path": req.Path})
+	})
+
+	OnTyped(ws, "rename", func(req RenameRequest) {
+		oldFullPath := filepath.Join("/workspaces", req.OldPath)
+		newFullPath := filepath.Join("/workspaces", req.NewPath)
+		err := fs.Rename(oldFullPath, newFullPath)
+		if err != nil {
+			log.Printf("Error renaming: %v", err)
+			ws.Emit("renameResponse", map[string]any{"error": err.Error()})
+			return
+		}
+		ws.Emit("renameResponse", map[string]any{
+			"success": true,
+			"oldPath": req.OldPath,
+			"newPath": req.NewPath,
+		})
+	})
+
+	OnTyped(ws, "copy", func(req CopyRequest) {
+		sourceFullPath := filepath.Join("/workspaces", req.SourcePath)
+		targetFullPath := filepath.Join("/workspaces", req.TargetPath)
+		err := fs.Copy(sourceFullPath, targetFullPath)
+		if err != nil {
+			log.Printf("Error copying: %v", err)
+			ws.Emit("copyResponse", map[string]any{"error": err.Error()})
+			return
+		}
+		ws.Emit("copyResponse", map[string]any{
+			"success":    true,
+			"sourcePath": req.SourcePath,
+			"targetPath": req.TargetPath,
+		})
+	})
+
+	OnTyped(ws, "cut", func(req CutRequest) {
+		sourceFullPath := filepath.Join("/workspaces", req.SourcePath)
+		err := fs.Cut(sourceFullPath)
+		if err != nil {
+			log.Printf("Error cutting: %v", err)
+			ws.Emit("cutResponse", map[string]any{"error": err.Error()})
+			return
+		}
+		ws.Emit("cutResponse", map[string]any{
+			"success":    true,
+			"sourcePath": req.SourcePath,
+		})
+	})
+
+	OnTyped(ws, "paste", func(req PasteRequest) {
+		targetFullPath := filepath.Join("/workspaces", req.TargetPath)
+		err := fs.Paste(targetFullPath)
+		if err != nil {
+			log.Printf("Error pasting: %v", err)
+			ws.Emit("pasteResponse", map[string]any{"error": err.Error()})
+			return
+		}
+		ws.Emit("pasteResponse", map[string]any{
+			"success":    true,
+			"targetPath": req.TargetPath,
+		})
+	})
+
+	// Terminal Actions
 	ws.On("requestTerminal", func(data any) {
 		sessionID := generateSessionID()
 		if sessionID == "" {
