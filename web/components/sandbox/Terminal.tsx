@@ -276,7 +276,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
       onTerminalResize,
       theme = defaultTheme,
       fontSize = 14,
-      fontFamily = '"Cascadia Code", "Fira Code", "SF Mono", Monaco, "Inconsolata", "Roboto Mono", "Source Code Pro", monospace',
+      fontFamily = 'Monaspace, "Cascadia Code", "Fira Code", "SF Mono", Monaco, "Inconsolata", "Roboto Mono", "Source Code Pro"',
       cols = 80,
       rows = 24,
       onReady,

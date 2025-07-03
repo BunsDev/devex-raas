@@ -1,6 +1,6 @@
 "use client";
 
-import Sandbox from "@/components/sandbox";
+import Sandbox from "@/components/sandbox/index";
 import { Button } from "@/components/ui/button";
 import { useRunnerSocket } from "@/hooks/useSocket";
 import Link from "next/link";

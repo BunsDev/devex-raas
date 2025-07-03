@@ -132,8 +132,8 @@ code,
 pre,
 .font-mono {
     font-family:
-        "SF Mono", Monaco, "Inconsolata", "Roboto Mono", "Source Code Pro",
-        monospace;
+        monospace, "SF Mono", Monaco, "Inconsolata", "Roboto Mono",
+        "Source Code Pro";
 }
 
 /* Animation utilities */

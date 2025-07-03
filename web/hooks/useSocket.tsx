@@ -9,6 +9,14 @@ export type Events = {
   terminalClosed: (data: any) => void;
   terminalConnected: (data: any) => void;
   terminalError: (data: any) => void;
+  copyResponse: (data: any) => void;
+  renameResponse: (data: any) => void;
+  deleteResponse: (data: any) => void;
+  createFolderResponse: (data: any) => void;
+  createFileResponse: (data: any) => void;
+  cutResponse: (data: any) => void;
+  pasteResponse: (data: any) => void;
+  error: (data: any) => void;
 };
 
 type EventHandler = (...args: any[]) => void;
