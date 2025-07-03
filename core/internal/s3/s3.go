@@ -202,3 +202,51 @@ func (s *S3Client) ListObjects(prefix string) error {
 
 	return nil
 }
+
+func (s *S3Client) DeleteFolder(folderPrefix string) error {
+	var continuationToken *string
+
+	for {
+		// Step 1: List objects under the folder prefix
+		listInput := &s3.ListObjectsV2Input{
+			Bucket:            aws.String(spacesBucket),
+			Prefix:            aws.String(folderPrefix),
+			ContinuationToken: continuationToken,
+		}
+
+		output, err := s.client.ListObjectsV2(s.ctx, listInput)
+		if err != nil {
+			return fmt.Errorf("❌ Failed to list objects: %w", err)
+		}
+
+		if len(output.Contents) == 0 && continuationToken == nil {
+			log.Println("⚠️ No objects found under prefix:", folderPrefix)
+			return nil
+		}
+
+		// Step 2: Delete each object
+		for _, obj := range output.Contents {
+			deleteInput := &s3.DeleteObjectInput{
+				Bucket: aws.String(spacesBucket),
+				Key:    obj.Key,
+			}
+
+			_, err := s.client.DeleteObject(s.ctx, deleteInput)
+			if err != nil {
+				log.Printf("❌ Failed to delete object %s: %v", *obj.Key, err)
+				continue
+			}
+
+			log.Printf("✅ Deleted %s", *obj.Key)
+		}
+
+		// Step 3: Handle pagination
+		if output.IsTruncated != nil && *output.IsTruncated {
+			continuationToken = output.NextContinuationToken
+		} else {
+			break
+		}
+	}
+
+	return nil
+}

@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/parthkapoor-dev/core/models"
@@ -49,6 +50,35 @@ func (r *Redis) CreateRepl(username, replName, replID string) error {
 
 	if err := r.client.SAdd(r.ctx, "user:"+username, replID).Err(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *Redis) DeleteRepl(replID string) error {
+	// Get the repl data to find the username
+	replData, err := r.client.HGetAll(r.ctx, "repl:"+replID).Result()
+	if err != nil {
+		return fmt.Errorf("failed to get repl data: %w", err)
+	}
+
+	if len(replData) == 0 {
+		return fmt.Errorf("repl not found: %s", replID)
+	}
+
+	username := replData["user"]
+	if username == "" {
+		return fmt.Errorf("no user found for repl: %s", replID)
+	}
+
+	// Remove repl from user's set
+	if err := r.client.SRem(r.ctx, "user:"+username, replID).Err(); err != nil {
+		return fmt.Errorf("failed to remove repl from user set: %w", err)
+	}
+
+	// Delete the repl hash
+	if err := r.client.Del(r.ctx, "repl:"+replID).Err(); err != nil {
+		return fmt.Errorf("failed to delete repl: %w", err)
 	}
 
 	return nil
