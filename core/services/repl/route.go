@@ -12,6 +12,7 @@ import (
 	"github.com/parthkapoor-dev/core/internal/redis"
 	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/models"
+	"github.com/parthkapoor-dev/core/pkg/dotenv"
 	"github.com/parthkapoor-dev/core/pkg/json"
 )
 
@@ -120,6 +121,13 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 
 	if err := k8s.CreateReplDeploymentAndService(userName, replId); err != nil {
 		log.Println("K8s Deployment Failed", err)
+		json.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	url := fmt.Sprintf("https://%s/%s/ping", dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost:8081"), replId)
+
+	if err := pingRunner(url); err != nil {
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

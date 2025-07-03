@@ -28,9 +28,10 @@ func (api *APIServer) Run() error {
 	sm := shutdown.NewShutdownManager(dotenv.EnvString("REPL_ID", "repl_id_not_found"), shutdownCallback)
 
 	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler(sm)))
-	router.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("testing")
-		json.WriteJSON(w, http.StatusOK, "we are getting successful")
+
+	router.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("ping-pong")
+		json.WriteJSON(w, http.StatusOK, "pong")
 	})
 
 	c := cors.New(cors.Options{
