@@ -51,6 +51,7 @@ interface ReplDashboardProps {
   getRepls: () => Promise<StoredRepl[]>;
   createRepl: (templateKey: string, replName: string) => Promise<void>;
   startRepl: (replId: string) => Promise<void>;
+  deleteReplSession: (replId: string) => Promise<void>;
   deleteRepl: (replId: string) => Promise<void>;
 }
 
@@ -59,6 +60,7 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
   getRepls,
   createRepl,
   startRepl,
+  deleteReplSession,
   deleteRepl,
 }) => {
   const [repls, setRepls] = useState<StoredRepl[]>([]);
@@ -115,6 +117,18 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
       await loadRepls();
     } catch (error) {
       console.error("Error starting repl:", error);
+    } finally {
+      setActionLoading({ ...actionLoading, [replId]: null });
+    }
+  };
+
+  const handleDeleteReplSession = async (replId: string) => {
+    try {
+      setActionLoading({ ...actionLoading, [replId]: "deleting" });
+      await deleteReplSession(replId);
+      await loadRepls();
+    } catch (error) {
+      console.error("Error deleting repl:", error);
     } finally {
       setActionLoading({ ...actionLoading, [replId]: null });
     }
@@ -299,7 +313,7 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
                             Open <ArrowRight className="w-3 h-3" />
                           </Link>
                           <button
-                            onClick={() => handleDeleteRepl(repl.id)}
+                            onClick={() => handleDeleteReplSession(repl.id)}
                             disabled={actionLoading[repl.id] === "deleting"}
                             className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors duration-200 font-medium text-xs"
                           >

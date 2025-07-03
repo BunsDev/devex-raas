@@ -30,11 +30,14 @@ func NewHandler(s3Client *s3.S3Client, rds *redis.Redis) http.Handler {
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		getUserRepls(w, r, rds)
 	})
-	mux.HandleFunc("GET /{replId}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /session/{replId}", func(w http.ResponseWriter, r *http.Request) {
 		startReplSession(w, r, rds)
 	})
-	mux.HandleFunc("DELETE /{replId}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("DELETE /session/{replId}", func(w http.ResponseWriter, r *http.Request) {
 		endReplSession(w, r, rds)
+	})
+	mux.HandleFunc("DELETE /{replId}", func(w http.ResponseWriter, r *http.Request) {
+		deleteRepl(w, r, s3Client, rds)
 	})
 
 	return mux
@@ -56,6 +59,13 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 	id := uuid.New()
 	replID := strings.TrimSpace(id.String())
 
+	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
+	if err := s3Client.CopyFolder(repl.Template, destinationPrefix); err != nil {
+		log.Println("S3 CopyTemplate is giving Err: ", err)
+		json.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	// Create Repl in Store
 	if err := rds.CreateRepl(userName, repl.ReplName, replID); err != nil {
 		log.Println(err)
@@ -63,9 +73,43 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 		return
 	}
 
-	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
-	if err := s3Client.CopyFolder(repl.Template, destinationPrefix); err != nil {
-		log.Println("S3 CopyTemplate is giving Err: ", err)
+	json.WriteJSON(w, http.StatusOK, "Success")
+}
+
+func deleteRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds *redis.Redis) {
+
+	user, _ := middleware.GetUserFromContext(r.Context())
+	userName := strings.ToLower(user.Login)
+
+	replId := r.PathValue("replId")
+
+	repl, err := rds.GetRepl(replId)
+	if err != nil {
+		json.WriteError(w, http.StatusBadRequest, "This Repl Id doesn't exists")
+		return
+	}
+	if repl.User != userName {
+		json.WriteError(w, http.StatusUnauthorized, "This User doesn't have access to this Repl")
+		return
+	}
+
+	if repl.IsActive == true {
+		if val, err := rds.DeleteReplSession(replId); err != nil || val == 0 {
+			json.WriteError(w, http.StatusInternalServerError, "Unable to Create Repl Session")
+			return
+		}
+	}
+
+	destination := fmt.Sprintf("repl/%s/%s/", userName, repl.Id)
+	if err := s3Client.DeleteFolder(destination); err != nil {
+		log.Println("Delete S3 is giving Err: ", err)
+		json.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Create Repl in Store
+	if err := rds.DeleteRepl(repl.Id); err != nil {
+		log.Println(err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

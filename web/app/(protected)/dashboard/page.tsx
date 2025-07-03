@@ -42,7 +42,10 @@ function DashboardComponent() {
       throw err;
     }
   };
-  const deleteRepl = async (name: string) => await core.deleteRepl(name);
+  const deleteReplSession = async (name: string) =>
+    await core.deleteReplSession(name);
+  const deleteRepl = async (replId: string) =>
+    await core.deleteReplById(replId);
 
   useEffect(() => {
     const isMobile = window.innerWidth < 640;
@@ -88,7 +91,7 @@ function DashboardComponent() {
                       getRepls={getRepls}
                       createRepl={createRepl}
                       startRepl={startRepl}
-                      deleteRepl={deleteRepl}
+                      deleteReplSession={deleteReplSession}
                     />
                   )}
                   {activeTab === "ui" && (
@@ -97,6 +100,7 @@ function DashboardComponent() {
                       getRepls={getRepls}
                       createRepl={createRepl}
                       startRepl={startRepl}
+                      deleteReplSession={deleteReplSession}
                       deleteRepl={deleteRepl}
                     />
                   )}

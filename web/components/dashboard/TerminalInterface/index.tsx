@@ -28,7 +28,7 @@ interface TerminalInterfaceProps {
   getRepls: () => Promise<StoredRepl[]>;
   createRepl: (templateKey: string, replName: string) => Promise<void>;
   startRepl: (replId: string) => Promise<void>;
-  deleteRepl: (replId: string) => Promise<void>;
+  deleteReplSession: (replId: string) => Promise<void>;
 }
 
 const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
@@ -36,7 +36,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
   getRepls,
   createRepl,
   startRepl,
-  deleteRepl,
+  deleteReplSession,
 }) => {
   // Initialize command system
   const commandRegistry = createCommandRegistry();
@@ -191,7 +191,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
     getRepls,
     createRepl,
     startRepl,
-    deleteRepl,
+    deleteReplSession,
     setHistory,
     repls,
     setRepls,

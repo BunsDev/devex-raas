@@ -24,7 +24,7 @@ export interface CommandExecutionContext {
   getRepls: () => Promise<StoredRepl[]>;
   createRepl: (templateKey: string, replName: string) => Promise<void>;
   startRepl: (replId: string) => Promise<void>;
-  deleteRepl: (replId: string) => Promise<void>;
+  deleteReplSession: (replId: string) => Promise<void>;
   setHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
   repls: StoredRepl[];
   setRepls: React.Dispatch<React.SetStateAction<StoredRepl[]>>;

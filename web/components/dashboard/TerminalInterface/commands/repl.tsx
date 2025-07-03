@@ -126,7 +126,7 @@ export const replCommand: Command = {
             return `❌ Error: Repl with name "${replName}" not found.\n${repls.length > 0 ? `Available repls: ${availableRepls}` : "No repls found."}\n\n💡 Use 'repl list' to see all available repls.`;
           }
 
-          await context.deleteRepl(repl.id);
+          await context.deleteReplSession(repl.id);
           return `🗑️ Successfully deactivated repl "${repl.name}"\n   ID: ${repl.id}\n\n💡 Use 'repl create <name> <template>' to create a new repl.`;
         } catch (error: any) {
           return `❌ Error deactivating repl: ${error.message || "Unknown error"}`;

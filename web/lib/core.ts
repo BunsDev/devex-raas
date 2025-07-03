@@ -74,7 +74,7 @@ export class CoreService {
   async startRepl(replName: string) {
     try {
       return (
-        await axios.get(this.url(`/api/repl/${replName}`), {
+        await axios.get(this.url(`/api/repl/session/${replName}`), {
           withCredentials: true,
           headers: {
             "Content-Type": "application/json",
@@ -87,9 +87,23 @@ export class CoreService {
     }
   }
 
-  async deleteRepl(replName: string) {
+  async deleteReplSession(replName: string) {
     try {
-      await axios.delete(this.url(`/api/repl/${replName}`), {
+      await axios.delete(this.url(`/api/repl/session/${replName}`), {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.log("error:", error);
+      throw error;
+    }
+  }
+
+  async deleteReplById(replId: string) {
+    try {
+      await axios.delete(this.url(`/api/repl/${replId}`), {
         withCredentials: true,
         headers: {
           "Content-Type": "application/json",
