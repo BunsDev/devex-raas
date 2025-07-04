@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/parthkapoor-dev/runner/cmd/proxy"
 	"github.com/parthkapoor-dev/runner/pkg/dotenv"
 	"github.com/parthkapoor-dev/runner/pkg/json"
 	"github.com/parthkapoor-dev/runner/pkg/shutdown"
@@ -27,7 +28,11 @@ func (api *APIServer) Run() error {
 	router := http.NewServeMux()
 	sm := shutdown.NewShutdownManager(dotenv.EnvString("REPL_ID", "repl_id_not_found"), shutdownCallback)
 
+	// background repl services
 	router.Handle("/api/v1/repl/", http.StripPrefix("/api/v1/repl", repl.NewHandler(sm)))
+
+	// user app usage
+	router.HandleFunc("/user-app/", proxy.ReverseProxyHandler)
 
 	router.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("ping-pong")
