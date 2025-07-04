@@ -980,7 +980,11 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                     />
                   )}
                   {activeBottomPanel === "output" && outputVisible && (
-                    <Output isVisible={outputVisible} className="h-full" />
+                    <Output
+                      replId={slug as string}
+                      isVisible={outputVisible}
+                      className="h-full"
+                    />
                   )}
                 </div>
               </div>
@@ -1165,6 +1169,7 @@ const Sandbox: React.FC<SandboxProps> = ({ slug }) => {
                             )}
                           {activeBottomPanel === "output" && outputVisible && (
                             <Output
+                              replId={slug as string}
                               isVisible={outputVisible}
                               className="h-full"
                             />
