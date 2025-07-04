@@ -1,7 +1,11 @@
 import Link from "next/link";
 export default function GithubStarButton() {
   return (
-    <Link href={"https://github.com/parthkapoor-dev/devex"} target="_blank">
+    <Link
+      href={"https://github.com/parthkapoor-dev/devex"}
+      target="_blank"
+      // className=" font-mono"
+    >
       <button className="group relative dark:bg-neutral-800 bg-neutral-200 rounded-full p-px mb-4 overflow-hidden">
         <span className="absolute inset-0 rounded-full overflow-hidden">
           <span className="inset-0 absolute pointer-events-none select-none">
@@ -66,7 +70,12 @@ export default function GithubStarButton() {
             ></span>
           </span>
           <span className="bg-gradient-to-b ml-1.5 dark:from-white dark:to-white/50 from-neutral-950 to-neutral-950/50 bg-clip-text text-xs text-transparent group-hover:scale-105 transition transform-gpu">
-            Star @parthkapoor-dev/devex on Github
+            Star{" "}
+            <span className=" font-mono text-teal-400 font-bold ">
+              {" "}
+              @parthkapoor-dev/devex{" "}
+            </span>{" "}
+            on Github
           </span>
         </span>
       </button>
