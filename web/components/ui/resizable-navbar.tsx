@@ -15,6 +15,7 @@ import {
 } from "motion/react";
 
 import React, { useRef, useState } from "react";
+import { Cmd } from "../commandMenu";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -175,6 +176,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
           <span className="relative z-20">{item.name}</span>
         </a>
       ))}
+      <Cmd />
     </motion.div>
   );
 };

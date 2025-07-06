@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Cmd } from "./commandMenu";
 
 export default function Header() {
   const router = useRouter();
@@ -143,7 +144,8 @@ export default function Header() {
               </div>
 
               {/* Action Button */}
-              <div className="w-full border-t border-gray-200 dark:border-neutral-700 pt-4">
+              <div className="w-full border-t border-gray-200 dark:border-neutral-700 pt-4 flex flex-col gap-4">
+                <Cmd />
                 <NavbarButton
                   onClick={() => {
                     handleCall();
@@ -172,6 +174,7 @@ export default function Header() {
 
               {/* Action Buttons for Unauthenticated Users */}
               <div className="flex w-full flex-col gap-4">
+                <Cmd />
                 <NavbarButton
                   onClick={() => {
                     setIsMobileMenuOpen(false);
