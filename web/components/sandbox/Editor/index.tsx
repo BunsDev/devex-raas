@@ -25,6 +25,8 @@ import React, {
 } from "react";
 
 import { diff_match_patch } from "diff-match-patch";
+import EditorSettingsPopup from "./settings";
+import { Button } from "@/components/ui/button";
 
 // Dynamically import Monaco Editor (SSR disabled)
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -134,27 +136,6 @@ const Editor = ({
   );
 
   // Handlers
-  const handleUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        const content = e.target?.result as string;
-        setCode(content);
-        if (editor) {
-          editor.setValue(content);
-        }
-        // Try to detect language from file extension
-        const ext = file.name.split(".").pop()?.toLowerCase();
-        const detectedLang = detectLanguageFromExtension(ext);
-        if (detectedLang) {
-          setLanguage(detectedLang);
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
   function handleCodeChange(newValue: string) {
     const currentCode = (newValue || "").replace(/\r\n/g, "\n");
     const prevCode = prevCodeRef.current.replace(/\r\n/g, "\n");
@@ -270,7 +251,35 @@ const Editor = ({
     setIsRunning(false);
   }, [code, language]);
 
-  const handleDownload = useCallback((): void => {
+  const formatCode = useCallback((): void => {
+    if (editorRef.current) {
+      editorRef.current.getAction("editor.action.formatDocument").run();
+    }
+  }, []);
+
+  // settings handler
+  const handleUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const content = e.target?.result as string;
+        setCode(content);
+        if (editor) {
+          editor.setValue(content);
+        }
+        // Try to detect language from file extension
+        const ext = file.name.split(".").pop()?.toLowerCase();
+        const detectedLang = detectLanguageFromExtension(ext);
+        if (detectedLang) {
+          setLanguage(detectedLang);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleFileDownload = useCallback((): void => {
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -280,15 +289,35 @@ const Editor = ({
     URL.revokeObjectURL(url);
   }, [code, language]);
 
-  const formatCode = useCallback((): void => {
-    if (editorRef.current) {
-      editorRef.current.getAction("editor.action.formatDocument").run();
-    }
-  }, []);
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+  };
 
-  const toggleFullscreen = useCallback((): void => {
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+  };
+
+  const handleFullScreenChange = () => {
     setIsFullscreen((prev) => !prev);
-  }, []);
+  };
+
+  const handleFontSizeChange = (newFontSize: number) => {
+    setFontSize(newFontSize);
+  };
+
+  const handleWordWrapChange = (
+    newWordWrap: "off" | "on" | "wordWrapColumn",
+  ) => {
+    setWordWrap(newWordWrap);
+  };
+
+  const handleMinimapChange = (newMinimap: boolean) => {
+    setMinimap(newMinimap);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettings(false);
+  };
 
   return (
     <div
@@ -296,7 +325,14 @@ const Editor = ({
         isFullscreen ? "fixed inset-0 z-50 rounded-none" : "h-full"
       }`}
     >
-      {/* Enhanced Editor Container */}
+      <Button
+        onClick={() => setShowSettings(true)}
+        className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+        title="Settings"
+      >
+        <Settings className="h-4 w-4" />
+      </Button>
+      {/* Editor Container */}
       <div className="flex-1 relative overflow-hidden">
         {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_1px_1px,_rgba(16,185,129,0.3)_1px,_transparent_0)] bg-[length:20px_20px]" />
@@ -338,6 +374,26 @@ const Editor = ({
           box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
         }
       `}</style>
+      {showSettings && (
+        <EditorSettingsPopup
+          language={language}
+          isFullScreen={isFullscreen}
+          theme={theme}
+          fontSize={fontSize}
+          wordWrap={wordWrap}
+          minimap={minimap}
+          languages={languages}
+          themes={themes}
+          onThemeChange={handleThemeChange}
+          onFontSizeChange={handleFontSizeChange}
+          onWordWrapChange={handleWordWrapChange}
+          onMinimapChange={handleMinimapChange}
+          onClose={handleCloseSettings}
+          onUpload={handleUpload}
+          onFileDownload={handleFileDownload}
+          onFullScreenMode={handleFullScreenChange}
+        />
+      )}
     </div>
   );
 };
