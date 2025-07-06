@@ -14,12 +14,14 @@ import {
   useMotionValueEvent,
 } from "motion/react";
 
-import React, { useRef, useState } from "react";
+import React, { RefObject, useRef, useState } from "react";
 import { Cmd } from "../commandMenu";
 
 interface NavbarProps {
   children: React.ReactNode;
   className?: string;
+  visible: boolean;
+  ref: RefObject<HTMLDivElement | null>;
 }
 
 interface NavBodyProps {
@@ -66,6 +68,7 @@ interface UserProfileDropdownProps {
   };
   onLogout: () => void;
   className?: string;
+  visible: boolean;
 }
 
 interface MobileUserProfileProps {
@@ -82,22 +85,7 @@ interface MobileUserProfileProps {
   className?: string;
 }
 
-export const Navbar = ({ children, className }: NavbarProps) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
-  const [visible, setVisible] = useState<boolean>(false);
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 100) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-    }
-  });
-
+export const Navbar = ({ children, className, visible, ref }: NavbarProps) => {
   return (
     <motion.div
       ref={ref}
@@ -185,6 +173,7 @@ export const UserProfileDropdown = ({
   user,
   onLogout,
   className,
+  visible,
 }: UserProfileDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -199,9 +188,11 @@ export const UserProfileDropdown = ({
           alt={user.name || user.login}
           className="h-8 w-8 rounded-full object-cover"
         />
-        <span className="hidden sm:block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          {user.login}
-        </span>
+        {!visible && (
+          <span className="hidden sm:block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            {user.login}
+          </span>
+        )}
         <IconChevronDown className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
       </button>
 

@@ -15,11 +15,27 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Cmd } from "./commandMenu";
+import { useMotionValueEvent, useScroll } from "motion/react";
 
 export default function Header() {
   const router = useRouter();
+
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+  const [visible, setVisible] = useState<boolean>(false);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    if (latest > 100) {
+      setVisible(true);
+    } else {
+      setVisible(false);
+    }
+  });
   const { user, isAuthenticated, logout } = useAuth();
 
   // Navigation items for unauthenticated users
@@ -68,7 +84,7 @@ export default function Header() {
   const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
 
   return (
-    <Navbar>
+    <Navbar visible={visible} ref={ref}>
       {/* Desktop Navigation */}
       <NavBody>
         <NavbarLogo />
@@ -76,7 +92,11 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {isAuthenticated && user ? (
             <>
-              <UserProfileDropdown user={user} onLogout={handleLogout} />
+              <UserProfileDropdown
+                visible={visible}
+                user={user}
+                onLogout={handleLogout}
+              />
               <NavbarButton variant="primary" onClick={handleCall}>
                 Book a call
               </NavbarButton>

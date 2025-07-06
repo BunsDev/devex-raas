@@ -164,7 +164,7 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
   return (
     <div className="min-h-screen bg-black text-gray-300">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-gray-800 bg-black/50 backdrop-blur-sm sticky top-0 ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center">
@@ -369,7 +369,7 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
 
       {/* Create Repl Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center  p-4">
           <div className="bg-gray-950 border border-gray-800 rounded-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">
