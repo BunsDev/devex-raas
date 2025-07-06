@@ -62,7 +62,7 @@ const Editor = ({
   const [fontSize, setFontSize] = useState<number>(14);
   const [editor, setEditor] = useState<any>(null);
   const [wordWrap, setWordWrap] = useState<"off" | "on" | "wordWrapColumn">(
-    "off",
+    "on",
   );
   const [minimap, setMinimap] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -75,9 +75,12 @@ const Editor = ({
     if (detectedLang) {
       setLanguage(detectedLang);
     }
-    console.log("New File Type: ", fileType);
-    console.log("Extension Detected", detectedLang);
   }, [fileType]);
+
+  // Update Prev Code Ref on code change
+  useEffect(() => {
+    if (prevCodeRef.current != code) prevCodeRef.current = code;
+  }, [code]);
 
   // Supported languages and themes
   const languages = useMemo(
@@ -130,29 +133,6 @@ const Editor = ({
     [fontSize, wordWrap, minimap],
   );
 
-  // Language icon mapping
-  const getLanguageIcon = (lang: string) => {
-    const icons: Record<string, string> = {
-      javascript: "🟨",
-      typescript: "🔷",
-      python: "🐍",
-      java: "☕",
-      cpp: "⚡",
-      c: "⚡",
-      csharp: "🔷",
-      php: "🐘",
-      ruby: "💎",
-      go: "🐹",
-      rust: "🦀",
-      swift: "🍎",
-      kotlin: "🔥",
-      html: "🌐",
-      css: "🎨",
-      json: "📋",
-    };
-    return icons[lang] || "📄";
-  };
-
   // Handlers
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
@@ -176,11 +156,12 @@ const Editor = ({
   };
 
   function handleCodeChange(newValue: string) {
-    const currentCode = newValue || "";
+    const currentCode = (newValue || "").replace(/\r\n/g, "\n");
+    const prevCode = prevCodeRef.current.replace(/\r\n/g, "\n");
 
     const dmp = new diff_match_patch();
-    const diffs = dmp.diff_main(prevCodeRef.current, currentCode);
-    const patchList = dmp.patch_make(prevCodeRef.current, diffs);
+    const diffs = dmp.diff_main(prevCode, currentCode);
+    const patchList = dmp.patch_make(prevCode, diffs);
     const patchText = dmp.patch_toText(patchList);
 
     if (patchText.trim()) {
@@ -218,11 +199,14 @@ const Editor = ({
     ext: string | undefined,
   ): string | undefined => {
     if (!ext) return undefined;
-
     const langMap: Record<string, string> = {
       js: "javascript",
+      jsx: "javascript",
       ts: "typescript",
+      tsx: "typescript",
       py: "python",
+      pyx: "python",
+      pyi: "python",
       java: "java",
       cpp: "cpp",
       c: "c",
@@ -235,12 +219,28 @@ const Editor = ({
       kt: "kotlin",
       html: "html",
       css: "css",
+      scss: "scss",
+      sass: "sass",
       json: "json",
       xml: "xml",
       yml: "yaml",
+      yaml: "yaml",
       md: "markdown",
+      dockerfile: "dockerfile",
+      sh: "shell",
+      bash: "shell",
+      zsh: "shell",
+      sql: "sql",
+      r: "r",
+      scala: "scala",
+      lua: "lua",
+      perl: "perl",
+      vim: "vim",
+      toml: "toml",
+      ini: "ini",
+      env: "dotenv",
     };
-    return langMap[ext];
+    return langMap[ext.toLowerCase()];
   };
 
   const handleEditorMount = useCallback((editor: any, monaco: any) => {
@@ -258,10 +258,6 @@ const Editor = ({
 
   const handleSave = useCallback(async (): Promise<void> => {
     setIsSaving(true);
-    console.log("Saving file...", {
-      language,
-      code: code.substring(0, 100) + "...",
-    });
     // Simulate save delay
     await new Promise((resolve) => setTimeout(resolve, 800));
     setIsSaving(false);
@@ -269,10 +265,6 @@ const Editor = ({
 
   const handleRun = useCallback(async (): Promise<void> => {
     setIsRunning(true);
-    console.log("Running code...", {
-      language,
-      code: code.substring(0, 100) + "...",
-    });
     // Simulate run delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsRunning(false);

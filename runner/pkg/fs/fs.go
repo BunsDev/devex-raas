@@ -38,21 +38,23 @@ func SaveFileDiffs(fullPath, patch string) error {
 		return err
 	}
 	currentText := string(currentBytes)
+
 	dmp := diffmatchpatch.New()
 	patches, err := dmp.PatchFromText(patch)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid patch format: %v", err)
 	}
+
 	newText, results := dmp.PatchApply(patches, currentText)
-	for _, result := range results {
+
+	// Check if any patches failed
+	for i, result := range results {
 		if !result {
-			return fmt.Errorf("failed to apply patch")
+			return fmt.Errorf("patch %d failed to apply", i)
 		}
 	}
-	if err := os.WriteFile(fullPath, []byte(newText), 0644); err != nil {
-		return err
-	}
-	return nil
+
+	return os.WriteFile(fullPath, []byte(newText), 0644)
 }
 
 // CreateFile creates a new file at the specified path
