@@ -123,6 +123,7 @@ const Editor = ({
   const editorOptions: editor.IStandaloneEditorConstructionOptions = useMemo(
     () => ({
       fontSize,
+      fontFamily: "Jetbrains mono",
       wordWrap,
       minimap: { enabled: minimap },
       automaticLayout: true,

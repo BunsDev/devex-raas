@@ -319,11 +319,11 @@ const Sandbox: React.FC<SandboxProps> = ({
   };
 
   return (
-    <div className="h-screen w-full bg-gray-800 flex flex-col pt-12">
+    <div className="h-screen w-full bg-zinc-950 flex flex-col pt-14">
       {/* Mobile header */}
       {isMobile && (
         <div className="h-12 bg-gray-900 border-b border-gray-600 flex items-center justify-between px-3 relative z-50">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -337,7 +337,7 @@ const Sandbox: React.FC<SandboxProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center gap-1">
             <Button
               onClick={() => setShowSettings(true)}
               className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
@@ -354,7 +354,7 @@ const Sandbox: React.FC<SandboxProps> = ({
             >
               <TerminalIcon className="h-3 w-3" />
             </Button>
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center gap-1">
               <div
                 className={`w-2 h-2 rounded-full ${
                   isConnected ? "bg-green-500" : "bg-red-500"
@@ -375,7 +375,7 @@ const Sandbox: React.FC<SandboxProps> = ({
           {/* Mobile menu overlay */}
           {mobileMenuOpen && (
             <div className="absolute top-12 left-0 right-0 bg-gray-900 border-b border-gray-600 p-3 shadow-lg">
-              <div className="flex flex-col space-y-2">
+              <div className="flex flex-col gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -424,7 +424,7 @@ const Sandbox: React.FC<SandboxProps> = ({
 
       {/* Desktop top bar */}
       {!isMobile && (
-        <div className="h-10 bg-gray-800 border-b border-gray-600 flex items-center px-3 space-x-2">
+        <div className="h-10 bg-gray-800 border-b border-gray-600 flex items-center px-3 gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -440,7 +440,7 @@ const Sandbox: React.FC<SandboxProps> = ({
           </Button>
 
           {/* Connection status indicator */}
-          <div className="flex items-center space-x-2 text-xs">
+          <div className="flex items-center gap-2 text-xs">
             <div
               className={`w-2 h-2 rounded-full ${
                 isConnected ? "bg-green-500" : "bg-red-500"
@@ -458,7 +458,7 @@ const Sandbox: React.FC<SandboxProps> = ({
               title={`Terminal: ${terminal.status}`}
             />
           </div>
-          <div className="flex items-center space-x-1 ml-auto">
+          <div className="flex items-center gap-1 ml-auto">
             <Button
               onClick={() => setShowSettings(true)}
               className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
@@ -580,9 +580,9 @@ const Sandbox: React.FC<SandboxProps> = ({
 
             {/* Mobile bottom panel */}
             {!bottomPanelCollapsed && showBottomPanel && (
-              <div className="h-1/2 border-t border-gray-600 flex flex-col">
-                <div className="h-10 bg-gray-200 border-b flex items-center justify-between px-3">
-                  <div className="flex space-x-2">
+              <div className="h-1/2 border-t border-gray-700 flex flex-col">
+                <div className="h-10 bg-gray-800 border-b flex items-center justify-between px-3">
+                  <div className="flex gap-2">
                     <button
                       onClick={() => {
                         setActiveBottomPanel("terminal");
@@ -591,7 +591,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                       className={`px-2 py-1 text-xs rounded transition-colors ${
                         activeBottomPanel === "terminal" && terminalVisible
                           ? "bg-white text-gray-900"
-                          : "text-gray-600 hover:text-gray-900"
+                          : "text-gray-600 hover:text-gray-100"
                       }`}
                     >
                       Terminal
@@ -611,7 +611,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                     </button>
                   </div>
 
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center gap-1">
                     {/* Terminal-specific controls */}
                     {activeBottomPanel === "terminal" && terminalVisible && (
                       <>
@@ -750,10 +750,10 @@ const Sandbox: React.FC<SandboxProps> = ({
                       minSize={15}
                       className={isTerminalMaximized ? "flex-1" : ""}
                     >
-                      <div className="h-full bg-white border-t border-gray-200">
+                      <div className="h-full bg-zinc-900 border-t border-gray-800">
                         {/* Tab buttons for bottom panel */}
-                        <div className="h-8 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-2">
-                          <div className="flex space-x-1">
+                        <div className="h-8 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2">
+                          <div className="flex gap-1">
                             <button
                               onClick={() => {
                                 setActiveBottomPanel("terminal");
@@ -794,7 +794,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                           {/* Terminal-specific controls */}
                           {activeBottomPanel === "terminal" &&
                             terminalVisible && (
-                              <div className="flex items-center space-x-1">
+                              <div className="flex items-center gap-1">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -828,7 +828,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                               </div>
                             )}
 
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
