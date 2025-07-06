@@ -51,11 +51,15 @@ const Editor = ({
   setCode,
   fileType,
   sendDiff,
+  showSettings,
+  setShowSettings,
 }: {
   code: string;
   setCode: React.Dispatch<React.SetStateAction<string>>;
   fileType: string;
   sendDiff: (patch: string) => void;
+  showSettings: boolean;
+  setShowSettings: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const editorRef = useRef<any>(null);
   const [language, setLanguage] = useState<string>("javascript");
@@ -68,7 +72,6 @@ const Editor = ({
   );
   const [minimap, setMinimap] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [showSettings, setShowSettings] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -325,13 +328,6 @@ const Editor = ({
         isFullscreen ? "fixed inset-0 z-50 rounded-none" : "h-full"
       }`}
     >
-      <Button
-        onClick={() => setShowSettings(true)}
-        className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
-        title="Settings"
-      >
-        <Settings className="h-4 w-4" />
-      </Button>
       {/* Editor Container */}
       <div className="flex-1 relative overflow-hidden">
         {/* Subtle background pattern */}
