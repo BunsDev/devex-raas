@@ -1,6 +1,12 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import {
+  IconMenu2,
+  IconX,
+  IconChevronDown,
+  IconLogout,
+  IconUser,
+} from "@tabler/icons-react";
 import {
   motion,
   AnimatePresence,
@@ -46,6 +52,33 @@ interface MobileNavMenuProps {
   className?: string;
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface UserProfileDropdownProps {
+  user: {
+    id: number;
+    login: string;
+    name: string;
+    email: string;
+    avatar_url: string;
+    created_at: string;
+  };
+  onLogout: () => void;
+  className?: string;
+}
+
+interface MobileUserProfileProps {
+  user: {
+    id: number;
+    login: string;
+    name: string;
+    email: string;
+    avatar_url: string;
+    created_at: string;
+  };
+  onLogout: () => void;
+  onClose: () => void;
+  className?: string;
 }
 
 export const Navbar = ({ children, className }: NavbarProps) => {
@@ -146,6 +179,147 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   );
 };
 
+export const UserProfileDropdown = ({
+  user,
+  onLogout,
+  className,
+}: UserProfileDropdownProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className={cn("relative", className)}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+      >
+        <img
+          src={user.avatar_url}
+          alt={user.name || user.login}
+          className="h-8 w-8 rounded-full object-cover"
+        />
+        <span className="hidden sm:block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          {user.login}
+        </span>
+        <IconChevronDown className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-[70]"
+              onClick={() => setIsOpen(false)}
+            />
+
+            {/* Dropdown Menu */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute right-0 top-full mt-2 w-48 z-[80] rounded-lg bg-white dark:bg-neutral-900 shadow-[0_0_24px_rgba(34,_42,_53,_0.06),_0_1px_1px_rgba(0,_0,_0,_0.05),_0_0_0_1px_rgba(34,_42,_53,_0.04),_0_0_4px_rgba(34,_42,_53,_0.08),_0_16px_68px_rgba(47,_48,_55,_0.05),_0_1px_0_rgba(255,_255,_255,_0.1)_inset] border border-gray-200 dark:border-neutral-700"
+            >
+              <div className="p-3 border-b border-gray-200 dark:border-neutral-700">
+                <div className="flex items-center gap-2">
+                  <img
+                    src={user.avatar_url}
+                    alt={user.name || user.login}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                      {user.name || user.login}
+                    </div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                      @{user.login}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="py-2">
+                <a
+                  href="https://parthkapoor.me"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <IconUser className="h-4 w-4" />
+                  Visit Developer
+                </a>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    onLogout();
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+                >
+                  <IconLogout className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export const MobileUserProfile = ({
+  user,
+  onLogout,
+  onClose,
+  className,
+}: MobileUserProfileProps) => {
+  return (
+    <div className={cn("w-full", className)}>
+      <div className="flex items-center gap-3 p-3 border-b border-gray-200 dark:border-neutral-700">
+        <img
+          src={user.avatar_url}
+          alt={user.name || user.login}
+          className="h-10 w-10 rounded-full object-cover"
+        />
+        <div>
+          <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            {user.name || user.login}
+          </div>
+          <div className="text-xs text-neutral-500 dark:text-neutral-400">
+            @{user.login}
+          </div>
+        </div>
+      </div>
+
+      <div className="py-2">
+        <a
+          href="https://parthkapoor.me"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+          onClick={onClose}
+        >
+          <IconUser className="h-4 w-4" />
+          Visit Developer
+        </a>
+
+        <button
+          onClick={() => {
+            onClose();
+            onLogout();
+          }}
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+        >
+          <IconLogout className="h-4 w-4" />
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   return (
     <motion.div
@@ -225,9 +399,15 @@ export const MobileNavToggle = ({
   onClick: () => void;
 }) => {
   return isOpen ? (
-    <IconX className="text-black dark:text-white" onClick={onClick} />
+    <IconX
+      className="text-black dark:text-white cursor-pointer"
+      onClick={onClick}
+    />
   ) : (
-    <IconMenu2 className="text-black dark:text-white" onClick={onClick} />
+    <IconMenu2
+      className="text-black dark:text-white cursor-pointer"
+      onClick={onClick}
+    />
   );
 };
 
