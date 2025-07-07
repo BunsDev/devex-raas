@@ -151,7 +151,7 @@ const CommandMenuContent = React.forwardRef<
           e.preventDefault();
           // Logic will be handled by CommandMenuList
         } else if (e.key === "Enter") {
-          e.preventDefault();
+          // e.preventDefault();
           // Logic will be handled by CommandMenuItem
         }
       };
@@ -309,7 +309,7 @@ const CommandMenuList = React.forwardRef<
         type={scrollType}
         scrollHideDelay={scrollHideDelay}
       >
-        <div className="space-y-1 p-1">{children}</div>
+        <div className="flex flex-col gap-1 p-1">{children}</div>
       </ScrollArea>
     </div>
   );
@@ -465,6 +465,21 @@ export const useCommandMenuShortcut = (callback: () => void) => {
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        callback();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [callback]);
+};
+
+// Hook for global keyboard shortcut
+export const useFinderMenuShortcut = (callback: () => void) => {
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "p" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         callback();
       }

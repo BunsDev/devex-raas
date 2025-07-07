@@ -50,12 +50,12 @@ export default function StartReplCard({ link, replName, onClose }: CardProps) {
           </Button>
         </CardHeader>
         <CardContent className="pt-6 pb-0 font-mono">
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <div className="flex items-center space-x-2">
               <span className="text-muted-foreground">$</span>
               <span>status</span>
             </div>
-            <div className="space-y-1 pl-6">
+            <div className="flex flex-col gap-1 pl-6">
               <p className="text-3xl font-bold">200</p>
               <p className="text-muted-foreground">Repl Session Started</p>
             </div>
