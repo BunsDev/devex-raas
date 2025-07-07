@@ -214,7 +214,7 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
           </div>
 
           {loading ? (
-            <div className="p-4 space-y-2">
+            <div className="p-4 flex flex-col gap-2">
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
@@ -383,7 +383,7 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   Repl Name

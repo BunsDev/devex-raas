@@ -62,6 +62,8 @@ type Props = {
   fetchContent: (filePath: string) => Promise<void>;
   onAction?: (action: FileTreeAction) => void;
   projectName?: string;
+  activePath: string | null;
+  setActivePath: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
 export default function VSCodeFileTree({
@@ -70,10 +72,11 @@ export default function VSCodeFileTree({
   fetchContent,
   onAction,
   projectName = "Project",
+  activePath,
+  setActivePath,
 }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set([""]));
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
-  const [activePath, setActivePath] = useState<string | null>(null);
   const [contextMenuPath, setContextMenuPath] = useState<string | null>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
   const [dialogState, setDialogState] = useState<{
@@ -291,7 +294,7 @@ export default function VSCodeFileTree({
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-gray-900 text-gray-100 border-r border-gray-700">
+    <div className="flex h-full w-full flex-col  bg-gradient-to-br from-gray-900 via-black to-gray-900  text-gray-100 border-r border-gray-700">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 bg-gray-800/50">
         <div className="flex items-center gap-2 flex-1 min-w-0">

@@ -44,9 +44,9 @@ const URLConverter = ({
     <div
       className={`bg-gray-50 border-t h-full ${className} ${!isVisible ? "hidden" : ""}`}
     >
-      <div className="p-4 space-y-4">
+      <div className="p-4 flex flex-col gap-4">
         {/* Input Section */}
-        <div className="space-y-3 text-black flex gap-2">
+        <div className="flex-col gap-3 text-black flex gap-2">
           {/* Original URL Display */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">

@@ -33,7 +33,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
-      <div className="flex flex-col items-center space-y-4">
+      <div className="flex flex-col items-center gap-4">
         <div className="w-16 h-16 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
         <p className="text-emerald-400 font-medium">Loading Editor...</p>
       </div>

@@ -27,6 +27,7 @@ import {
   ChevronUp,
   ChevronDown,
   Settings,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,6 +35,8 @@ import Editor from "./Editor";
 import FileTree, { FileTreeAction, Tree } from "./FileTree";
 import Output from "./Output";
 import Terminal, { TerminalRef } from "./Terminal";
+import { FileFinder } from "../commandMenu/finder";
+import ShortcutKeysPopup from "./help";
 
 interface SandboxProps {
   editor: {
@@ -75,6 +78,7 @@ const Sandbox: React.FC<SandboxProps> = ({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [terminalVisible, setTerminalVisible] = useState(true);
   const [outputVisible, setOutputVisible] = useState(true);
+  const [showHelp, setShowHelp] = useState(false);
   const [activeBottomPanel, setActiveBottomPanel] = useState<
     "terminal" | "output"
   >("terminal");
@@ -161,6 +165,21 @@ const Sandbox: React.FC<SandboxProps> = ({
           setSidebarCollapsed(false);
         }
         sidebarRef.current?.focus();
+        return;
+      }
+
+      // Ctrl+Shift+P: Open Settings
+      if (isCtrlOrCmd && shiftKey && key.toLowerCase() === "p") {
+        event.preventDefault();
+        setShowSettings(true);
+        return;
+      }
+
+      // Shift+/: Open Shortcuts
+      if (key.toLowerCase() === "?") {
+        event.preventDefault();
+        console.log("Hello World");
+        setShowHelp(true);
         return;
       }
 
@@ -318,8 +337,21 @@ const Sandbox: React.FC<SandboxProps> = ({
     }
   };
 
+  const [activePath, setActivePath] = useState<string | null>(null);
+
+  function handleFetchFile(path: string) {
+    setActivePath(path);
+    fileTree.fetchContent(path);
+  }
+
+  function handleFetchDir(path: string) {
+    if (!fileTree.tree[path]) {
+      fileTree.fetchDir(path);
+    }
+  }
+
   return (
-    <div className="h-screen w-full bg-zinc-950 flex flex-col pt-14">
+    <div className="h-screen w-full  bg-gradient-to-br from-gray-900 via-black to-gray-900  flex flex-col pt-14">
       {/* Mobile header */}
       {isMobile && (
         <div className="h-12 bg-gray-900 border-b border-gray-600 flex items-center justify-between px-3 relative z-50">
@@ -338,14 +370,20 @@ const Sandbox: React.FC<SandboxProps> = ({
           </div>
 
           <div className="flex items-center gap-1">
+            <FileFinder
+              tree={fileTree.tree}
+              handleFile={handleFetchFile}
+              handleDir={handleFetchDir}
+            />
+
             <Button
               onClick={() => setShowSettings(true)}
-              className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+              className=" items-center gap-1 rounded border border-border bg-muted px-2 text-lg font-jetbrains-mono font-medium opacity-100 ml-auto flex"
               title="Settings"
+              size={"sm"}
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-2 w-2" />
             </Button>
-
             <Button
               variant="ghost"
               size="sm"
@@ -424,7 +462,7 @@ const Sandbox: React.FC<SandboxProps> = ({
 
       {/* Desktop top bar */}
       {!isMobile && (
-        <div className="h-10 bg-gray-800 border-b border-gray-600 flex items-center px-3 gap-2">
+        <div className="h-10  bg-gradient-to-br from-gray-900 via-black to-emerald-900 border-b border-gray-600 flex items-center px-3 gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -457,14 +495,27 @@ const Sandbox: React.FC<SandboxProps> = ({
               }`}
               title={`Terminal: ${terminal.status}`}
             />
+
+            <Button onClick={() => setShowHelp(true)}>
+              <kbd className="pointer-events-none select-none items-center gap-1 rounded border border-border bg-muted px-2 text-sm font-jetbrains-mono font-medium opacity-100 ml-auto flex">
+                Shft + /
+              </kbd>
+            </Button>
           </div>
           <div className="flex items-center gap-1 ml-auto">
+            <FileFinder
+              tree={fileTree.tree}
+              handleFile={handleFetchFile}
+              handleDir={handleFetchDir}
+            />
+
             <Button
               onClick={() => setShowSettings(true)}
-              className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+              className=" items-center gap-1 rounded border border-border bg-muted px-2 text-lg font-jetbrains-mono font-medium opacity-100 ml-auto flex"
               title="Settings"
+              size={"sm"}
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-2 w-2" />
             </Button>
 
             <Button
@@ -484,7 +535,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                   setTimeout(() => focusTerminal(), 100);
                 }
               }}
-              className="h-6 px-2 text-xs text-gray-300 hover:text-white"
+              className="items-center gap-1 rounded border border-border bg-muted px-2 text-xs font-jetbrains-mono font-medium opacity-100 ml-auto flex"
               title="Toggle Terminal (Ctrl+`)"
             >
               <TerminalIcon className="h-3 w-3 mr-1" />
@@ -510,7 +561,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                   setBottomPanelCollapsed(false);
                 }
               }}
-              className="h-6 px-2 text-xs text-gray-300 hover:text-white"
+              className=" items-center gap-1 rounded border border-border bg-muted px-2 text-xs font-jetbrains-mono font-medium opacity-100 ml-auto flex"
               title="Toggle Output (Ctrl+Shift+Y)"
             >
               <Play className="h-3 w-3 mr-1" />
@@ -555,6 +606,8 @@ const Sandbox: React.FC<SandboxProps> = ({
                         fetchDir={fileTree.fetchDir}
                         fetchContent={fileTree.fetchContent}
                         onAction={fileTree.handleFileTreeAction}
+                        activePath={activePath}
+                        setActivePath={setActivePath}
                       />
                     </div>
                   </div>
@@ -567,14 +620,28 @@ const Sandbox: React.FC<SandboxProps> = ({
               className={`flex-1 ${!bottomPanelCollapsed && showBottomPanel ? "h-1/2" : "h-full"}`}
             >
               <div ref={editorRef} className="h-full">
-                <Editor
-                  sendDiff={editor.updateContent}
-                  code={editor.code}
-                  setCode={editor.setCode}
-                  fileType={editor.fileType}
-                  showSettings={showSettings}
-                  setShowSettings={setShowSettings}
-                />
+                {fileTree.filePath == "" ? (
+                  <div className="w-full h-full bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <FileText className="w-12 h-12 text-emerald-400" />
+                      <p className="text-emerald-400 font-medium font-jetbrains-mono">
+                        Select/Create a File to Continue
+                      </p>
+                      <p className="text-gray-500 text-sm">
+                        Open a file from the sidebar on the left
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <Editor
+                    sendDiff={editor.updateContent}
+                    code={editor.code}
+                    setCode={editor.setCode}
+                    fileType={editor.fileType}
+                    showSettings={showSettings}
+                    setShowSettings={setShowSettings}
+                  />
+                )}
               </div>
             </div>
 
@@ -714,6 +781,8 @@ const Sandbox: React.FC<SandboxProps> = ({
                       fetchDir={fileTree.fetchDir}
                       fetchContent={fileTree.fetchContent}
                       onAction={fileTree.handleFileTreeAction}
+                      activePath={activePath}
+                      setActivePath={setActivePath}
                     />
                   </div>
                 </ResizablePanel>
@@ -730,14 +799,28 @@ const Sandbox: React.FC<SandboxProps> = ({
                   minSize={30}
                 >
                   <div ref={editorRef} className="h-full">
-                    <Editor
-                      sendDiff={editor.updateContent}
-                      code={editor.code}
-                      setCode={editor.setCode}
-                      fileType={editor.fileType}
-                      showSettings={showSettings}
-                      setShowSettings={setShowSettings}
-                    />
+                    {fileTree.filePath == "" ? (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <FileText className="w-12 h-12 text-emerald-400" />
+                          <p className="text-emerald-400 font-medium font-jetbrains-mono">
+                            Select/Create a File to Continue
+                          </p>
+                          <p className="text-gray-500 text-sm">
+                            Open a file from the sidebar on the left
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Editor
+                        sendDiff={editor.updateContent}
+                        code={editor.code}
+                        setCode={editor.setCode}
+                        fileType={editor.fileType}
+                        showSettings={showSettings}
+                        setShowSettings={setShowSettings}
+                      />
+                    )}
                   </div>
                 </ResizablePanel>
 
@@ -752,7 +835,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                     >
                       <div className="h-full bg-zinc-900 border-t border-gray-800">
                         {/* Tab buttons for bottom panel */}
-                        <div className="h-8 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-2">
+                        <div className="h-8 bg-gradient-to-br from-gray-900 via-black/80 to-emerald-900 border-b border-gray-800 flex items-center justify-between px-2">
                           <div className="flex gap-1">
                             <button
                               onClick={() => {
@@ -898,6 +981,7 @@ const Sandbox: React.FC<SandboxProps> = ({
           </ResizablePanelGroup>
         )}
       </div>
+      {showHelp && <ShortcutKeysPopup onClose={() => setShowHelp(false)} />}
     </div>
   );
 };

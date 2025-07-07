@@ -73,6 +73,19 @@ export default function EditorSettingsPopup({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
