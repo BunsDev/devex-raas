@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: () => Promise<void>;
+  login: (type: "github" | "magiclink", email?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
 }
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      const status = await coreService.github.getStatus();
+      const status = await coreService.getStatus();
       setIsAuthenticated(status.authenticated);
       setUser(status.user || null);
     } catch (error) {
@@ -42,12 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async () => {
-    await coreService.github.login();
+  const login = async (type: "github" | "magiclink", email?: string) => {
+    if (type == "magiclink" && email)
+      await coreService.magiclinkLogin({ email });
+    else await coreService.githubLogin();
   };
 
   const logout = async () => {
-    const success = await coreService.github.logout();
+    const success = await coreService.logout();
     if (success) {
       setIsAuthenticated(false);
       setUser(null);

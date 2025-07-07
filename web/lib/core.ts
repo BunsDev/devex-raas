@@ -7,11 +7,6 @@ const API_BASE_URL =
 
 export class CoreService {
   private static instance: CoreService;
-  public github: GithubService;
-
-  private constructor() {
-    this.github = new GithubService();
-  }
 
   private url(route: string) {
     return `${API_BASE_URL}${route}`;
@@ -36,6 +31,84 @@ export class CoreService {
     };
 
     return fetch(`${API_BASE_URL}${url}`, defaultOptions);
+  }
+
+  async githubLogin(): Promise<void> {
+    window.location.href = `${API_BASE_URL}/auth/github/login`;
+  }
+
+  async magiclinkLogin(body: { email: string }) {
+    try {
+      return await axios.post(this.url("/auth/magiclink/login"), body, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.log("error:", error);
+      throw error;
+    }
+  }
+
+  // Logout user
+  async logout(): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error("Logout error:", error);
+      return false;
+    }
+  }
+
+  // Get current user info
+  async getMe(): Promise<User | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Get me error:", error);
+      return null;
+    }
+  }
+
+  // Check authentication status
+  async getStatus(): Promise<AuthStatus> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/status`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        return { authenticated: false };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Get status error:", error);
+      return { authenticated: false };
+    }
   }
 
   async getRepls() {
@@ -112,73 +185,6 @@ export class CoreService {
     } catch (error) {
       console.log("error:", error);
       throw error;
-    }
-  }
-}
-
-class GithubService {
-  // Redirect to GitHub OAuth
-  async login(): Promise<void> {
-    window.location.href = `${API_BASE_URL}/auth/github/login`;
-  }
-
-  // Logout user
-  async logout(): Promise<boolean> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/github/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      return response.ok;
-    } catch (error) {
-      console.error("Logout error:", error);
-      return false;
-    }
-  }
-
-  // Get current user info
-  async getMe(): Promise<User | null> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/github/me`, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Get me error:", error);
-      return null;
-    }
-  }
-
-  // Check authentication status
-  async getStatus(): Promise<AuthStatus> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/github/status`, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        return { authenticated: false };
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Get status error:", error);
-      return { authenticated: false };
     }
   }
 }

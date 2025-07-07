@@ -49,7 +49,7 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen max-md:mx-6">
       <Squares
         speed={0.5}
         squareSize={80}
@@ -62,9 +62,6 @@ function LoginPageContent() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-200">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-300">
-            Continue with your GitHub account
-          </p>
         </div>
 
         {error && (

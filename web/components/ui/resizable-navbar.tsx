@@ -185,7 +185,7 @@ export const UserProfileDropdown = ({
       >
         <img
           src={user.avatar_url}
-          alt={user.name || user.login}
+          alt={user.name.split("").slice(0, 3).join("")}
           className="h-8 w-8 rounded-full object-cover"
         />
         {!visible && (
