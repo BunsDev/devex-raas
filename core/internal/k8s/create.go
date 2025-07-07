@@ -16,9 +16,10 @@ import (
 var RUNNER_DOCKER_IMAGE = dotenv.EnvString("RUNNER_DOCKER_IMAGE", "parthkapoor-dev/devx-runner:latest")
 var RUNNER_CLUSTER_IP = dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost")
 
-func CreateReplDeploymentAndService(userName, replId string) error {
+func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 	clientset := getClientSet()
 	ctx := context.Background()
+	replId := fmt.Sprintf("repl-%s", uuid_replId)
 
 	region := dotenv.EnvString("SPACES_REGION", "blr1")
 	bucket := dotenv.EnvString("SPACES_BUCKET", "devex")
@@ -56,7 +57,7 @@ func CreateReplDeploymentAndService(userName, replId string) error {
 							Image:   "amazon/aws-cli",
 							Command: []string{"sh", "-c"},
 							Args: []string{
-								fmt.Sprintf(`aws s3 cp s3://%s/repl/%s/%s/ /workspaces --recursive --endpoint-url https://%s.digitaloceanspaces.com && echo "Resources copied from DO Spaces";`, bucket, userName, replId, region),
+								fmt.Sprintf(`aws s3 cp s3://%s/repl/%s/%s/ /workspaces --recursive --endpoint-url https://%s.digitaloceanspaces.com && echo "Resources copied from DO Spaces";`, bucket, userName, uuid_replId, region),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{

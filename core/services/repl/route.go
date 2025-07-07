@@ -169,7 +169,7 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 		return
 	}
 
-	url := fmt.Sprintf("https://%s/%s/ping", dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost:8081"), replId)
+	url := fmt.Sprintf("https://%s/repl-%s/ping", dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost:8081"), replId)
 
 	if err := pingRunner(url); err != nil {
 		json.WriteError(w, http.StatusInternalServerError, err.Error())

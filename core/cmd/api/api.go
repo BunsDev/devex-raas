@@ -9,7 +9,7 @@ import (
 	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/pkg/dotenv"
 	"github.com/parthkapoor-dev/core/pkg/json"
-	"github.com/parthkapoor-dev/core/services/auth/github"
+	"github.com/parthkapoor-dev/core/services/auth"
 	"github.com/parthkapoor-dev/core/services/repl"
 	"github.com/parthkapoor-dev/core/services/runner"
 	"github.com/rs/cors"
@@ -39,8 +39,8 @@ func (api *APIServer) Run() error {
 		json.WriteJSON(w, http.StatusOK, "Success")
 	})
 
-	// Github Auth Routes
-	router.Handle("/auth/github/", http.StripPrefix("/auth/github", github.NewHandler()))
+	//  Auth Routes
+	router.Handle("/auth/", http.StripPrefix("/auth", auth.NewAuthHandler()))
 
 	// Runner Routes
 	router.Handle("/api/runner/", http.StripPrefix("/api/runner", runner.NewHandler(rds)))

@@ -24,7 +24,7 @@ var (
 )
 
 // GenerateStateOauthCookie generates a random state string for CSRF protection
-func GenerateStateOauthCookie() string {
+func GenerateStateCookie() string {
 	b := make([]byte, 32)
 	rand.Read(b)
 	return base64.URLEncoding.EncodeToString(b)

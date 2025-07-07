@@ -11,7 +11,7 @@ import (
 // Ping the Runner Service to check whether the container is running or initiating.
 func pingRunner(url string) error {
 	timeout := time.After(1 * time.Minute)
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
 	for {

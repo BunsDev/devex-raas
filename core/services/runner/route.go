@@ -3,6 +3,7 @@ package runner
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/parthkapoor-dev/core/internal/k8s"
 	"github.com/parthkapoor-dev/core/internal/redis"
@@ -23,14 +24,16 @@ func endReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 
 	replId := r.PathValue("replId")
 
-	repl, err := rds.GetRepl(replId)
+	uuid_replId := strings.Split(replId, "-")[0]
+
+	repl, err := rds.GetRepl(uuid_replId)
 	if err != nil {
 		json.WriteError(w, http.StatusBadRequest, "This Repl Id doesn't exists")
 		return
 	}
 	userName := repl.User
 
-	if val, err := rds.DeleteReplSession(replId); err != nil || val == 0 {
+	if val, err := rds.DeleteReplSession(uuid_replId); err != nil || val == 0 {
 		json.WriteError(w, http.StatusInternalServerError, "Unable to Create Repl Session")
 	}
 
