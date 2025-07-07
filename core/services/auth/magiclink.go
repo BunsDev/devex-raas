@@ -13,6 +13,7 @@ import (
 	sessionManager "github.com/parthkapoor-dev/core/internal/session"
 	"github.com/parthkapoor-dev/core/models"
 	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"github.com/parthkapoor-dev/core/pkg/resend"
 )
 
 type MagicLinkData struct {
@@ -37,7 +38,7 @@ const (
 	MaxAttempts     = 3
 )
 
-func magiclinkLoginHandler(w http.ResponseWriter, r *http.Request) {
+func magiclinkLoginHandler(w http.ResponseWriter, r *http.Request, resend *resend.Resend) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("Error decoding login request: %v", err)
@@ -71,7 +72,8 @@ func magiclinkLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send magic link email
-	if err := email.SendMagicLink(norm_email, token); err != nil {
+	subject, body := email.GenerateMagicLink(norm_email, token)
+	if err := resend.SendEmail(norm_email, subject, body); err != nil {
 		log.Printf("Error sending magic link email: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to send magic link")
 		return

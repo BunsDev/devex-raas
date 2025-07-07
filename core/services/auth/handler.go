@@ -6,15 +6,19 @@ import (
 	"net/http"
 
 	sessionManager "github.com/parthkapoor-dev/core/internal/session"
+	"github.com/parthkapoor-dev/core/pkg/resend"
 )
 
 func NewAuthHandler() http.Handler {
 	mux := http.NewServeMux()
+	resend := resend.NewClient()
 
 	mux.HandleFunc("GET /github/login", githubLoginHandler)
 	mux.HandleFunc("GET /github/callback", githubCallbackHandler)
 
-	mux.HandleFunc("POST /magiclink/login", magiclinkLoginHandler)
+	mux.HandleFunc("POST /magiclink/login", func(w http.ResponseWriter, r *http.Request) {
+		magiclinkLoginHandler(w, r, resend)
+	})
 	mux.HandleFunc("GET /magiclink/verify", magiclinkCallbackHandler)
 
 	mux.HandleFunc("POST /logout", logoutHandler)

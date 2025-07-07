@@ -142,7 +142,7 @@ services:
 
       # ---- AUTHENTICATION CONFIGURATION ----
       GITHUB_REDIRECT_URL: "https://api.devx.parthkapoor.me/auth/github/callback" # OAuth callback URL
-      MAGICLINK_REDIRECT_URL: "http://localhost:8080/auth/magiclink/verify" # Magiclink verification
+      MAGICLINK_REDIRECT_URL: "https://api.devx.parthkapoor.me/auth/magiclink/verify" # Magiclink verification
 
       # ---- APPLICATION CONFIGURATION ----
       FRONTEND_URL: "https://devx.parthkapoor.me" # Frontend application URL (for CORS)
@@ -173,6 +173,10 @@ services:
         target: GMAIL_USER
       - source: gmail_password
         target: GMAIL_PASSWORD
+
+      # Resend API Key
+      - source: resend_api_key
+        target: RESEND_API_KEY
 
       # Session encryption secret key
       - source: session_secret
@@ -248,6 +252,10 @@ secrets:
     external: true # gmail user email
   gmail_password:
     external: true # gmail user password
+
+  # Resend API
+  resend_api_key:
+    external: true
 
   # Application session encryption key
   session_secret:

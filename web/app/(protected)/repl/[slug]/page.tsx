@@ -86,7 +86,7 @@ export default function ReplPage() {
       if (data.error) {
         toast.error(`Failed to save file: ${data.error}`);
       } else {
-        toast.success("File saved successfully");
+        // toast.success("File saved successfully");
       }
     });
 

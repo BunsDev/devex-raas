@@ -1,8 +1,6 @@
 package email
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/mail"
@@ -11,7 +9,6 @@ import (
 
 	"github.com/parthkapoor-dev/core/internal/session"
 	"github.com/parthkapoor-dev/core/pkg/dotenv"
-	"github.com/parthkapoor-dev/core/pkg/gomail"
 )
 
 const (
@@ -20,14 +17,6 @@ const (
 	RateLimitWindow = 1 * time.Minute
 	MaxAttempts     = 3
 )
-
-func GenerateSecureToken() (string, error) {
-	bytes := make([]byte, TokenLength)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(bytes), nil
-}
 
 func ValidateEmail(email string) error {
 	email = strings.TrimSpace(email)
@@ -86,7 +75,7 @@ func CheckRateLimit(r *http.Request, email string) error {
 	return nil
 }
 
-func SendMagicLink(email, token string) error {
+func GenerateMagicLink(email, token string) (string, string) {
 	url := dotenv.EnvString("MAGICLINK_REDIRECT_URL", "http://localhost:8080/auth/magiclink/verify")
 	magicLink := fmt.Sprintf("%s?token=%s", url, token)
 
@@ -199,7 +188,7 @@ func SendMagicLink(email, token string) error {
 </html>
 `, magicLink, magicLink)
 
-	return gomail.SendEmail(email, subject, body)
+	return subject, body
 }
 
 func ExtractNameFromEmail(email string) string {

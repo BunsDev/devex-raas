@@ -48,10 +48,6 @@ export default function Header() {
       name: "Pricing",
       link: "#pricing",
     },
-    {
-      name: "Contact",
-      link: "#contact",
-    },
   ];
 
   // Navigation items for authenticated users
