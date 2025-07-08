@@ -35,7 +35,7 @@ func pingRunner(url string) error {
 				log.Println("Received 'pong' from", url)
 				return nil
 			} else {
-				log.Println("Received unexpected response:", string(body))
+				log.Println("Received unexpected response, status code:", resp.StatusCode)
 			}
 		}
 	}

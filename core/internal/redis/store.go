@@ -38,9 +38,9 @@ func NewRedisStore() *Redis {
 }
 
 // Helper Functinos
-func (r *Redis) CreateRepl(template, username, replName, replID string) error {
-	if err := r.client.HSet(r.ctx, "repl:"+replID, map[string]string{
-		"id":       replID,
+func (r *Redis) CreateRepl(template, username, replName, replId string) error {
+	if err := r.client.HSet(r.ctx, "repl:"+replId, map[string]string{
+		"id":       replId,
 		"name":     replName,
 		"user":     username,
 		"template": template,
@@ -49,45 +49,45 @@ func (r *Redis) CreateRepl(template, username, replName, replID string) error {
 		return err
 	}
 
-	if err := r.client.SAdd(r.ctx, "user:"+username, replID).Err(); err != nil {
+	if err := r.client.SAdd(r.ctx, "user:"+username, replId).Err(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *Redis) DeleteRepl(replID string) error {
+func (r *Redis) DeleteRepl(replId string) error {
 	// Get the repl data to find the username
-	replData, err := r.client.HGetAll(r.ctx, "repl:"+replID).Result()
+	replData, err := r.client.HGetAll(r.ctx, "repl:"+replId).Result()
 	if err != nil {
 		return fmt.Errorf("failed to get repl data: %w", err)
 	}
 
 	if len(replData) == 0 {
-		return fmt.Errorf("repl not found: %s", replID)
+		return fmt.Errorf("repl not found: %s", replId)
 	}
 
 	username := replData["user"]
 	if username == "" {
-		return fmt.Errorf("no user found for repl: %s", replID)
+		return fmt.Errorf("no user found for repl: %s", replId)
 	}
 
 	// Remove repl from user's set
-	if err := r.client.SRem(r.ctx, "user:"+username, replID).Err(); err != nil {
+	if err := r.client.SRem(r.ctx, "user:"+username, replId).Err(); err != nil {
 		return fmt.Errorf("failed to remove repl from user set: %w", err)
 	}
 
 	// Delete the repl hash
-	if err := r.client.Del(r.ctx, "repl:"+replID).Err(); err != nil {
+	if err := r.client.Del(r.ctx, "repl:"+replId).Err(); err != nil {
 		return fmt.Errorf("failed to delete repl: %w", err)
 	}
 
 	return nil
 }
 
-func (r *Redis) GetRepl(replID string) (models.Repl, error) {
+func (r *Redis) GetRepl(replId string) (models.Repl, error) {
 
-	data, err := r.client.HGetAll(r.ctx, "repl:"+replID).Result()
+	data, err := r.client.HGetAll(r.ctx, "repl:"+replId).Result()
 	if err != nil {
 		return models.Repl{}, err
 	}
@@ -97,7 +97,7 @@ func (r *Redis) GetRepl(replID string) (models.Repl, error) {
 	}
 
 	repl := models.Repl{
-		Id:       replID,
+		Id:       replId,
 		Name:     data["name"],
 		User:     data["user"],
 		Template: data["template"],
@@ -108,8 +108,8 @@ func (r *Redis) GetRepl(replID string) (models.Repl, error) {
 }
 
 // user-repl relationship
-func (r *Redis) CreateUserRepl(username, replID string) error {
-	return r.client.SAdd(r.ctx, "user:"+username, replID).Err()
+func (r *Redis) CreateUserRepl(username, replId string) error {
+	return r.client.SAdd(r.ctx, "user:"+username, replId).Err()
 }
 
 func (r *Redis) GetUserRepls(username string) ([]string, error) {
@@ -117,27 +117,10 @@ func (r *Redis) GetUserRepls(username string) ([]string, error) {
 }
 
 // Repl Session
-func (r *Redis) CreateReplSession(replID string) error {
-	if err := r.client.SAdd(r.ctx, "sessions", replID).Err(); err != nil {
-		return err
-	}
-
-	return r.client.HSet(r.ctx, "repl:"+replID, "isActive", "true").Err()
+func (r *Redis) CreateReplSession(replId string) error {
+	return r.client.HSet(r.ctx, "repl:"+replId, "isActive", "true").Err()
 }
 
-func (r *Redis) GetReplSession(replID string) ([]string, error) {
-	return r.client.SMembers(r.ctx, "sessions").Result()
-}
-
-func (r *Redis) DeleteReplSession(replID string) (int64, error) {
-	val, err := r.client.SRem(r.ctx, "sessions", replID).Result()
-	if err != nil {
-		return val, err
-	}
-
-	if err := r.client.HSet(r.ctx, "repl:"+replID, "isActive", "false").Err(); err != nil {
-		return val, err
-	}
-
-	return val, nil
+func (r *Redis) DeleteReplSession(replId string) error {
+	return r.client.HSet(r.ctx, "repl:"+replId, "isActive", "false").Err()
 }

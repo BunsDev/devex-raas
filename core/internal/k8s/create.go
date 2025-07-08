@@ -16,10 +16,9 @@ import (
 
 var RUNNER_CLUSTER_IP = dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost")
 
-func CreateReplDeploymentAndService(userName, uuid_replId, template string) error {
+func CreateReplDeploymentAndService(userName, replId, template string) error {
 	clientset := getClientSet()
 	ctx := context.Background()
-	replId := fmt.Sprintf("repl-%s", uuid_replId)
 
 	config, exists := models.TemplateConfigs[template]
 	if !exists {
@@ -63,7 +62,7 @@ func CreateReplDeploymentAndService(userName, uuid_replId, template string) erro
 							Image:   "amazon/aws-cli",
 							Command: []string{"sh", "-c"},
 							Args: []string{
-								fmt.Sprintf(`aws s3 cp s3://%s/repl/%s/%s/ /workspaces --recursive --endpoint-url https://%s.digitaloceanspaces.com && echo "Resources copied from DO Spaces";`, bucket, userName, uuid_replId, region),
+								fmt.Sprintf(`aws s3 cp s3://%s/repl/%s/%s/ /workspaces --recursive --endpoint-url https://%s.digitaloceanspaces.com && echo "Resources copied from DO Spaces";`, bucket, userName, replId, region),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{

@@ -31,7 +31,7 @@ func NewHandler(s3Client *s3.S3Client, rds *redis.Redis) http.Handler {
 		getUserRepls(w, r, rds)
 	})
 	mux.HandleFunc("GET /session/{replId}", func(w http.ResponseWriter, r *http.Request) {
-		startReplSession(w, r, rds)
+		activateRepl(w, r, rds)
 	})
 	mux.HandleFunc("DELETE /session/{replId}", func(w http.ResponseWriter, r *http.Request) {
 		endReplSession(w, r, rds)
@@ -57,10 +57,10 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 
 	// Create Repl ID
 	id := uuid.New()
-	replID := strings.TrimSpace(id.String())
+	replId := fmt.Sprintf("repl-%s", strings.TrimSpace(id.String()))
 
 	sourcePrefix := fmt.Sprintf("templates/%s", repl.Template)
-	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
+	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replId)
 
 	if err := s3Client.CopyFolder(sourcePrefix, destinationPrefix); err != nil {
 		log.Println("S3 CopyTemplate is giving Err: ", err)
@@ -69,7 +69,7 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 	}
 
 	// Create Repl in Store
-	if err := rds.CreateRepl(repl.Template, userName, repl.ReplName, replID); err != nil {
+	if err := rds.CreateRepl(repl.Template, userName, repl.ReplName, replId); err != nil {
 		log.Println(err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -96,7 +96,7 @@ func deleteRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, r
 	}
 
 	if repl.IsActive == true {
-		if val, err := rds.DeleteReplSession(replId); err != nil || val == 0 {
+		if err := rds.DeleteReplSession(replId); err != nil {
 			json.WriteError(w, http.StatusInternalServerError, "Unable to Create Repl Session")
 			return
 		}
@@ -143,7 +143,7 @@ func getUserRepls(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 	json.WriteJSON(w, http.StatusOK, repls)
 }
 
-func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
+func activateRepl(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 
 	user, _ := middleware.GetUserFromContext(r.Context())
 	userName := strings.ToLower(user.Login)
@@ -171,7 +171,7 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 		return
 	}
 
-	url := fmt.Sprintf("https://%s/repl-%s/ping", dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost:8081"), replId)
+	url := fmt.Sprintf("https://%s/%s/ping", dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost:8081"), replId)
 
 	if err := pingRunner(url); err != nil {
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -201,7 +201,7 @@ func endReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 		return
 	}
 
-	if val, err := rds.DeleteReplSession(replId); err != nil || val == 0 {
+	if err := rds.DeleteReplSession(replId); err != nil {
 		json.WriteError(w, http.StatusInternalServerError, "Unable to Create Repl Session")
 	}
 
