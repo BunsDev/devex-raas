@@ -6,17 +6,35 @@ on:
       - main
     paths:
       - "runner/**"
-      - ".github/workflows/runner-pipeline.yaml" # Also trigger if the workflow itself changes
+      - ".github/workflows/runner-pipeline.yaml"
 
 permissions:
+  contents: read
   packages: write
 
 jobs:
-  build-and-push:
+  discover-dockerfiles:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find Dockerfiles in runner/
+        id: set-matrix
+        run: |
+          files=$(find runner -maxdepth 1 -name '*.dockerfile' -exec basename {} \;)
+          matrix=$(echo "$files" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "Found Dockerfiles: $matrix"
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    needs: discover-dockerfiles
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.discover-dockerfiles.outputs.matrix) }}
 
     steps:
       - name: Checkout repository
@@ -29,11 +47,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Extract tag name
+        id: tag
+        run: |
+          # Extract basename without `.dockerfile` (e.g., python.dockerfile -> python)
+          tag_name=$(basename "${{ matrix.dockerfile }}" .dockerfile)
+          echo "tag=$tag_name" >> $GITHUB_OUTPUT
+
+      - name: Build and push ${{ steps.tag.outputs.tag }}
         uses: docker/build-push-action@v6
         with:
           context: ./runner
+          file: ./runner/${{ matrix.dockerfile }}
           push: true
           tags: |
-            ghcr.io/parthkapoor-dev/devex/runner-service:latest
-            ghcr.io/parthkapoor-dev/devex/runner-service:${{ github.sha }}
+            ghcr.io/parthkapoor-dev/devex/runner-${{ steps.tag.outputs.tag }}:latest
+            ghcr.io/parthkapoor-dev/devex/runner-${{ steps.tag.outputs.tag }}:${{ github.sha }}
