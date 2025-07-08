@@ -9,12 +9,18 @@ import React, {
 } from "react";
 import { User, AuthStatus } from "@/types/auth";
 import { CoreService } from "@/lib/core";
+import { AxiosError } from "axios";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (type: "github" | "magiclink", email?: string) => Promise<void>;
+  login: (
+    type: "github" | "magiclink",
+    onError: (err: string) => void,
+    onSuccess: () => void,
+    email?: string,
+  ) => Promise<void>;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
 }
@@ -42,10 +48,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (type: "github" | "magiclink", email?: string) => {
-    if (type == "magiclink" && email)
-      await coreService.magiclinkLogin({ email });
-    else await coreService.githubLogin();
+  const login = async (
+    type: "github" | "magiclink",
+    onError: (err: string) => void,
+    onSuccess: () => void,
+    email?: string,
+  ) => {
+    try {
+      if (type == "magiclink" && email)
+        await coreService.magiclinkLogin({ email });
+      else await coreService.githubLogin();
+      onSuccess();
+    } catch (err: any) {
+      const error =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        err?.message ||
+        "Unknown error occurred";
+
+      console.log("Error caught:", error);
+      onError(error);
+    }
   };
 
   const logout = async () => {

@@ -8,11 +8,13 @@ import {
   Star,
   ChevronDown,
   ChevronUp,
+  LucideRouter,
 } from "lucide-react";
 import { Ref, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function LoginButton() {
   const { login, isLoading } = useAuth();
@@ -20,13 +22,27 @@ export function LoginButton() {
   const [showMagicLink, setShowMagicLink] = useState(false);
   const [magicLinkConsent, setMagicLinkConsent] = useState(false);
   const [email, setEmail] = useState("");
+  const [magicLoading, setMagicLoading] = useState(false);
+  const router = useRouter();
 
-  const handleMagicLinkLogin = () => {
+  function handleLoginError(err: string) {
+    toast.error(err);
+  }
+  function handleLoginSuccess(email: string) {
+    toast.success(`Magic Link Sent to ${email} `);
+    router.push("/login/success");
+  }
+
+  const handleMagicLinkLogin = async () => {
     if (email && magicLinkConsent) {
-      login("magiclink", email);
-      toast(`Magic Link Sent to ${email} `, {
-        description: "Check your email and click the link to sign in.",
-      });
+      setMagicLoading(true);
+      await login(
+        "magiclink",
+        handleLoginError,
+        () => handleLoginSuccess(email),
+        email,
+      );
+      setMagicLoading(false);
     }
   };
 
@@ -43,9 +59,9 @@ export function LoginButton() {
         </div>
 
         <Button
-          onClick={() => login("github")}
+          onClick={() => login("github", handleLoginError, () => {})}
           disabled={isLoading}
-          className="w-full gap-3 rounded-lg border-2 bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg hover:from-gray-800 hover:to-gray-700 hover:shadow-xl transition-all duration-300 ease-out transform hover:scale-[1.02] active:scale-[0.98] border-gray-700 hover:border-gray-600 py-3 font-medium"
+          className="w-full gap-3 rounded-lg border-2 bg-gradient-to-r from-gray-800 via-gray-950 to-gray-800 text-white shadow-lg hover:from-gray-900 hover:to-gray-800 hover:shadow-xl transition-all duration-300 ease-out transform hover:scale-[1.02] active:scale-[0.98] border-gray-700 hover:border-gray-600 py-3 font-medium"
           variant={"outline"}
         >
           <LucideGithub className="h-5 w-5" />
@@ -62,7 +78,7 @@ export function LoginButton() {
 
       {/* Divider */}
       <div className="flex items-center w-full gap-4">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+        <div className=" flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
         <span className="text-xs text-gray-400 font-medium">OR</span>
         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
       </div>
@@ -71,8 +87,7 @@ export function LoginButton() {
       <div className="w-full">
         <Button
           onClick={() => setShowMagicLink(!showMagicLink)}
-          variant="ghost"
-          className="w-full gap-2 text-gray-300 hover:text-white hover:bg-gray-800/70 transition-all duration-300 py-3 rounded-lg border border-gray-700/50 hover:border-gray-600/50"
+          className="w-full gap-2 text-gray-300 hover:text-white hover:bg-gray-800/70 transition-all duration-300 py-3 rounded-lg border border-gray-700/50 hover:border-gray-600/50 bg-gradient-to-r from-gray-900 via-gray-950 to-gray-900"
         >
           <Mail className="h-4 w-4" />
           Use Magic Link instead
@@ -138,7 +153,9 @@ export function LoginButton() {
             {/* Magic Link Button */}
             <Button
               onClick={handleMagicLinkLogin}
-              disabled={isLoading || !email || !magicLinkConsent}
+              disabled={
+                isLoading || !email || !magicLinkConsent || magicLoading
+              }
               className={`w-full gap-2 rounded-lg py-3 font-medium transition-all duration-300 ${
                 !email || !magicLinkConsent
                   ? "bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -146,7 +163,7 @@ export function LoginButton() {
               }`}
             >
               <Link className="h-5 w-5" />
-              {isLoading ? (
+              {magicLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Sending Magic Link...

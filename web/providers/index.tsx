@@ -16,7 +16,7 @@ export default function Providers({ children }: { children: ReactNode }) {
         <AuthProvider>
           {children}
           <Analytics />
-          <Toaster />
+          <Toaster richColors style={{}} />
         </AuthProvider>
       </ThemeProvider>
     </div>

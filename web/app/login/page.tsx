@@ -1,4 +1,3 @@
-// app/login/page.tsx
 "use client";
 
 import { useEffect, Suspense } from "react";
@@ -6,12 +5,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginButton } from "@/components/Auth/LoginButton";
 import Squares from "@/components/ui/background-squares";
+import { toast } from "sonner";
 
 function LoginPageContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+
+  useEffect(() => {
+    if (error) {
+      toast.error(getErrorMessage(error));
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {

@@ -198,24 +198,6 @@ a {
     outline: none;
 }
 
-/* Button base styles */
-button {
-    font-family: inherit;
-    cursor: pointer;
-    border: none;
-    background: none;
-    color: inherit;
-}
-
-/* Input base styles */
-input,
-textarea {
-    font-family: inherit;
-    color: inherit;
-    background: transparent;
-    border: none;
-}
-
 input::placeholder,
 textarea::placeholder {
     color: var(--app-muted);
@@ -300,76 +282,6 @@ pre,
 
 .glow-accent {
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
-}
-
-/* Custom component styles */
-.terminal-window {
-    background: var(--terminal-bg);
-    border: 1px solid var(--terminal-border);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.terminal-header {
-    background: var(--terminal-header);
-    border-bottom: 1px solid var(--terminal-border);
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.terminal-body {
-    padding: 16px;
-    font-family: var(--font-geist-mono), "SF Mono", Monaco, monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    min-height: 400px;
-    overflow-y: auto;
-}
-
-/* Card styles */
-.card {
-    background: var(--app-surface);
-    border: 1px solid var(--app-border);
-    border-radius: 8px;
-    padding: 16px;
-    transition: all 0.2s ease;
-}
-
-.card:hover {
-    border-color: var(--app-accent);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* Button variants */
-.btn-primary {
-    background: var(--app-accent);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-    background: var(--app-accent-hover);
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background: var(--app-surface);
-    color: var(--app-text);
-    border: 1px solid var(--app-border);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-    background: var(--app-hover);
-    border-color: var(--app-accent);
 }
 
 /* Status indicators */
