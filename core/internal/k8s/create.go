@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/parthkapoor-dev/core/models"
 	"github.com/parthkapoor-dev/core/pkg/dotenv"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,19 +14,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var RUNNER_DOCKER_IMAGE = dotenv.EnvString("RUNNER_DOCKER_IMAGE", "parthkapoor-dev/devx-runner:latest")
 var RUNNER_CLUSTER_IP = dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost")
 
-func CreateReplDeploymentAndService(userName, uuid_replId string) error {
+func CreateReplDeploymentAndService(userName, uuid_replId, template string) error {
 	clientset := getClientSet()
 	ctx := context.Background()
 	replId := fmt.Sprintf("repl-%s", uuid_replId)
+
+	config, exists := models.TemplateConfigs[template]
+	if !exists {
+		return fmt.Errorf("unsupported template: %s", template)
+	}
 
 	region := dotenv.EnvString("SPACES_REGION", "blr1")
 	bucket := dotenv.EnvString("SPACES_BUCKET", "devex")
 
 	labels := map[string]string{
-		"app": replId,
+		"app":      replId,
+		"template": template,
 	}
 
 	// 1. Deployment
@@ -71,12 +77,16 @@ func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 					Containers: []corev1.Container{
 						{
 							Name:            "runner",
-							Image:           RUNNER_DOCKER_IMAGE,
+							Image:           fmt.Sprintf("ghcr.io/parthkapoor-dev/devex/runner-%s:latest", template),
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "REPL_ID",
 									Value: replId,
+								},
+								{
+									Name:  "TEMPLATE",
+									Value: template,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -87,18 +97,17 @@ func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 							},
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 8081,
+									ContainerPort: config.Port,
 								},
 							},
-
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("250m"),  // 0.25 CPU
-									corev1.ResourceMemory: resource.MustParse("512Mi"), // 512 MB RAM
+									corev1.ResourceCPU:    resource.MustParse("250m"),
+									corev1.ResourceMemory: resource.MustParse("512Mi"),
 								},
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("750m"), // 0.5 CPU max
-									corev1.ResourceMemory: resource.MustParse("1Gi"),  // 1 GB RAM max
+									corev1.ResourceCPU:    resource.MustParse("750m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
 								},
 							},
 						},
@@ -122,11 +131,11 @@ func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 			Selector: labels,
 			Ports: []corev1.ServicePort{
 				{
-					Port:       8081,
-					TargetPort: intstrFromInt(8081),
+					Port:       config.Port,
+					TargetPort: intstrFromInt(int(config.Port)),
 				},
 			},
-			Type: corev1.ServiceTypeClusterIP, // Change to LoadBalancer for cloud
+			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
 
@@ -135,9 +144,7 @@ func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 		return fmt.Errorf("failed to create service: %w", err)
 	}
 
-	const tlsSecretName = "tls-secret"
-
-	// 3. Ingress (path-based, using repl.parthkapoor.me/repl-id)
+	// 3. Ingress (same as before, but using config.Port)
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: replId + "-ingress",
@@ -145,7 +152,7 @@ func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 				"nginx.ingress.kubernetes.io/use-regex":          "true",
 				"nginx.ingress.kubernetes.io/rewrite-target":     "/$1",
 				"nginx.ingress.kubernetes.io/websocket-services": replId,
-				"nginx.ingress.kubernetes.io/ssl-redirect":       "false", // disable for now
+				"nginx.ingress.kubernetes.io/ssl-redirect":       "false",
 				"nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
 				"nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
 			},
@@ -171,7 +178,7 @@ func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 										Service: &networkingv1.IngressServiceBackend{
 											Name: replId,
 											Port: networkingv1.ServiceBackendPort{
-												Number: 8081,
+												Number: config.Port,
 											},
 										},
 									},
@@ -189,6 +196,6 @@ func CreateReplDeploymentAndService(userName, uuid_replId string) error {
 		return fmt.Errorf("failed to create ingress: %w", err)
 	}
 
-	log.Printf("✅ Deployment and Service for repl %s created.\n", replId)
+	log.Printf("✅ Deployment and Service for repl %s (template: %s) created.\n", replId, template)
 	return nil
 }

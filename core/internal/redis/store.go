@@ -38,11 +38,12 @@ func NewRedisStore() *Redis {
 }
 
 // Helper Functinos
-func (r *Redis) CreateRepl(username, replName, replID string) error {
+func (r *Redis) CreateRepl(template, username, replName, replID string) error {
 	if err := r.client.HSet(r.ctx, "repl:"+replID, map[string]string{
 		"id":       replID,
 		"name":     replName,
 		"user":     username,
+		"template": template,
 		"isActive": "false",
 	}).Err(); err != nil {
 		return err
@@ -99,6 +100,7 @@ func (r *Redis) GetRepl(replID string) (models.Repl, error) {
 		Id:       replID,
 		Name:     data["name"],
 		User:     data["user"],
+		Template: data["template"],
 		IsActive: data["isActive"] == "true",
 	}
 

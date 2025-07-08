@@ -59,15 +59,17 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 	id := uuid.New()
 	replID := strings.TrimSpace(id.String())
 
+	sourcePrefix := fmt.Sprintf("templates/%s", repl.Template)
 	destinationPrefix := fmt.Sprintf("repl/%s/%s/", userName, replID)
-	if err := s3Client.CopyFolder(repl.Template, destinationPrefix); err != nil {
+
+	if err := s3Client.CopyFolder(sourcePrefix, destinationPrefix); err != nil {
 		log.Println("S3 CopyTemplate is giving Err: ", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Create Repl in Store
-	if err := rds.CreateRepl(userName, repl.ReplName, replID); err != nil {
+	if err := rds.CreateRepl(repl.Template, userName, repl.ReplName, replID); err != nil {
 		log.Println(err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -163,7 +165,7 @@ func startReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) 
 		json.WriteError(w, http.StatusInternalServerError, "Unable to Create Repl Session")
 	}
 
-	if err := k8s.CreateReplDeploymentAndService(userName, replId); err != nil {
+	if err := k8s.CreateReplDeploymentAndService(userName, replId, repl.Template); err != nil {
 		log.Println("K8s Deployment Failed", err)
 		json.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
