@@ -1,4 +1,4 @@
-<h1 align="center">🧠 DevEx Cloud Development IDE - REPL as a Service</h1>
+<h1 align="center">🧑‍💻 DevEx Cloud Development IDE - REPL as a Service</h1>
 
 <p align="center">
   <b>A production-grade REPL-as-a-Service Cloud IDE platform</b><br/>
@@ -17,7 +17,6 @@
   </a>
 </p>
 
-
 <p align="center">
   <img src="./assets/devx.png" alt="Cloud Dev IDE Banner" />
 </p>
@@ -27,13 +26,16 @@
 Think **Replit** but open-source, custom-built, and containerized!
 This monorepo powers an **on-demand cloud development environment**, where users can spin up live REPLs, write code, use terminals, and persist their work — all through a browser.
 
+> 📣 Want to add your own REPL template? It's easy!
+> 👉 [Read the Contributing Guide](./CONTRIBUTING.md) to get started.
+
 ---
 
 ## ✨ Features
 
 - 🔐 **GitHub OAuth** authentication
 - 🪄 **Create, Start, Stop, Delete REPLs** via Core API
-- ☁️ **S3-backed file persistence**
+- 💾 **S3-backed file persistence**
 - 📦 **Kubernetes Deployments per REPL** (Dynamic)
 - 📡 **WebSocket-based Editor & Terminal**
 - 🧹 **Ephemeral containers for cleanup and sync**
@@ -152,12 +154,13 @@ sequenceDiagram
 
 ### [`templates/`](./templates)
 
-* Base folders (e.g. Node.js) copied on REPL creation
+* Base folders (e.g. Node.js, Python) copied on REPL creation
 * Language-specific dockerized scaffolds
+* 📦 Want to add your own template? See the [Contribution Guide](./CONTRIBUTING.md)
 
 ---
 
-## ☁️ Infrastructure
+## 🧱 Infrastructure
 
 * ☸️ Kubernetes cluster for REPL pods
 * 🔒 Cert Manager + Let’s Encrypt for TLS
@@ -222,7 +225,9 @@ sequenceDiagram
 ## 🤝 Contributing
 
 This project is under active development.
-PRs, issues, and ideas are all welcome! Let's build together.
+Want to contribute a template, fix, or feature? Start here 👉 [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+Pull requests, suggestions, and feedback are always welcome!
 
 ---
 
