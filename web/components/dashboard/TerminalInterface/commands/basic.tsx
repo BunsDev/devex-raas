@@ -1,16 +1,6 @@
 // commands/basic.ts
+import templates from "@/lib/templates";
 import { Command } from "@/types/dashboard";
-
-const templates = {
-  "node-js": {
-    key: "templates/node-js",
-    name: "Node-JS",
-  },
-  python: {
-    key: "templates/python",
-    name: "Python",
-  },
-};
 
 const ASCII_BANNER = `
 
@@ -72,7 +62,7 @@ ${commandList}
 4. List active repls: repl list --active
 
 💡 Example workflow:
-   repl create my-app node-js
+   repl create my-app node
    repl activate my-app
    ls --active
 
@@ -135,7 +125,7 @@ export const templatesCommand: Command = {
 ${templateList}
 
 💡 Usage: repl create <n> <template>
-   Example: repl create my-app node-js`;
+   Example: repl create my-app node`;
   },
 };
 
@@ -205,12 +195,12 @@ export const lsCommand: Command = {
    ls
    repl activate <n>
 
-💡 Or create a new repl: repl create my-app node-js`;
+💡 Or create a new repl: repl create my-app node`;
         }
         return `📭 No repls found.
 
 🚀 Get started by creating your first repl:
-   repl create my-app node-js
+   repl create my-app node
    repl activate my-app
 
 💡 Use 'templates' to see available templates.`;

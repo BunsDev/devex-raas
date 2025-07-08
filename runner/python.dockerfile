@@ -17,8 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o runner ./cmd/main.go
 
 
 # ---- Step 2: Final Runtime Stage ----
-# ✅ Use a minimal Node.js image with Debian Slim as the base
-FROM node:20-slim
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -31,9 +30,18 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     bash \
     curl \
-    ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+    git \
+    build-essential \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install Python specific tools
+RUN pip install --no-cache-dir \
+    flask \
+    fastapi \
+    uvicorn \
+    requests \
+    ipython
 
 # ✅  Install Starship prompt
 RUN curl -sS https://starship.rs/install.sh | sh -s -- -y && \

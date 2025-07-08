@@ -1,16 +1,6 @@
 // commands/repl.ts
+import templates from "@/lib/templates";
 import { Command } from "@/types/dashboard";
-
-const templates = {
-  "node-js": {
-    key: "templates/node-js",
-    name: "Node-JS",
-  },
-  python: {
-    key: "templates/python",
-    name: "Python",
-  },
-};
 
 export const replCommand: Command = {
   name: "repl",
@@ -165,9 +155,9 @@ export const replCommand: Command = {
 
           if (repls.length === 0) {
             if (options.active) {
-              return `📭 No active repls found.\n\n🚀 Get started by activating a repl:\n   repl list\n   repl activate <name>\n\n💡 Or create a new repl: repl create my-app node-js`;
+              return `📭 No active repls found.\n\n🚀 Get started by activating a repl:\n   repl list\n   repl activate <name>\n\n💡 Or create a new repl: repl create my-app node`;
             }
-            return `📭 No repls found.\n\n🚀 Get started by creating your first repl:\n   repl create my-app node-js\n   repl activate my-app\n\n💡 Use 'templates' to see available templates.`;
+            return `📭 No repls found.\n\n🚀 Get started by creating your first repl:\n   repl create my-app node\n   repl activate my-app\n\n💡 Use 'templates' to see available templates.`;
           }
 
           // Sort repls: active ones first, then inactive
@@ -279,6 +269,6 @@ export const replCommand: Command = {
   },
 
   execute: async (args, options, context) => {
-    return `╭─────────────────────────────────────────╮\n│               REPL MANAGER              │\n╰─────────────────────────────────────────╯\nAvailable subcommands:\n  create <name> <template>     - Create a new repl\n  activate <name>              - Activate an existing repl\n  deactivate <name>            - Deactivate a repl\n  list [--detailed] [--active] - List all repls\n  search <query>               - Search repls by name\n\n💡 Examples:\n   repl create my-app node-js\n   repl activate my-app\n   repl deactivate old-project\n   repl list --detailed\n   repl list --active\n\nUse 'templates' to see available templates.`;
+    return `╭─────────────────────────────────────────╮\n│               REPL MANAGER              │\n╰─────────────────────────────────────────╯\nAvailable subcommands:\n  create <name> <template>     - Create a new repl\n  activate <name>              - Activate an existing repl\n  deactivate <name>            - Deactivate a repl\n  list [--detailed] [--active] - List all repls\n  search <query>               - Search repls by name\n\n💡 Examples:\n   repl create my-app node\n   repl activate my-app\n   repl deactivate old-project\n   repl list --detailed\n   repl list --active\n\nUse 'templates' to see available templates.`;
   },
 };

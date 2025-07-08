@@ -13,7 +13,7 @@ import {
   StopCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { IconBrandNodejs } from "@tabler/icons-react";
+import templates from "@/lib/templates";
 
 // Types definition
 interface StoredRepl {
@@ -22,29 +22,6 @@ interface StoredRepl {
   user: string;
   isActive?: boolean;
 }
-
-const templates = {
-  "node-js": {
-    key: "templates/node-js",
-    name: "Node.js",
-    description: "JavaScript runtime environment",
-    icon: (
-      <IconBrandNodejs className=" bg-green-800 h-9 w-9 p-2 rounded-full" />
-    ),
-    color: "bg-green-900/50 text-green-400 border-green-500/30",
-    iconBg: "bg-green-500/10",
-  },
-  python: {
-    key: "templates/python",
-    name: "Python",
-    description: "High-level programming language",
-    icon: (
-      <IconBrandNodejs className=" bg-green-800 h-9 w-9 p-2 rounded-full" />
-    ),
-    color: "bg-blue-900/50 text-blue-400 border-blue-500/30",
-    iconBg: "bg-blue-500/10",
-  },
-};
 
 interface ReplDashboardProps {
   userName: string;
@@ -153,12 +130,12 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
   const getTemplateFromRepl = (repl: StoredRepl) => {
     const replName = repl.name.toLowerCase();
     if (replName.includes("node") || replName.includes("js")) {
-      return templates["node-js"];
+      return templates["node"];
     }
     if (replName.includes("python") || replName.includes("py")) {
       return templates.python;
     }
-    return templates["node-js"]; // default
+    return templates["node"]; // default
   };
 
   return (
