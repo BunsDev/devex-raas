@@ -1,7 +1,7 @@
 {
-  "name": "node-js-template",
+  "name": "node-template",
   "version": "1.0.0",
-  "description": "A Hello-World node-js-template server",
+  "description": "A Hello-World node-template server",
   "license": "ISC",
   "author": "",
   "type": "module",
