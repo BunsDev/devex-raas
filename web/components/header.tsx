@@ -41,8 +41,8 @@ export default function Header() {
   // Navigation items for unauthenticated users
   const publicNavItems = [
     {
-      name: "Features",
-      link: "#features",
+      name: "Docs",
+      link: "/docs",
     },
     {
       name: "Pricing",

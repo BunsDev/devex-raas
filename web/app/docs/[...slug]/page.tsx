@@ -1,221 +1,157 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
-import { DocTree } from "@/lib/docs/github";
-import { Loader2, BookOpen, AlertCircle, Search } from "lucide-react";
+// app/docs/[[...slug]]/page.tsx
+import React from "react";
+import { StaticDocsService } from "@/lib/docs/static-docs-service";
+import { BookOpen, AlertCircle } from "lucide-react";
 import DocsSidebar from "@/components/docs/sidebar";
 import MarkdownRenderer from "@/components/docs/markdown-render";
-import { useParams } from "next/navigation";
+import DocsSearchClient from "@/components/docs/search-client";
+import getDocTree from "@/app/actions/docs/getTree";
+import getFileContent from "@/app/actions/docs/getFile";
+import { slugToPath } from "@/lib/docs/utils";
 
-interface ApiResponse {
-  tree?: DocTree;
-  content?: string;
-  results?: Array<{ path: string; name: string }>;
-  source?: "static" | "github";
-  warning?: string;
-  metadata?: {
-    generatedAt: string;
-    totalFiles: number;
-    repository: string;
-    version: string;
-  };
+interface DocsPageProps {
+  params?: Promise<{
+    slug?: string[];
+  }>;
 }
 
-const DocsPage: React.FC = () => {
-  const params = useParams();
-  const slug = params.slug as string[] | undefined;
+export default async function DocsPage({ params }: DocsPageProps) {
+  try {
+    const paramsValue = await params;
+    // Determine current path from slug
+    const currentPath = slugToPath(paramsValue?.slug);
 
-  const [docTree, setDocTree] = useState<DocTree>({});
-  const [currentContent, setCurrentContent] = useState<string>("");
-  const [currentPath, setCurrentPath] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<
-    Array<{ path: string; name: string }>
-  >([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    // Get content for the current path (server-side)
+    const { content: currentContent, warning: contentWarning } =
+      await getFileContent(currentPath);
 
-  useEffect(() => {
-    loadDocTree();
-  }, [slug]);
-
-  const loadDocTree = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/docs/tree");
-      const data: ApiResponse = await response.json();
-      console.log("Tree Route Response", data);
-
-      if (data.tree) {
-        setDocTree(data.tree);
-
-        if (data.warning) {
-          console.warn(data.warning);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading doc tree:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const searchDocs = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
+    if (contentWarning) {
+      throw new Error(contentWarning);
     }
 
-    try {
-      setIsSearching(true);
-      const response = await fetch(
-        `/api/docs/search?q=${encodeURIComponent(query)}`,
-      );
-      const data: ApiResponse = await response.json();
-
-      if (data.results) {
-        setSearchResults(data.results);
-      }
-    } catch (error) {
-      console.error("Error searching docs:", error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    searchDocs(query);
-  };
-
-  const handleNavigate = async (path: string) => {
-    setLoading(true);
-    try {
-      setCurrentPath(path);
-      const response = await fetch(
-        `/api/docs/content?path=${encodeURIComponent(path)}`,
-      );
-      const data: ApiResponse = await response.json();
-
-      if (data.content) {
-        setCurrentContent(data.content);
-
-        if (data.warning) {
-          console.warn(data.warning);
-        }
-      }
-      // Update URL without page reload
-      const routePath = path.replace(/\.md$/, "").replace(/\/README$/, "");
-      const newUrl = routePath ? `/docs/${routePath}` : "/docs";
-      window.history.pushState({}, "", newUrl);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load file");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading && Object.keys(docTree).length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-6 text-emerald-400" />
-          <p className="text-zinc-300 text-lg font-medium tracking-wide">
-            Loading documentation...
+      <div className="flex-1 flex h-full flex-col md:m-2 rounded-lg ">
+        {/* Header */}
+        <div className="bg-zinc-900 border-b border-zinc-800 px-4 sm:px-6 md:px-8 py-4 sm:py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center min-w-0 flex-1">
+              <div className="p-1.5 sm:p-2 bg-emerald-500 rounded-lg mr-2 sm:mr-4 flex-shrink-0">
+                <BookOpen className="h-4 w-4 sm:h-6 sm:w-6 text-black" />
+              </div>
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-zinc-100 tracking-tight truncate">
+                {currentPath || "Documentation"}
+              </h1>
+            </div>
+
+            {/* Search component (client component for interactivity) */}
+            <div className="ml-2 sm:ml-4 flex-shrink-0">
+              <DocsSearchClient />
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto bg-zinc-950">
+          <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8">
+            {currentContent ? (
+              <div
+                suppressHydrationWarning
+                className="prose prose-invert prose-zinc max-w-none
+                                prose-headings:text-zinc-100 prose-headings:font-bold
+                                prose-h1:text-xl sm:prose-h1:text-2xl md:prose-h1:text-3xl
+                                prose-h2:text-lg sm:prose-h2:text-xl md:prose-h2:text-2xl
+                                prose-h3:text-base sm:prose-h3:text-lg md:prose-h3:text-xl
+                                prose-p:text-zinc-300 prose-p:leading-relaxed prose-p:text-sm sm:prose-p:text-base
+                                prose-code:text-emerald-400 prose-code:bg-zinc-900 prose-code:text-xs sm:prose-code:text-sm
+                                prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800
+                                prose-pre:text-xs sm:prose-pre:text-sm prose-pre:overflow-x-auto
+                                prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline prose-a:text-sm sm:prose-a:text-base
+                                prose-strong:text-zinc-100 prose-strong:font-semibold
+                                prose-blockquote:border-l-emerald-500 prose-blockquote:text-zinc-300 prose-blockquote:text-sm sm:prose-blockquote:text-base
+                                prose-hr:border-zinc-700
+                                prose-li:text-zinc-300 prose-li:text-sm sm:prose-li:text-base
+                                prose-table:border-zinc-700 prose-table:text-xs sm:prose-table:text-sm
+                                prose-th:text-zinc-100 prose-td:text-zinc-300
+                                prose-img:rounded-lg prose-img:border prose-img:border-zinc-800
+                                [&>*]:break-words [&_table]:overflow-x-auto [&_table]:block [&_table]:w-full
+                                [&_table]:whitespace-nowrap sm:[&_table]:whitespace-normal"
+              >
+                <MarkdownRenderer content={currentContent} />
+              </div>
+            ) : (
+              <div className="text-center py-12 sm:py-16 md:py-20">
+                <div className="p-4 sm:p-6 bg-zinc-900 rounded-2xl inline-block mb-4 sm:mb-6">
+                  <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-zinc-600 mx-auto" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-zinc-100 mb-2 sm:mb-3 tracking-tight px-4">
+                  Ready to explore?
+                </h2>
+                <p className="text-zinc-400 text-base sm:text-lg font-medium px-4">
+                  Select a document from the sidebar to get started
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  } catch (error) {
+    console.error("Error loading documentation:", error);
+
+    return (
+      <div className="min-h-full bg-black flex-1 flex  items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-red-400 mx-auto mb-4 sm:mb-6" />
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-100 mb-3 sm:mb-4 tracking-tight">
+            Error Loading Documentation
+          </h2>
+          <p className="text-zinc-400 text-base sm:text-lg break-words">
+            {error instanceof Error
+              ? error.message
+              : "An unexpected error occurred"}
           </p>
         </div>
       </div>
     );
   }
+}
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-zinc-100 mb-4 tracking-tight">
-            Error Loading Documentation
-          </h2>
-          <p className="text-zinc-400 text-lg">{error}</p>
-        </div>
-      </div>
-    );
+// Generate static params for all documentation paths
+export async function generateStaticParams() {
+  try {
+    const staticService = new StaticDocsService();
+
+    if (staticService.isStaticDocsAvailable()) {
+      const fileList = staticService.getFileList();
+
+      return fileList.map((file) => {
+        // Convert file path to slug array
+        const slug = file.path
+          .replace(/\.md$/, "") // Remove .md extension
+          .replace(/^\//, "") // Remove leading slash
+          .split("/")
+          .filter(Boolean); // Remove empty strings
+
+        return { slug };
+      });
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error generating static params:", error);
+    return [];
   }
+}
 
-  return (
-    <div className="min-h-screen bg-black text-zinc-100">
-      <div className="flex h-screen">
-        {/* Sidebar */}
-        <DocsSidebar
-          docTree={docTree}
-          currentPath={currentPath}
-          onNavigate={handleNavigate}
-        />
+// Optional: Add metadata for SEO
+export async function generateMetadata({ params }: DocsPageProps) {
+  const paramsValue = await params;
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <div className="bg-zinc-900 border-b border-zinc-800 px-8 py-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-emerald-500 rounded-lg mr-4">
-                <BookOpen className="h-6 w-6 text-black" />
-              </div>
-              <h1 className="text-3xl font-bold text-zinc-100 tracking-tight">
-                Documentation
-              </h1>
-            </div>
-          </div>
+  const currentPath = slugToPath(paramsValue?.slug);
+  const pathTitle = paramsValue?.slug?.join(" > ") || "Documentation";
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto bg-zinc-950">
-            <div className="max-w-5xl mx-auto p-8">
-              {loading ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="h-8 w-8 animate-spin mr-3 text-emerald-400" />
-                  <span className="text-zinc-300 text-lg font-medium">
-                    Loading content...
-                  </span>
-                </div>
-              ) : currentContent ? (
-                <div
-                  className="prose prose-invert prose-zinc max-w-none
-                              prose-headings:text-zinc-100 prose-headings:font-bold
-                              prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl
-                              prose-p:text-zinc-300 prose-p:leading-relaxed
-                              prose-code:text-emerald-400 prose-code:bg-zinc-900
-                              prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-800
-                              prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-                              prose-strong:text-zinc-100 prose-strong:font-semibold
-                              prose-blockquote:border-l-emerald-500 prose-blockquote:text-zinc-300
-                              prose-hr:border-zinc-700
-                              prose-li:text-zinc-300
-                              prose-table:border-zinc-700
-                              prose-th:text-zinc-100 prose-td:text-zinc-300"
-                >
-                  <MarkdownRenderer content={currentContent} />
-                </div>
-              ) : (
-                <div className="text-center py-20">
-                  <div className="p-6 bg-zinc-900 rounded-2xl inline-block mb-6">
-                    <BookOpen className="h-16 w-16 text-zinc-600 mx-auto" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-zinc-100 mb-3 tracking-tight">
-                    Ready to explore?
-                  </h2>
-                  <p className="text-zinc-400 text-lg font-medium">
-                    Select a document from the sidebar to get started
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default DocsPage;
+  return {
+    title: `${pathTitle} | Documentation`,
+    description: `Documentation for ${pathTitle}`,
+  };
+}

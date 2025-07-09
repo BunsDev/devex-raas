@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { RunIcon } from "@codesandbox/sandpack-react";
+import { getHref } from "@/lib/docs/utils";
 
 // Types
 interface DocResult {
@@ -106,39 +107,16 @@ export const Cmd = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setDocsSearchQuery(query);
-    // searchDocs(query);
   };
 
-  const handleNavigate = async (path: string) => {
+  const handleNavigate = (path: string) => {
     setOpen(false);
     setValue("");
     setSearchMode("default");
     setDocsSearchQuery("");
     setDocsSearchResults([]);
 
-    try {
-      const response = await fetch(
-        `/api/docs/content?path=${encodeURIComponent(path)}`,
-      );
-      const data: ApiResponse = await response.json();
-      if (data.content) {
-        // Update URL without page reload
-        const routePath = path.replace(/\.md$/, "").replace(/\/README$/, "");
-        const newUrl = routePath ? `/docs/${routePath}` : "/docs";
-        window.history.pushState({}, "", newUrl);
-
-        // You might want to trigger a callback here to update the parent component
-        // or emit an event to update the docs content
-        if (
-          typeof window !== "undefined" &&
-          (window as any).updateDocsContent
-        ) {
-          (window as any).updateDocsContent(data.content, path);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load file:", err);
-    }
+    router.push(getHref(`${path}`));
   };
 
   const allItems = [

@@ -1,52 +1,34 @@
 // app/api/docs/search/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { StaticDocsService } from "@/lib/docs/static-docs-service";
-import GitHubDocsService from "@/lib/docs/github";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get("q");
 
   if (!query) {
-    return NextResponse.json(
-      { error: "Query parameter is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ results: [] });
   }
 
   try {
     const staticService = new StaticDocsService();
 
-    // Try to search in static files first
     if (staticService.isStaticDocsAvailable()) {
       const results = staticService.searchFiles(query);
       return NextResponse.json({
-        results,
+        results: results.map((result) => ({
+          path: result.path,
+          name: result.name,
+        })),
         source: "static",
-        totalFiles: staticService.getMetadata()?.totalFiles || 0,
       });
     }
 
-    // Fallback to GitHub API if static files aren't available
-    console.warn(
-      "Static search index not available, falling back to GitHub API",
-    );
-    const githubService = new GitHubDocsService(
-      "https://github.com/parthkapoor-dev/devex",
-    );
-    const files = await githubService.findMarkdownFiles();
-
-    // Simple search implementation
-    const results = files.filter(
-      (file) =>
-        file.name.toLowerCase().includes(query.toLowerCase()) ||
-        file.path.toLowerCase().includes(query.toLowerCase()),
-    );
-
+    // If static docs not available, return empty results
+    // You could implement GitHub search here as fallback if needed
     return NextResponse.json({
-      results,
-      source: "github",
-      warning: "Using GitHub API fallback - consider regenerating static docs",
+      results: [],
+      warning: "Static docs not available for search",
     });
   } catch (error) {
     console.error("Error searching docs:", error);

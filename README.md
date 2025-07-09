@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="./assets/devx.png" alt="Cloud Dev IDE Banner" />
+  <img src="https://raw.githubusercontent.com/parthkapoor-dev/devex/main/assets/devx.png" alt="Cloud Dev IDE Banner" />
 </p>
 
 ---
