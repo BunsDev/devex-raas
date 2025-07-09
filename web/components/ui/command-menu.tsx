@@ -478,7 +478,7 @@ export const useCommandMenuShortcut = (callback: () => void) => {
 export const useDocsShortcut = (callback: () => void) => {
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "f" && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+      if (e.key === "F" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         callback();
       }
