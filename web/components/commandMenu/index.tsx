@@ -11,6 +11,7 @@ import {
   CommandMenuSeparator,
   useCommandMenuShortcut,
   CommandMenuEmpty,
+  useDocsShortcut,
 } from "@/components/ui/command-menu";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -26,9 +27,24 @@ import {
   FileText,
   Home,
   List,
+  BookOpen,
+  ArrowLeft,
+  File,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { RunIcon } from "@codesandbox/sandpack-react";
+
+// Types
+interface DocResult {
+  name: string;
+  path: string;
+  type?: "file" | "folder";
+}
+
+interface ApiResponse {
+  content?: string;
+  warning?: string;
+}
 
 // Utility function to detect OS and return appropriate modifier key
 const getModifierKey = () => {
@@ -40,8 +56,90 @@ export const Cmd = () => {
 
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
+  const [searchMode, setSearchMode] = React.useState<"default" | "docs">(
+    "default",
+  );
+  const [docsSearchQuery, setDocsSearchQuery] = React.useState("");
+  const [docsSearchResults, setDocsSearchResults] = React.useState<DocResult[]>(
+    [],
+  );
+  const [docsLoading, setDocsLoading] = React.useState(false);
 
   useCommandMenuShortcut(() => setOpen(true));
+  useDocsShortcut(() => {
+    setOpen(true);
+    setSearchMode("docs");
+  });
+
+  // Debounced docs search
+  React.useEffect(() => {
+    if (searchMode === "docs" && docsSearchQuery.trim()) {
+      const timeoutId = setTimeout(() => {
+        console.log("Called");
+        searchDocs(docsSearchQuery);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    } else if (searchMode === "docs" && !docsSearchQuery.trim()) {
+      setDocsSearchResults([]);
+    }
+  }, [docsSearchQuery, searchMode]);
+
+  const searchDocs = async (query: string) => {
+    setDocsLoading(true);
+    try {
+      const response = await fetch(
+        `/api/docs/search?q=${encodeURIComponent(query)}`,
+      );
+      if (response.ok) {
+        const results = await response.json();
+        setDocsSearchResults(results.results);
+        console.log("results", results);
+      }
+    } catch (error) {
+      console.error("Failed to search docs:", error);
+      setDocsSearchResults([]);
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setDocsSearchQuery(query);
+    // searchDocs(query);
+  };
+
+  const handleNavigate = async (path: string) => {
+    setOpen(false);
+    setValue("");
+    setSearchMode("default");
+    setDocsSearchQuery("");
+    setDocsSearchResults([]);
+
+    try {
+      const response = await fetch(
+        `/api/docs/content?path=${encodeURIComponent(path)}`,
+      );
+      const data: ApiResponse = await response.json();
+      if (data.content) {
+        // Update URL without page reload
+        const routePath = path.replace(/\.md$/, "").replace(/\/README$/, "");
+        const newUrl = routePath ? `/docs/${routePath}` : "/docs";
+        window.history.pushState({}, "", newUrl);
+
+        // You might want to trigger a callback here to update the parent component
+        // or emit an event to update the docs content
+        if (
+          typeof window !== "undefined" &&
+          (window as any).updateDocsContent
+        ) {
+          (window as any).updateDocsContent(data.content, path);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load file:", err);
+    }
+  };
 
   const allItems = [
     // Pages
@@ -79,6 +177,17 @@ export const Cmd = () => {
       icon: <List />,
       shortcut: "cmd+e",
     },
+    {
+      type: "action",
+      name: "Search Docs",
+      icon: <BookOpen />,
+      shortcut: "cmd+shift+f",
+      action: () => {
+        setSearchMode("docs");
+        setDocsSearchQuery("");
+        setValue("");
+      },
+    },
   ];
 
   const filteredItems = React.useMemo(() => {
@@ -114,10 +223,25 @@ export const Cmd = () => {
     }
   };
 
+  const resetToDefault = () => {
+    setSearchMode("default");
+    setDocsSearchQuery("");
+    setDocsSearchResults([]);
+    setValue("");
+  };
+
   let globalIndex = 0;
 
   return (
-    <CommandMenu open={open} onOpenChange={setOpen}>
+    <CommandMenu
+      open={open}
+      onOpenChange={(newOpen) => {
+        setOpen(newOpen);
+        if (!newOpen) {
+          resetToDefault();
+        }
+      }}
+    >
       <CommandMenuTrigger asChild>
         <Button className="gap-2" variant={"outline"}>
           <Search size={16} />
@@ -127,45 +251,122 @@ export const Cmd = () => {
           </kbd>
         </Button>
       </CommandMenuTrigger>
-      <CommandMenuContent className=" rounded-xl outline-2 outline-[var(--app-accent)] outline-offset-2">
-        <CommandMenuInput
-          placeholder="Type to search pages, actions, users, documents..."
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <CommandMenuList maxHeight="400px">
-          {Object.keys(groupedItems).length === 0 ? (
-            <CommandMenuEmpty>No results found for "{value}"</CommandMenuEmpty>
-          ) : (
-            Object.entries(groupedItems).map(([type, items], groupIndex) => (
-              <React.Fragment key={type}>
-                {groupIndex > 0 && <CommandMenuSeparator />}
-                <CommandMenuGroup heading={getGroupTitle(type)}>
-                  {items.map((item, index) => {
-                    const currentIndex = globalIndex++;
-                    return (
-                      <CommandMenuItem
-                        key={`${type}-${index}`}
-                        icon={item.icon}
-                        index={currentIndex}
-                        shortcut={item.shortcut}
-                        onSelect={() => {
-                          if (item.type == "page" && item.link) {
-                            router.push(item.link);
-                          }
-                          setOpen(false);
-                          setValue("");
-                        }}
-                      >
-                        {item.name}
-                      </CommandMenuItem>
-                    );
-                  })}
+      <CommandMenuContent className="rounded-xl outline-2 outline-[var(--app-accent)] outline-offset-2">
+        {searchMode === "default" ? (
+          <>
+            <CommandMenuInput
+              placeholder="Type to search pages, actions, users, documents..."
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+            />
+            <CommandMenuList maxHeight="400px">
+              {Object.keys(groupedItems).length === 0 ? (
+                <CommandMenuEmpty>
+                  No results found for "{value}"
+                </CommandMenuEmpty>
+              ) : (
+                Object.entries(groupedItems).map(
+                  ([type, items], groupIndex) => (
+                    <React.Fragment key={type}>
+                      {groupIndex > 0 && <CommandMenuSeparator />}
+                      <CommandMenuGroup heading={getGroupTitle(type)}>
+                        {items.map((item, index) => {
+                          const currentIndex = globalIndex++;
+                          return (
+                            <CommandMenuItem
+                              key={`${type}-${index}`}
+                              icon={item.icon}
+                              index={currentIndex}
+                              shortcut={item.shortcut}
+                              onSelect={() => {
+                                if (item.type === "page" && item.link) {
+                                  router.push(item.link);
+                                } else if (
+                                  item.type === "action" &&
+                                  item.action
+                                ) {
+                                  item.action();
+                                  return; // Don't close the menu for docs search
+                                }
+                                setOpen(false);
+                                setValue("");
+                              }}
+                            >
+                              {item.name}
+                            </CommandMenuItem>
+                          );
+                        })}
+                      </CommandMenuGroup>
+                    </React.Fragment>
+                  ),
+                )
+              )}
+            </CommandMenuList>
+          </>
+        ) : (
+          <>
+            <CommandMenuInput
+              placeholder="Search documentation files..."
+              value={docsSearchQuery}
+              onChange={handleSearchChange}
+              autoFocus
+            />
+            {/* <div className="flex items-center gap-2 px-3 py-2 border-b border-border ">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetToDefault}
+                className="p-1 h-6 w-6"
+              >
+                <ArrowLeft size={14} />
+              </Button>
+              <BookOpen size={16} className="text-muted-foreground" />
+              <span className="text-sm font-medium">Search Documentation</span>
+            </div> */}
+            <CommandMenuList maxHeight="400px">
+              {docsLoading ? (
+                <div className="px-6 py-4 text-center text-sm text-muted-foreground">
+                  Searching...
+                </div>
+              ) : docsSearchResults.length === 0 && docsSearchQuery.trim() ? (
+                <CommandMenuEmpty>
+                  No documentation found for "{docsSearchQuery}"
+                </CommandMenuEmpty>
+              ) : docsSearchResults.length > 0 ? (
+                <CommandMenuGroup
+                  heading={`Documentation (${docsSearchResults.length})`}
+                >
+                  {docsSearchResults.map((result, index) => (
+                    <CommandMenuItem
+                      key={index}
+                      icon={
+                        result.type === "folder" ? (
+                          <Settings size={16} />
+                        ) : (
+                          <File size={16} />
+                        )
+                      }
+                      index={index}
+                      onSelect={() => handleNavigate(result.path)}
+                      className="flex-col items-start"
+                    >
+                      <p className="font-medium text-foreground">
+                        {result.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono mt-1">
+                        {result.path}
+                      </p>
+                    </CommandMenuItem>
+                  ))}
                 </CommandMenuGroup>
-              </React.Fragment>
-            ))
-          )}
-        </CommandMenuList>
+              ) : (
+                <div className="px-6 py-4 text-center text-sm text-muted-foreground">
+                  Start typing to search documentation...
+                </div>
+              )}
+            </CommandMenuList>
+          </>
+        )}
       </CommandMenuContent>
     </CommandMenu>
   );

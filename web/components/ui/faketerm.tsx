@@ -2,7 +2,7 @@ export default function Faketerm() {
   return (
     <aside className="bg-black text-white p-6 rounded-lg w-full max-w-lg font-mono">
       <div className="flex justify-between items-center">
-        <div className="flex space-x-2 text-red-500">
+        <div className="flex gap-2 text-red-500">
           <div className="w-3 h-3 rounded-full bg-red-500"></div>
           <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
           <div className="w-3 h-3 rounded-full bg-green-500"></div>

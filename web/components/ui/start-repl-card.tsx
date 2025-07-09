@@ -39,7 +39,7 @@ export default function StartReplCard({ link, replName, onClose }: CardProps) {
         }`}
       >
         <CardHeader className="border-b border-dashed pb-4 flex flex-row items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <Terminal className="h-5 w-5" />
             <span className="text-sm font-mono">
               Your {replName} Session Started
@@ -51,7 +51,7 @@ export default function StartReplCard({ link, replName, onClose }: CardProps) {
         </CardHeader>
         <CardContent className="pt-6 pb-0 font-mono">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <span className="text-muted-foreground">$</span>
               <span>status</span>
             </div>
@@ -59,7 +59,7 @@ export default function StartReplCard({ link, replName, onClose }: CardProps) {
               <p className="text-3xl font-bold">200</p>
               <p className="text-muted-foreground">Repl Session Started</p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <span className="text-muted-foreground">$</span>
               <div className="flex items-center">
                 <span>locate_page</span>

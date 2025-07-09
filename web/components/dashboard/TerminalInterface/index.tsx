@@ -415,7 +415,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
 
       {/* Status Bar */}
       <div className="flex-shrink-0 bg-gray-800 px-2 sm:px-4 py-1 sm:py-2 border-t border-gray-700 flex items-center justify-between text-xs sm:text-sm">
-        <div className="flex items-center space-x-2 sm:space-x-4 text-gray-400 overflow-x-auto">
+        <div className="flex items-center gap-2 sm:gap-4 text-gray-400 overflow-x-auto">
           <div className="flex items-center whitespace-nowrap">
             <Activity className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-green-500" />
             <span className="hidden sm:inline">Ready</span>
@@ -445,7 +445,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
             <span className="sm:hidden">{repls.length}</span>
           </div>
         </div>
-        <div className="flex items-center space-x-1 sm:space-x-2 text-gray-400">
+        <div className="flex items-center gap-1 sm:gap-2 text-gray-400">
           <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
           <span className="hidden sm:inline">Connected</span>
           <span className="sm:hidden">✓</span>

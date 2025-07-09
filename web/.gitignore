@@ -13,6 +13,8 @@
 # testing
 /coverage
 
+/public/static-docs/
+
 # next.js
 /.next/
 /out/

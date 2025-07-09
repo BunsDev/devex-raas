@@ -475,6 +475,20 @@ export const useCommandMenuShortcut = (callback: () => void) => {
   }, [callback]);
 };
 
+export const useDocsShortcut = (callback: () => void) => {
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "f" && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+        e.preventDefault();
+        callback();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [callback]);
+};
+
 // Hook for global keyboard shortcut
 export const useFinderMenuShortcut = (callback: () => void) => {
   React.useEffect(() => {
