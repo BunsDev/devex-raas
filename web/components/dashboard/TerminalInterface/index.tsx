@@ -199,6 +199,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
 
   const executeCommand = useCallback(
     async (commandLine: string): Promise<void> => {
+      setShowSuggestions(false);
       setIsLoading(true);
       await commandExecutor.executeCommand(commandLine, executionContext);
       setIsLoading(false);

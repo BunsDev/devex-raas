@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import templates from "@/lib/templates";
+import { toast } from "sonner";
 
 // Types definition
 interface StoredRepl {
@@ -71,6 +72,13 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
 
   const handleCreateRepl = async () => {
     if (!newReplName.trim() || !selectedTemplate) return;
+
+    if (repls.length >= 2) {
+      toast.error("Free Account Limit Expired", {
+        description: "Go to pricing page to know more",
+      });
+      return;
+    }
 
     try {
       setCreating(true);
@@ -347,91 +355,128 @@ const GuiInterface: React.FC<ReplDashboardProps> = ({
       {/* Create Repl Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center  p-4">
-          <div className="bg-gray-950 border border-gray-800 rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-white">
-                Create New Repl
-              </h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-white transition-colors duration-200"
-              >
-                <Plus className="w-5 h-5 rotate-45" />
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Repl Name
-                </label>
-                <input
-                  type="text"
-                  value={newReplName}
-                  onChange={(e) => setNewReplName(e.target.value)}
-                  placeholder="my-awesome-project"
-                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-white"
-                />
+          {repls.length >= 2 ? (
+            <div className="bg-gray-950 border border-gray-800 rounded-xl p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-red-500">
+                  Cannot Create More Repls
+                </h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-white transition-colors duration-200"
+                >
+                  <Plus className="w-5 h-5 rotate-45" />
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Choose Template
-                </label>
-                <div className="grid grid-cols-1 gap-3">
-                  {Object.entries(templates).map(([key, template]) => (
-                    <div
-                      key={key}
-                      onClick={() => setSelectedTemplate(key)}
-                      className={cn(
-                        "p-3 border rounded-lg cursor-pointer transition-colors duration-200 flex items-center gap-3",
-                        selectedTemplate === key
-                          ? "border-white bg-white/5"
-                          : "border-gray-800 hover:border-gray-700",
-                      )}
-                    >
-                      <div />
-                      {template.icon}
-                      <div>
-                        <h3 className="font-medium text-white text-sm">
-                          {template.name}
-                        </h3>
-                        <p className="text-xs text-gray-400">
-                          {template.description}
-                        </p>
+              <p className="block text-sm font-medium text-gray-400 mb-2">
+                Your Free Limit is Expired. Get Pro to get more Repls and
+                features
+              </p>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 text-white rounded-lg transition-colors duration-200 font-semibold text-sm"
+                >
+                  Cancel
+                </button>
+                <Link href={"/#pricing"} className="">
+                  <button className="flex-1 px-4 py-2 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-black rounded-lg transition-colors duration-200 font-semibold flex items-center justify-center gap-2 text-sm">
+                    Pricing Page
+                  </button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-950 border border-gray-800 rounded-xl p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-white">
+                  Create New Repl
+                </h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-white transition-colors duration-200"
+                >
+                  <Plus className="w-5 h-5 rotate-45" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Repl Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newReplName}
+                    onChange={(e) => setNewReplName(e.target.value)}
+                    placeholder="my-awesome-project"
+                    className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Choose Template
+                  </label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {Object.entries(templates).map(([key, template]) => (
+                      <div
+                        key={key}
+                        onClick={() => setSelectedTemplate(key)}
+                        className={cn(
+                          "p-3 border rounded-lg cursor-pointer transition-colors duration-200 flex items-center gap-3",
+                          selectedTemplate === key
+                            ? "border-white bg-white/5"
+                            : "border-gray-800 hover:border-gray-700",
+                        )}
+                      >
+                        <div />
+                        {template.icon}
+                        <div>
+                          <h3 className="font-medium text-white text-sm">
+                            {template.name}
+                          </h3>
+                          <p className="text-xs text-gray-400">
+                            {template.description}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 text-white rounded-lg transition-colors duration-200 font-semibold text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateRepl}
-                disabled={!newReplName.trim() || !selectedTemplate || creating}
-                className="flex-1 px-4 py-2 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-black rounded-lg transition-colors duration-200 font-semibold flex items-center justify-center gap-2 text-sm"
-              >
-                {creating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Create Repl
-                  </>
-                )}
-              </button>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-800/50 hover:bg-gray-800 text-white rounded-lg transition-colors duration-200 font-semibold text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateRepl}
+                  disabled={
+                    !newReplName.trim() || !selectedTemplate || creating
+                  }
+                  className="flex-1 px-4 py-2 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-black rounded-lg transition-colors duration-200 font-semibold flex items-center justify-center gap-2 text-sm"
+                >
+                  {creating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Create Repl
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

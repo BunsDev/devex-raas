@@ -55,6 +55,12 @@ func newRepl(w http.ResponseWriter, r *http.Request, s3Client *s3.S3Client, rds 
 	user, _ := middleware.GetUserFromContext(r.Context())
 	userName := strings.ToLower(user.Login)
 
+	if userRepls, err := rds.GetUserRepls(userName); err == nil && len(userRepls) == 2 {
+		log.Println("Cannot Create More Repls (Free Account Limit Reached): ")
+		json.WriteError(w, http.StatusInternalServerError, "Free Account Limit Reached")
+		return
+	}
+
 	// Create Repl ID
 	id := uuid.New()
 	replId := fmt.Sprintf("repl-%s", strings.TrimSpace(id.String()))

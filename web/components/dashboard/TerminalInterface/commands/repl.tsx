@@ -35,6 +35,13 @@ export const replCommand: Command = {
         }
 
         try {
+          const repls = await context.getRepls();
+          if (repls.length >= 2) {
+            throw new Error(
+              "Free Account Limit Expired! go to /pricing to learn more",
+            );
+          }
+
           const template = templates[templateKey as keyof typeof templates];
           await context.createRepl(template.key, name);
           return `✅ Successfully created repl "${name}"\n   Template: ${template.name}\n   Key: ${template.key}\n   Status: Ready\n\n🚀 Next step: Activate your repl with 'repl activate ${name}'`;
