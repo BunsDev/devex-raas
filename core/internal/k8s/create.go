@@ -10,7 +10,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -71,6 +70,16 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 								},
 							},
 							Env: awsEnvVars(),
+							// Resources: corev1.ResourceRequirements{
+							// 	Requests: corev1.ResourceList{
+							// 		corev1.ResourceCPU:    resource.MustParse("50m"),
+							// 		corev1.ResourceMemory: resource.MustParse("100Mi"),
+							// 	},
+							// 	Limits: corev1.ResourceList{
+							// 		corev1.ResourceCPU:    resource.MustParse("200m"),
+							// 		corev1.ResourceMemory: resource.MustParse("300Mi"),
+							// 	},
+							// },
 						},
 					},
 					Containers: []corev1.Container{
@@ -99,16 +108,16 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 									ContainerPort: config.Port,
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("250m"),
-									corev1.ResourceMemory: resource.MustParse("512Mi"),
-								},
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("750m"),
-									corev1.ResourceMemory: resource.MustParse("1Gi"),
-								},
-							},
+							// Resources: corev1.ResourceRequirements{
+							// 	Requests: corev1.ResourceList{
+							// 		corev1.ResourceCPU:    resource.MustParse("125m"),
+							// 		corev1.ResourceMemory: resource.MustParse("256Mi"),
+							// 	},
+							// 	Limits: corev1.ResourceList{
+							// 		corev1.ResourceCPU:    resource.MustParse("750m"),
+							// 		corev1.ResourceMemory: resource.MustParse("1Gi"),
+							// 	},
+							// },
 						},
 					},
 				},
