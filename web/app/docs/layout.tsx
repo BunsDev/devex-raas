@@ -29,8 +29,8 @@ const DocsLayout: React.FC<DocsLayoutProps> = async ({ children, params }) => {
     }
 
     return (
-      <div className="max-h-screen bg-black text-zinc-100 pt-14 overflow-hidden">
-        <div className="flex h-screen">
+      <div className="min-h-screen bg-black text-zinc-100 pt-14 overflow-hidden">
+        <div className="flex relative">
           <DocsSidebar docTree={docTree} />
           {children}
         </div>

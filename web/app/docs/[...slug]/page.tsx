@@ -30,16 +30,16 @@ export default async function DocsPage({ params }: DocsPageProps) {
     }
 
     return (
-      <div className="flex-1 flex h-full flex-col md:m-2 rounded-lg ">
+      <div className="flex-1 flex flex-col md:m-2 md:rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-zinc-900 border-b border-zinc-800 px-4 sm:px-6 md:px-8 py-4 sm:py-6">
+        <div className="bg-zinc-900 border-b border-zinc-800 px-4 sm:px-6 md:px-8 py-4 ">
           <div className="flex items-center justify-between">
             <div className="flex items-center min-w-0 flex-1">
               <div className="p-1.5 sm:p-2 bg-emerald-500 rounded-lg mr-2 sm:mr-4 flex-shrink-0">
                 <BookOpen className="h-4 w-4 sm:h-6 sm:w-6 text-black" />
               </div>
-              <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-zinc-100 tracking-tight truncate">
-                {currentPath || "Documentation"}
+              <h1 className="text-lg sm:text-2xl  font-bold text-zinc-100 tracking-tight truncate">
+                {paramsValue?.slug?.join("/") || "Documentation"}
               </h1>
             </div>
 
@@ -51,8 +51,8 @@ export default async function DocsPage({ params }: DocsPageProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto bg-zinc-950">
-          <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8">
+        <div className="flex-1 overflow-y-auto bg-zinc-950 pb-14">
+          <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8 ">
             {currentContent ? (
               <div
                 suppressHydrationWarning
