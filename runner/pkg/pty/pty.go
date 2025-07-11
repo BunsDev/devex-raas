@@ -153,7 +153,7 @@ func (pm *PTYManager) ListSessions() []string {
 }
 
 // GetSessionStatus returns status information for a session
-func (pm *PTYManager) GetSessionStatus(sessionID string) (map[string]interface{}, error) {
+func (pm *PTYManager) GetSessionStatus(sessionID string) (map[string]any, error) {
 	session, exists := pm.GetSession(sessionID)
 	if !exists {
 		return nil, fmt.Errorf("session %s not found", sessionID)
@@ -165,6 +165,8 @@ func (pm *PTYManager) GetSessionStatus(sessionID string) (map[string]interface{}
 func (pm *PTYManager) Cleanup() {
 	pm.mutex.Lock()
 	defer pm.mutex.Unlock()
+
+	log.Println("Calling Cleanup")
 
 	for _, session := range pm.sessions {
 		session.Close()
@@ -292,11 +294,11 @@ func (s *PTYSession) SetOnCloseCallback(callback func()) {
 }
 
 // GetStatus returns current session status
-func (s *PTYSession) GetStatus() map[string]interface{} {
+func (s *PTYSession) GetStatus() map[string]any {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	status := map[string]interface{}{
+	status := map[string]any{
 		"id":     s.ID,
 		"active": !s.isClosed.Load(),
 	}
@@ -308,7 +310,7 @@ func (s *PTYSession) GetStatus() map[string]interface{} {
 
 	if !s.isClosed.Load() {
 		if size, err := s.GetSize(); err == nil {
-			status["size"] = map[string]interface{}{
+			status["size"] = map[string]any{
 				"cols": size.Cols,
 				"rows": size.Rows,
 			}

@@ -61,6 +61,7 @@ interface SandboxProps {
     handleResize: (cols: number, rows: number) => void;
     handleReady: () => void;
     handleSendData: (data: string) => void;
+    sessionId: string | null;
     status: "connected" | "connecting" | "disconnected";
     error: string | null;
   };
@@ -749,6 +750,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                     <Terminal
                       ref={terminal.ref}
                       onSendData={terminal.handleSendData}
+                      sessionId={terminal.sessionId}
                       onRequestTerminal={terminal.handleRequest}
                       onTerminalResize={terminal.handleResize}
                       onReady={terminal.handleReady}
@@ -960,6 +962,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                                 onTerminalResize={terminal.handleResize}
                                 onReady={terminal.handleReady}
                                 onClose={terminal.handleClose}
+                                sessionId={terminal.sessionId}
                                 onError={terminal.handleError}
                                 className="h-full"
                               />

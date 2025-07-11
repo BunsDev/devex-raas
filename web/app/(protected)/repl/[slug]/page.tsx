@@ -31,7 +31,7 @@ export default function ReplPage() {
   const [filePath, setFilePath] = useState<string>("");
 
   const terminalRef = useRef<TerminalRef>(null);
-  const terminalSessionIdRef = useRef<string>("");
+  const terminalSessionIdRef = useRef<string | null>(null);
   const [terminalConnectionStatus, setTerminalConnectionStatus] = useState<
     "disconnected" | "connecting" | "connected"
   >("disconnected");
@@ -336,6 +336,9 @@ export default function ReplPage() {
   }, []);
 
   const handleTerminalClose = useCallback(() => {
+    emit("closeTerminal", {
+      sessionId: terminalSessionIdRef.current,
+    });
     setTerminalConnectionStatus("disconnected");
     console.log("🖥️ Terminal closed by user");
   }, []);
@@ -383,6 +386,7 @@ export default function ReplPage() {
         handleResize: handleTerminalResize,
         handleReady: handleTerminalReady,
         handleSendData: handleTerminalSendData,
+        sessionId: terminalSessionIdRef.current,
         status: terminalConnectionStatus,
         error: terminalError,
       }}

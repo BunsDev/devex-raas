@@ -103,7 +103,7 @@ interface TerminalProps {
   onReady?: () => void;
 
   /** Callback fired when the terminal is closed */
-  onClose?: () => void;
+  onClose: () => void;
 
   /**
    * Callback fired when an error occurs
@@ -127,7 +127,7 @@ interface TerminalProps {
    * Session identifier for the terminal
    * Used to distinguish between different terminal sessions
    */
-  sessionId?: string;
+  sessionId: string | null;
 
   /**
    * Whether to automatically reconnect when the session changes
@@ -331,7 +331,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
      * Store the current session ID to detect changes
      * Used for session management and reconnection logic
      */
-    const currentSessionIdRef = useRef<string | undefined>(sessionId);
+    const currentSessionIdRef = useRef<string | null>(sessionId);
 
     // ===== CORE FUNCTIONALITY =====
 
@@ -564,6 +564,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(
         clearTimeout(timeoutId);
         console.log("Cleanup: disposing terminal");
 
+        onClose();
         // Cleanup terminal instance
         if (xtermRef.current) {
           try {

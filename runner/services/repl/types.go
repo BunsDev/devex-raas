@@ -56,6 +56,10 @@ type TerminalDataRequest struct {
 	SessionID string `json:"sessionId"`
 }
 
+type TerminalCloseRequest struct {
+	SessionID string `json:"sessionId"`
+}
+
 type TerminalResizeRequest struct {
 	Cols      int    `json:"cols"`
 	Rows      int    `json:"rows"`

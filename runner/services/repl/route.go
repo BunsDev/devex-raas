@@ -31,9 +31,10 @@ func getPTYManager() *pty.PTYManager {
 
 func NewHandler(sm *shutdown.ShutdownManager) http.Handler {
 	mux := http.NewServeMux()
-	ptyManager = getPTYManager()
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		wsHandler := ws.NewWSHandler(strings.Split(r.Host, ".")[0], sm)
+		ptyManager = getPTYManager()
+		defer ptyManager.Cleanup()
 		handleWs(w, r, wsHandler, ptyManager)
 	})
 	return mux
@@ -215,6 +216,14 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, ptyManag
 			ws.Emit("terminalClosed", nil)
 			ptyManager.RemoveSession(sessionID)
 		})
+	})
+
+	OnTyped(ws, "closeTerminal", func(req TerminalCloseRequest) {
+		session, exists := ptyManager.GetSession(req.SessionID)
+		if !exists {
+			return
+		}
+		session.Close()
 	})
 
 	OnTyped(ws, "terminalInput", func(req TerminalDataRequest) {
