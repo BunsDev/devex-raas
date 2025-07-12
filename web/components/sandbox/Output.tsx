@@ -15,13 +15,13 @@ const URLConverter = ({
   isVisible: boolean;
   replId: string;
 }) => {
-  const [port, setPort] = useState("4000");
-  const [route, setRoute] = useState("/some/route/");
+  const [port, setPort] = useState("5000");
+  const [route, setRoute] = useState("/ping");
   const [copied, setCopied] = useState(false);
 
   const domainName =
     "https://" +
-    (process.env.NEXT_PUBLIC_RUNNER_DOMAIN_NAME || "localhost:8001");
+    (process.env.NEXT_PUBLIC_RUNNER_DOMAIN_NAME || "localhost:8081");
 
   // Generate the converted URL
   const convertedUrl = `${domainName}/${replId}/user-app/${port}${route.startsWith("/") ? route : "/" + route}`;
@@ -46,7 +46,7 @@ const URLConverter = ({
     >
       <div className="p-4 flex flex-col gap-4">
         {/* Input Section */}
-        <div className="flex-col gap-3 text-black flex gap-2">
+        <div className="flex gap-3 text-black ">
           {/* Original URL Display */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
