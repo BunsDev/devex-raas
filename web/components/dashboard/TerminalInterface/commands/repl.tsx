@@ -1,16 +1,16 @@
-// commands/repl.ts
+// commands/repl.tsx
 import templates from "@/lib/templates";
 import { Command } from "@/types/dashboard";
 
 export const replCommand: Command = {
   name: "repl",
   description: "Manage repls - create, activate, deactivate, and list repls",
-  usage: "repl <subcommand> [options]",
+  usage: "repl {subcommand} [options]",
   subcommands: {
     create: {
       name: "create",
       description: "Create a new repl",
-      usage: "repl create <name> <template>",
+      usage: "repl create {name} {template}",
       arguments: [
         {
           name: "name",
@@ -60,7 +60,7 @@ export const replCommand: Command = {
     activate: {
       name: "activate",
       description: "Activate an existing repl",
-      usage: "repl activate <name>",
+      usage: "repl activate {name}",
       arguments: [
         {
           name: "name",
@@ -81,7 +81,7 @@ export const replCommand: Command = {
 
           if (!repl) {
             const availableRepls = repls.map((r) => r.name).join(", ");
-            return `❌ Error: Repl with name "${replName}" not found.\n${repls.length > 0 ? `Available repls: ${availableRepls}` : "No repls found."}\n\n💡 Use 'repl list' to see all repls or 'repl create <name> <template>' to create one.`;
+            return `❌ Error: Repl with name "${replName}" not found.\n${repls.length > 0 ? `Available repls: ${availableRepls}` : "No repls found."}\n\n💡 Use 'repl list' to see all repls or 'repl create {name} {template}' to create one.`;
           }
 
           await context.startRepl(repl.id);
@@ -99,7 +99,7 @@ export const replCommand: Command = {
     deactivate: {
       name: "deactivate",
       description: "Deactivate a repl",
-      usage: "repl deactivate <name>",
+      usage: "repl deactivate {name}",
       arguments: [
         {
           name: "name",
@@ -124,7 +124,7 @@ export const replCommand: Command = {
           }
 
           await context.deleteReplSession(repl.id);
-          return `🗑️ Successfully deactivated repl "${repl.name}"\n   ID: ${repl.id}\n\n💡 Use 'repl create <name> <template>' to create a new repl.`;
+          return `🗑️ Successfully deactivated repl "${repl.name}"\n   ID: ${repl.id}\n\n💡 Use 'repl create {name} {template}' to create a new repl.`;
         } catch (error: any) {
           return `❌ Error deactivating repl: ${error.message || "Unknown error"}`;
         }
@@ -162,7 +162,7 @@ export const replCommand: Command = {
 
           if (repls.length === 0) {
             if (options.active) {
-              return `📭 No active repls found.\n\n🚀 Get started by activating a repl:\n   repl list\n   repl activate <name>\n\n💡 Or create a new repl: repl create my-app node`;
+              return `📭 No active repls found.\n\n🚀 Get started by activating a repl:\n   repl list\n   repl activate {name}\n\n💡 Or create a new repl: repl create my-app node`;
             }
             return `📭 No repls found.\n\n🚀 Get started by creating your first repl:\n   repl create my-app node\n   repl activate my-app\n\n💡 Use 'templates' to see available templates.`;
           }
@@ -194,8 +194,8 @@ export const replCommand: Command = {
               .join("\n\n");
 
             const footerText = options.active
-              ? "💡 Use 'repl deactivate <name>' to stop any active repl."
-              : "💡 Use 'repl activate <name>' or 'repl deactivate <name>' to manage repls.";
+              ? "💡 Use 'repl deactivate {name}' to stop any active repl."
+              : "💡 Use 'repl activate {name}' or 'repl deactivate {name}' to manage repls.";
 
             return `${header}\n${replList}\n\n${footerText}`;
           }
@@ -216,8 +216,8 @@ export const replCommand: Command = {
             .join("\n");
 
           const footerText = options.active
-            ? "💡 Use 'repl deactivate <name>' to stop any repl or 'repl list --detailed --active' for more info."
-            : "💡 Use 'repl activate <name>' to activate a repl or 'repl list --detailed' for more info.";
+            ? "💡 Use 'repl deactivate {name}' to stop any repl or 'repl list --detailed --active' for more info."
+            : "💡 Use 'repl activate {name}' to activate a repl or 'repl list --detailed' for more info.";
 
           return `${header}\n${replList}\n\n${footerText}`;
         } catch (error: any) {
@@ -229,7 +229,7 @@ export const replCommand: Command = {
     search: {
       name: "search",
       description: "Search repls by name",
-      usage: "repl search <query>",
+      usage: "repl search {query}",
       arguments: [
         {
           name: "query",
@@ -248,7 +248,7 @@ export const replCommand: Command = {
           );
 
           if (matches.length === 0) {
-            return `🔍 No repls found matching "${query}"\n\n💡 Use 'repl list' to see all repls or 'repl create <name> <template>' to create one.`;
+            return `🔍 No repls found matching "${query}"\n\n💡 Use 'repl list' to see all repls or 'repl create {name} {template}' to create one.`;
           }
 
           // Sort matches: active ones first
@@ -267,7 +267,7 @@ export const replCommand: Command = {
             })
             .join("\n");
 
-          return `${header}\n🔍 Found ${sortedMatches.length} repl(s) matching "${query}":\n${resultList}\n\n💡 Use 'repl activate <name>' or 'repl deactivate <name>' to manage these repls.`;
+          return `${header}\n🔍 Found ${sortedMatches.length} repl(s) matching "${query}":\n${resultList}\n\n💡 Use 'repl activate {name}' or 'repl deactivate {name}' to manage these repls.`;
         } catch (error: any) {
           return `❌ Error searching repls: ${error.message || "Unknown error"}`;
         }
@@ -276,6 +276,6 @@ export const replCommand: Command = {
   },
 
   execute: async (args, options, context) => {
-    return `╭─────────────────────────────────────────╮\n│               REPL MANAGER              │\n╰─────────────────────────────────────────╯\nAvailable subcommands:\n  create <name> <template>     - Create a new repl\n  activate <name>              - Activate an existing repl\n  deactivate <name>            - Deactivate a repl\n  list [--detailed] [--active] - List all repls\n  search <query>               - Search repls by name\n\n💡 Examples:\n   repl create my-app node\n   repl activate my-app\n   repl deactivate old-project\n   repl list --detailed\n   repl list --active\n\nUse 'templates' to see available templates.`;
+    return `╭─────────────────────────────────────────╮\n│               REPL MANAGER              │\n╰─────────────────────────────────────────╯\nAvailable subcommands:\n  create {name} {template}     - Create a new repl\n  activate {name}              - Activate an existing repl\n  deactivate {name}            - Deactivate a repl\n  list [--detailed] [--active] - List all repls\n  search {query}               - Search repls by name\n\n💡 Examples:\n   repl create my-app node\n   repl activate my-app\n   repl deactivate old-project\n   repl list --detailed\n   repl list --active\n\nUse 'templates' to see available templates.`;
   },
 };

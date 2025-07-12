@@ -32,20 +32,54 @@ export const helpCommand: Command = {
     }
 
     const commands = [
-      "help",
-      "version",
-      "status",
-      "templates",
-      "repl",
-      "clear",
-      "whoami",
-      "ls",
-      "neofetch",
+      {
+        name: "help",
+        description: "Lists all available commands and their descriptions",
+      },
+      {
+        name: "version",
+        description: "Displays the current version of the application",
+      },
+      {
+        name: "status",
+        description: "Shows the current operational status of the system",
+      },
+      {
+        name: "templates",
+        description:
+          "Gives a list of all available project templates to kickstart your coding journey 🚀",
+      },
+      {
+        name: "repl",
+        description:
+          "Launches an interactive Read-Eval-Print Loop (REPL) environment for quick code execution and testing",
+      },
+      {
+        name: "clear",
+        description: "Clears the terminal screen for a fresh start",
+      },
+      {
+        name: "whoami",
+        description:
+          "Reveals your current user identity – because even machines need to know who's boss 😉",
+      },
+      {
+        name: "ls",
+        description:
+          "Lists your created repls, showing you all the amazing projects you've been working on",
+      },
+      {
+        name: "neofetch",
+        description:
+          "Displays a sleek, aesthetic system information script that proudly showcases your operating system and hardware details ✨",
+      },
     ];
 
     const commandList = commands
-      .map((cmd) => `  ${cmd.padEnd(12)} - Available command`)
+      .map((cmd) => `  ${cmd.name.padEnd(12)} - ${cmd.description}`)
       .join("\n");
+
+    console.log(commandList);
 
     return `╭─────────────────────────────────────────╮
 │             AVAILABLE COMMANDS          │
@@ -56,8 +90,8 @@ ${commandList}
 │             GETTING STARTED             │
 ╰─────────────────────────────────────────╯
 🚀 Quick Start Guide:
-1. Create a new repl: repl create <n> <template>
-2. Activate your repl: repl activate <n>
+1. Create a new repl: repl create {name} {template}
+2. Activate your repl: repl activate {name}
 3. List all repls: repl list
 4. List active repls: repl list --active
 
@@ -69,45 +103,9 @@ ${commandList}
 💡 Useful commands:
    repl list --detailed    - Show detailed repl info
    ls --active            - Show only active repls
-   repl search <query>    - Search repls by name
+   repl search {query}    - Search repls by name
 
-Type <command> --help for detailed usage information.`;
-  },
-};
-
-export const versionCommand: Command = {
-  name: "version",
-  description: "Show application version and system information",
-  usage: "version",
-  execute: async (args, options, context) => {
-    return `╭─────────────────────────────────────────╮
-│             SYSTEM INFO                 │
-╰─────────────────────────────────────────╯
-devX v2.0.0 - Next-Gen Terminal Interface
-Built with React & TypeScript
-Status: Online ✓`;
-  },
-};
-
-export const statusCommand: Command = {
-  name: "status",
-  description: "Display comprehensive system status and metrics",
-  usage: "status",
-  execute: async (args, options, context) => {
-    const uptime = Math.floor(Math.random() * 72) + 1;
-    const repls = await context.getRepls();
-    const activeRepls = repls.filter((repl) => repl.isActive);
-    return `╭─────────────────────────────────────────╮
-│             SYSTEM STATUS               │
-╰─────────────────────────────────────────╯
-🟢 System:     Online
-🔋 CPU:        ${Math.floor(Math.random() * 30) + 10}%
-💾 Memory:     ${Math.floor(Math.random() * 40) + 20}%
-💿 Storage:    ${Math.floor(Math.random() * 60) + 15}%
-⏱️ Uptime:     ${uptime}h ${Math.floor(Math.random() * 60)}m
-📊 Repls:      ${repls.length} total (${activeRepls.length} active)
-
-💡 Use 'repl list --active' to see active repls`;
+Type {command} --help for detailed usage information.`;
   },
 };
 
@@ -124,7 +122,7 @@ export const templatesCommand: Command = {
 ╰─────────────────────────────────────────╯
 ${templateList}
 
-💡 Usage: repl create <n> <template>
+💡 Usage: repl create {name} {template}
    Example: repl create my-app node`;
   },
 };
@@ -142,23 +140,6 @@ export const clearCommand: Command = {
       },
     ]);
     return "";
-  },
-};
-
-export const whoamiCommand: Command = {
-  name: "whoami",
-  description: "Display current user information and session details",
-  usage: "whoami",
-  execute: async (args, options, context) => {
-    return `╭─────────────────────────────────────────╮
-│              USER PROFILE               │
-╰─────────────────────────────────────────╯
-👤 User:       ${context.userName}
-🏠 Home:       /home/${context.userName}
-🐚 Shell:      devX Terminal v2.0.0
-🌐 Session:    ${new Date().toLocaleString()}
-
-💡 Try 'repl create <n> <template>' to get started!`;
   },
 };
 
@@ -193,7 +174,7 @@ export const lsCommand: Command = {
 
 🚀 Get started by activating a repl:
    ls
-   repl activate <n>
+   repl activate {name}
 
 💡 Or create a new repl: repl create my-app node`;
         }
@@ -236,8 +217,8 @@ export const lsCommand: Command = {
           .join("\n\n");
 
         const footerText = options.active
-          ? "💡 Use 'repl deactivate <n>' to stop any active repl."
-          : "💡 Use 'repl activate <n>' or 'repl deactivate <n>' to manage repls.";
+          ? "💡 Use 'repl deactivate {name}' to stop any active repl."
+          : "💡 Use 'repl activate {name}' or 'repl deactivate {name}' to manage repls.";
 
         return `${header}\n${replList}\n\n${footerText}`;
       }
@@ -258,8 +239,8 @@ export const lsCommand: Command = {
         .join("\n");
 
       const footerText = options.active
-        ? "💡 Use 'repl deactivate <n>' to stop any repl or 'ls --detailed --active' for more info."
-        : "💡 Use 'repl activate <n>' to activate a repl or 'ls --detailed' for more info.";
+        ? "💡 Use 'repl deactivate {name}' to stop any repl or 'ls --detailed --active' for more info."
+        : "💡 Use 'repl activate {name}' to activate a repl or 'ls --detailed' for more info.";
 
       return `${header}\n${replList}\n\n${footerText}`;
     } catch (error: any) {
@@ -268,20 +249,82 @@ export const lsCommand: Command = {
   },
 };
 
+// Extras
+
+export const whoamiCommand: Command = {
+  name: "whoami",
+  description: "Display current user information and session details",
+  usage: "whoami",
+  execute: async (args, options, context) => {
+    return `╭─────────────────────────────────────────╮
+│        ✨ DIGITAL IDENTITY CARD ✨        │
+╰─────────────────────────────────────────╯
+🆔 User Handle:  ${context.userName}
+🏠 Personal Nexus: /home/${context.userName}
+🚀 Command Conduit: devX Terminal v2.0.0
+⏱️ Session Epoch:  ${new Date().toLocaleString()}
+
+🌟 *Your journey begins now! Explore with 'repl create {name} {template}'*`;
+  },
+};
+
 export const neofetchCommand: Command = {
   name: "neofetch",
   description: "Display system information in a stylized format",
   usage: "neofetch",
   execute: async (args, options, context) => {
-    return `                    ╭───────────────────────╮
-    ╭─────────────╮   │     devX v2.0.0       │
-    │  ████████   │   │                           │
-    │  ████████   │   │ OS: devX Terminal     │
-    │  ████████   │   │ Shell: Advanced CLI       │
-    │  ████████   │   │ Theme: Dark Terminal      │
-    ╰─────────────╯   │ Uptime: Online            │
-                    ╰───────────────────────╯
+    return `          _______
+         /  ____  \\
+        |  |____|  |
+        |   ____   |
+        |  |    |  |
+        \\__|____|__/
+─────────────────────────────────────────
+             devX v2.0.0
+─────────────────────────────────────────
+ operating system   : devX Terminal
+ shell interface    : Advanced CLI
+ visual theme       : Dark Terminal
+ operational status : Online
 
-💡 Ready to code! Try 'repl create <n> <template>'`;
+💡 *Ready for action! Launch a new project with 'repl create {name} {template}'*`;
+  },
+};
+
+export const versionCommand: Command = {
+  name: "version",
+  description: "Show application version and system information",
+  usage: "version",
+  execute: async (args, options, context) => {
+    return `╭─────────────────────────────────────────╮
+│        🚀 DEVX CORE SPECS 🚀        │
+╰─────────────────────────────────────────╯
+💻 Version:      devX v2.0.0 - Next-Gen Terminal Interface
+⚙️ Engine:       Built with React & TypeScript
+✅ System Status: Online and Fully Operational
+
+*Experience the future of coding!*`;
+  },
+};
+
+export const statusCommand: Command = {
+  name: "status",
+  description: "Display comprehensive system status and metrics",
+  usage: "status",
+  execute: async (args, options, context) => {
+    const uptime = Math.floor(Math.random() * 72) + 1;
+    const repls = await context.getRepls();
+    const activeRepls = repls.filter((repl) => repl.isActive);
+    return `╭─────────────────────────────────────────╮
+│      📈 SYSTEM VITAL SIGNS 📈       │
+╰─────────────────────────────────────────╯
+🌐 Network:      Online & Connected
+🧠 CPU Load:     ${Math.floor(Math.random() * 30) + 10}% [Optimized]
+💾 Memory Usage: ${Math.floor(Math.random() * 40) + 20}% [Stable]
+📦 Disk Space:   ${Math.floor(Math.random() * 60) + 15}% [Ample]
+⚡ Active Since: ${uptime}h ${Math.floor(Math.random() * 60)}m
+🔄 Repls:        ${repls.length} total (${activeRepls.length} currently engaged)
+
+🔍 *Dive deeper into active sessions: 'repl list --active'*`;
   },
 };

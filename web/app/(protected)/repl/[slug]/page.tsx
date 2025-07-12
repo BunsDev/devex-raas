@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { FileTreeAction, Tree } from "@/components/sandbox/FileTree";
 import { toast } from "sonner";
 import { TerminalRef } from "@/components/sandbox/Terminal";
+import { ProtectedRoute } from "@/components/Auth/ProtectedRoute";
 
 export default function ReplPage() {
   const { slug } = useParams();
@@ -368,29 +369,31 @@ export default function ReplPage() {
   }
 
   return (
-    <Sandbox
-      isConnected={isConnected}
-      editor={{ updateContent, code, setCode, fileType }}
-      fileTree={{
-        tree,
-        fetchDir,
-        fetchContent,
-        handleFileTreeAction,
-        filePath,
-      }}
-      terminal={{
-        ref: terminalRef,
-        handleRequest: handleRequestTerminal,
-        handleClose: handleTerminalClose,
-        handleError: handleTerminalError,
-        handleResize: handleTerminalResize,
-        handleReady: handleTerminalReady,
-        handleSendData: handleTerminalSendData,
-        sessionId: terminalSessionIdRef.current,
-        status: terminalConnectionStatus,
-        error: terminalError,
-      }}
-      replId={slug as string}
-    />
+    <ProtectedRoute>
+      <Sandbox
+        isConnected={isConnected}
+        editor={{ updateContent, code, setCode, fileType }}
+        fileTree={{
+          tree,
+          fetchDir,
+          fetchContent,
+          handleFileTreeAction,
+          filePath,
+        }}
+        terminal={{
+          ref: terminalRef,
+          handleRequest: handleRequestTerminal,
+          handleClose: handleTerminalClose,
+          handleError: handleTerminalError,
+          handleResize: handleTerminalResize,
+          handleReady: handleTerminalReady,
+          handleSendData: handleTerminalSendData,
+          sessionId: terminalSessionIdRef.current,
+          status: terminalConnectionStatus,
+          error: terminalError,
+        }}
+        replId={slug as string}
+      />
+    </ProtectedRoute>
   );
 }

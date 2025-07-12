@@ -57,7 +57,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
     {
       type: "info",
       content:
-        '💡 Type "help" to see available commands or "repl create <name> <template>" to get started',
+        '💡 Type "help" to see available commands or "repl create {name} <template>" to get started',
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);
@@ -312,6 +312,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
         {history.map((entry, index) => (
           <div key={index} className={`mb-2 ${getTypeColor(entry.type)}`}>
             <pre className="whitespace-pre-wrap font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto">
+              {/* {entry.content} */}
               <div dangerouslySetInnerHTML={{ __html: entry.content }} />
             </pre>
             {entry.timestamp && (

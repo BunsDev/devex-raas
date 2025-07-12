@@ -141,18 +141,21 @@ export const Cmd = () => {
       type: "action",
       name: "Create New Repl",
       icon: <Plus />,
+      action: () => router.push("/dashboard"),
       // shortcut: "cmd+n",
     },
     {
       type: "action",
       name: "Activate a Repl",
       icon: <RunIcon />,
+      action: () => router.push("/dashboard"),
       // shortcut: "cmd+u",
     },
     {
       type: "action",
       name: "Get Repls",
       icon: <List />,
+      action: () => router.push("/dashboard"),
       // shortcut: "cmd+e",
     },
     {
@@ -264,7 +267,6 @@ export const Cmd = () => {
                                   item.action
                                 ) {
                                   item.action();
-                                  return; // Don't close the menu for docs search
                                 }
                                 setOpen(false);
                                 setValue("");

@@ -16,7 +16,7 @@ function DashboardComponent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get("view") === "gui" ? "ui" : "terminal";
+  const activeTab = searchParams.get("view") === "terminal" ? "terminal" : "ui";
 
   const [popup, setPopup] = useState<{ replName: string; link: string } | null>(
     null,
@@ -133,6 +133,20 @@ const NavigationTabs = ({
     <div className="w-full sm:w-auto">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-5 bg-gray-900 rounded-lg p-2">
         <Button
+          onClick={() => setActiveTab("ui")}
+          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
+            activeTab === "ui"
+              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
+              : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+          }`}
+        >
+          <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">GUI Mode</span>
+          <span className="sm:hidden">GUI</span>
+          <Activity className="w-3 h-3" />
+          <span>Live</span>
+        </Button>
+        <Button
           className={`flex gap-2 sm:gap-3 justify-center items-center px-3 sm:px-4 py-2 text-xs sm:text-sm ${
             activeTab === "terminal"
               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
@@ -148,24 +162,10 @@ const NavigationTabs = ({
             Terminal
           </span>
           <div className="hidden sm:flex items-center gap-1 text-xs text-gray-500">
-            <Activity className="w-3 h-3" />
-            <span>Live</span>
+            <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 sm:px-2 py-0.5 rounded-full">
+              Beta
+            </span>
           </div>
-        </Button>
-        <Button
-          onClick={() => setActiveTab("ui")}
-          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-            activeTab === "ui"
-              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-              : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-          }`}
-        >
-          <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">GUI Mode</span>
-          <span className="sm:hidden">GUI</span>
-          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 sm:px-2 py-0.5 rounded-full">
-            Beta
-          </span>
         </Button>
       </div>
     </div>
