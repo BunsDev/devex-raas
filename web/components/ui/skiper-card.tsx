@@ -140,14 +140,15 @@ function Step1Component() {
   );
 }
 
-// Step 2: Terminal Animation
+// Step 2: Terminal Animation - Fixed Version
 function Step2Component() {
   const [lines, setLines] = useState<string[]>([]);
   const [currentLine, setCurrentLine] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const terminalSequence = [
-    { text: "$ create new repl", delay: 500, isCommand: true },
+    { text: "$ create new repl", delay: 200, isCommand: true },
     {
       text: "🔄 Initializing new development environment...",
       delay: 1000,
@@ -168,39 +169,52 @@ function Step2Component() {
   ];
 
   useEffect(() => {
-    let timeouts: NodeJS.Timeout[] = [];
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
 
-    terminalSequence.forEach((item, index) => {
-      const timeout = setTimeout(() => {
-        setIsTyping(true);
-        typeWriter(item.text, item.isCommand, () => {
-          setLines((prev) => [...prev, item.text]);
-          setCurrentLine("");
+    const processNextLine = () => {
+      if (currentIndex >= terminalSequence.length) return;
+
+      const item = terminalSequence[currentIndex];
+      setIsTyping(true);
+
+      let i = 0;
+      intervalId = setInterval(() => {
+        if (i < item.text.length) {
+          setCurrentLine(item.text.slice(0, i + 1));
+          i++;
+        } else {
+          clearInterval(intervalId);
           setIsTyping(false);
-        });
-      }, item.delay);
-      timeouts.push(timeout);
-    });
 
-    return () => timeouts.forEach(clearTimeout);
-  }, []);
+          // Add completed line to lines array and clear current line
+          timeoutId = setTimeout(() => {
+            setLines((prev) => [...prev, item.text]);
+            setCurrentLine("");
+            setCurrentIndex((prev) => prev + 1);
+          }, 150);
+        }
+      }, 25);
+    };
 
-  const typeWriter = (
-    text: string,
-    isCommand: boolean,
-    callback: () => void,
-  ) => {
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < text.length) {
-        setCurrentLine(text.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(timer);
-        setTimeout(callback, 300);
-      }
-    }, 50);
-  };
+    // Start the first line after initial delay
+    if (currentIndex === 0) {
+      timeoutId = setTimeout(() => {
+        processNextLine();
+      }, terminalSequence[0].delay);
+    } else {
+      // For subsequent lines, use a shorter delay between lines
+      timeoutId = setTimeout(() => {
+        processNextLine();
+      }, 200);
+    }
+
+    // Cleanup function
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [currentIndex]);
 
   return (
     <div className="bg-black border border-neutral-700 rounded-lg p-4 font-mono text-sm h-64 overflow-hidden">
@@ -212,7 +226,6 @@ function Step2Component() {
         </div>
         <span className="text-neutral-400 text-xs">Terminal</span>
       </div>
-
       <div className="text-emerald-400">
         {lines.map((line, index) => (
           <div key={index} className="mb-1">
@@ -223,7 +236,6 @@ function Step2Component() {
             )}
           </div>
         ))}
-
         {currentLine && (
           <div className="mb-1">
             {currentLine.startsWith("$") ? (
@@ -239,10 +251,12 @@ function Step2Component() {
   );
 }
 
-// Step 3: VS Code Editor
+// Step 3: VS Code Editor - Fixed Version
 function Step3Component() {
   const [codeLines, setCodeLines] = useState<string[]>([]);
   const [currentLine, setCurrentLine] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
 
   const code = [
     "import React from 'react';",
@@ -260,33 +274,65 @@ function Step3Component() {
   ];
 
   useEffect(() => {
-    let index = 0;
-    const timer = setInterval(() => {
-      if (index < code.length) {
-        typeWriterCode(code[index], () => {
-          setCodeLines((prev) => [...prev, code[index]]);
-          setCurrentLine("");
-          index++;
-        });
-      } else {
-        clearInterval(timer);
-      }
-    }, 800);
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
 
-    return () => clearInterval(timer);
-  }, []);
+    const processNextLine = () => {
+      if (currentIndex >= code.length) return;
 
-  const typeWriterCode = (text: string, callback: () => void) => {
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i <= text.length) {
-        setCurrentLine(text.slice(0, i));
-        i++;
-      } else {
-        clearInterval(timer);
-        setTimeout(callback, 200);
-      }
-    }, 30);
+      const lineText = code[currentIndex];
+      setIsTyping(true);
+
+      let i = 0;
+      intervalId = setInterval(() => {
+        if (i <= lineText.length) {
+          setCurrentLine(lineText.slice(0, i));
+          i++;
+        } else {
+          clearInterval(intervalId);
+          setIsTyping(false);
+
+          // Add completed line and move to next
+          timeoutId = setTimeout(() => {
+            setCodeLines((prev) => [...prev, lineText]);
+            setCurrentLine("");
+            setCurrentIndex((prev) => prev + 1);
+          }, 200);
+        }
+      }, 30);
+    };
+
+    // Start processing the next line
+    if (currentIndex < code.length) {
+      // Add a small delay between lines for better visual flow
+      timeoutId = setTimeout(
+        () => {
+          processNextLine();
+        },
+        currentIndex === 0 ? 500 : 300,
+      );
+    }
+
+    // Cleanup function
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [currentIndex]);
+
+  const syntaxHighlight = (code: string) => {
+    return code
+      .replace(/('.*?'|".*?")/g, '<span style="color: #98D982;">$1</span>')
+      .replace(
+        /\b(import|from|function|return|export|default|const|let|var)\b/g,
+        '<span style="color: #569CD6;">$1</span>',
+      )
+      .replace(
+        /\b(React|App|div|h1|p)\b/g,
+        '<span style="color: #4EC9B0;">$1</span>',
+      )
+      .replace(/(className)/g, '<span style="color: #92C5F8;">$1</span>')
+      .replace(/([{}()[\];,])/g, '<span style="color: #D4D4D4;">$1</span>');
   };
 
   return (
@@ -303,7 +349,6 @@ function Step3Component() {
           <span className="text-white text-sm">App.jsx</span>
         </div>
       </div>
-
       {/* Editor Content */}
       <div className="p-4 font-mono text-sm h-full bg-neutral-900">
         <div className="text-neutral-400 mb-2">
@@ -311,7 +356,6 @@ function Step3Component() {
             # Start coding in your DevX environment
           </span>
         </div>
-
         {codeLines.map((line, index) => (
           <div key={index} className="flex items-start gap-3 mb-1">
             <span className="text-neutral-500 text-xs w-6 text-right">
@@ -326,36 +370,20 @@ function Step3Component() {
             </code>
           </div>
         ))}
-
         {currentLine && (
           <div className="flex items-start gap-3 mb-1">
             <span className="text-neutral-500 text-xs w-6 text-right">
               {codeLines.length + 1}
             </span>
             <code className="text-white">
-              <span
-                dangerouslySetInnerHTML={{
-                  __html: syntaxHighlight(currentLine),
-                }}
-              />
-              <span className="animate-pulse">▋</span>
+              <span>{currentLine}</span>
+              {isTyping && <span className="animate-pulse">▋</span>}
             </code>
           </div>
         )}
       </div>
     </div>
   );
-}
-
-function syntaxHighlight(code: string): string {
-  return code
-    .replace(
-      /import|from|function|return|export|default/g,
-      '<span style="color: #e879f9">$&</span>',
-    )
-    .replace(/'[^']*'/g, '<span style="color: #10b981">$&</span>')
-    .replace(/React|App/g, '<span style="color: #60a5fa">$&</span>')
-    .replace(/className|div|h1|p/g, '<span style="color: #f59e0b">$&</span>');
 }
 
 // Step 4: Success Message

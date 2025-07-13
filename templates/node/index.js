@@ -2,7 +2,7 @@ const http = require("http");
 const port = 5000;
 
 const server = http.createServer((req, res) => {
-  if (req.path == "/ping") {
+  if (req.url == "/ping") {
     res.writeHead(200, { "Content-Type": "application/json" });
 
     const responseObject = {
@@ -11,6 +11,7 @@ const server = http.createServer((req, res) => {
     };
 
     res.end(JSON.stringify(responseObject));
+    return;
   }
 
   res.writeHead(200, { "Content-Type": "text/plain" });

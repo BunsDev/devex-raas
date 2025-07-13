@@ -14,7 +14,6 @@ import {
   useDocsShortcut,
 } from "@/components/ui/command-menu";
 import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
 import {
   Command,
   Calendar,
@@ -30,10 +29,12 @@ import {
   BookOpen,
   ArrowLeft,
   File,
+  LogOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { RunIcon } from "@codesandbox/sandpack-react";
 import { getHref } from "@/lib/docs/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Types
 interface DocResult {
@@ -47,13 +48,9 @@ interface ApiResponse {
   warning?: string;
 }
 
-// Utility function to detect OS and return appropriate modifier key
-const getModifierKey = () => {
-  return { key: "cmd", symbol: "⌘" };
-};
-
 export const Cmd = () => {
   const router = useRouter();
+  const { isAuthenticated, logout } = useAuth();
 
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
@@ -137,6 +134,13 @@ export const Cmd = () => {
     },
 
     // Actions
+    {
+      type: "action",
+      name: isAuthenticated ? "Logout" : "Login",
+      icon: isAuthenticated ? <LogOut /> : <User />,
+      action: () => (isAuthenticated ? logout() : router.push("/login")),
+      // shortcut: "cmd+n",
+    },
     {
       type: "action",
       name: "Create New Repl",
