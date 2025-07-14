@@ -37,6 +37,7 @@ import Output from "./Output";
 import Terminal, { TerminalRef } from "./Terminal";
 import { FileFinder } from "../commandMenu/finder";
 import ShortcutKeysPopup from "./help";
+import { cn } from "@/lib/utils";
 
 interface SandboxProps {
   editor: {
@@ -77,11 +78,9 @@ const Sandbox: React.FC<SandboxProps> = ({
   isConnected,
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [terminalVisible, setTerminalVisible] = useState(true);
-  const [outputVisible, setOutputVisible] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [activeBottomPanel, setActiveBottomPanel] = useState<
-    "terminal" | "output"
+    "terminal" | "output" | null
   >("terminal");
 
   // Responsive state
@@ -134,6 +133,7 @@ const Sandbox: React.FC<SandboxProps> = ({
   }, []);
 
   const resetTerminal = useCallback(() => {
+    terminal.handleClose();
     terminal.ref.current?.reset();
     terminal.handleRequest();
   }, [terminal.handleRequest]);
@@ -194,30 +194,24 @@ const Sandbox: React.FC<SandboxProps> = ({
       // Ctrl+`: Toggle terminal
       if (isCtrlOrCmd && key === "`") {
         event.preventDefault();
-        setTerminalVisible((prev) => {
-          const newValue = !prev;
-          if (newValue) {
-            setActiveBottomPanel("terminal");
-            setBottomPanelCollapsed(false);
-            // Focus terminal after showing
-            setTimeout(() => focusTerminal(), 100);
-          }
-          return newValue;
-        });
+        if (bottomPanelCollapsed || activeBottomPanel !== "terminal") {
+          setActiveBottomPanel("terminal");
+          setTimeout(() => focusTerminal(), 100);
+        } else {
+          setActiveBottomPanel(null);
+        }
         return;
       }
 
       // Ctrl+Shift+Y: Toggle output
       if (isCtrlOrCmd && shiftKey && key.toLowerCase() === "y") {
         event.preventDefault();
-        setOutputVisible((prev) => {
-          const newValue = !prev;
-          if (newValue) {
-            setActiveBottomPanel("output");
-            setBottomPanelCollapsed(false);
-          }
-          return newValue;
-        });
+
+        setBottomPanelCollapsed((prev) => !prev);
+        if (bottomPanelCollapsed || activeBottomPanel !== "output") {
+          setActiveBottomPanel("output");
+          setBottomPanelCollapsed(false);
+        }
         return;
       }
 
@@ -270,8 +264,7 @@ const Sandbox: React.FC<SandboxProps> = ({
       // Ctrl+2: Focus terminal
       if (isCtrlOrCmd && key === "2") {
         event.preventDefault();
-        if (!terminalVisible) {
-          setTerminalVisible(true);
+        if (activeBottomPanel != "terminal") {
           setActiveBottomPanel("terminal");
           setBottomPanelCollapsed(false);
         }
@@ -289,7 +282,6 @@ const Sandbox: React.FC<SandboxProps> = ({
       isMobile,
       sidebarCollapsed,
       activeBottomPanel,
-      terminalVisible,
       clearTerminal,
       resetTerminal,
       searchInTerminal,
@@ -306,8 +298,7 @@ const Sandbox: React.FC<SandboxProps> = ({
   }, [handleKeyDown]);
 
   // Calculate if bottom panel should be shown
-  const showBottomPanel =
-    (terminalVisible || outputVisible) && !bottomPanelCollapsed;
+  const showBottomPanel = !bottomPanelCollapsed;
 
   const scrollTerminalToBottom = useCallback(() => {
     terminal.ref.current?.scrollToBottom();
@@ -315,13 +306,13 @@ const Sandbox: React.FC<SandboxProps> = ({
 
   // Auto-scroll terminal to bottom when new data arrives
   useEffect(() => {
-    if (activeBottomPanel === "terminal" && terminalVisible) {
+    if (activeBottomPanel === "terminal") {
       const timer = setTimeout(() => {
         scrollTerminalToBottom();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [activeBottomPanel, terminalVisible, scrollTerminalToBottom]);
+  }, [activeBottomPanel, scrollTerminalToBottom]);
 
   // Responsive sidebar handler
   const handleSidebarToggle = () => {
@@ -378,7 +369,11 @@ const Sandbox: React.FC<SandboxProps> = ({
             />
 
             <Button
-              onClick={() => setShowSettings(true)}
+              onClick={() =>
+                fileTree.filePath == ""
+                  ? toast("Open/Create a file to continue")
+                  : setShowSettings(true)
+              }
               className=" items-center gap-1 rounded border border-border bg-muted px-2 text-lg font-jetbrains-mono font-medium opacity-100 ml-auto flex"
               title="Settings"
               size={"sm"}
@@ -419,8 +414,8 @@ const Sandbox: React.FC<SandboxProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setSidebarCollapsed(false); // Show sidebar
-                    setMobileMenuOpen(false); // Close menu
+                    setSidebarCollapsed(false);
+                    setMobileMenuOpen(false);
                   }}
                   className="justify-start text-gray-300 hover:text-white"
                 >
@@ -431,7 +426,6 @@ const Sandbox: React.FC<SandboxProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setTerminalVisible(true);
                     setActiveBottomPanel("terminal");
                     setBottomPanelCollapsed(false);
                     setMobileMenuOpen(false);
@@ -445,7 +439,6 @@ const Sandbox: React.FC<SandboxProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setOutputVisible(true);
                     setActiveBottomPanel("output");
                     setBottomPanelCollapsed(false);
                     setMobileMenuOpen(false);
@@ -511,7 +504,11 @@ const Sandbox: React.FC<SandboxProps> = ({
             />
 
             <Button
-              onClick={() => setShowSettings(true)}
+              onClick={() =>
+                fileTree.filePath == ""
+                  ? toast("Open/Create a file to continue")
+                  : setShowSettings(true)
+              }
               className=" transition-colors duration-150 hover:bg-emerald-800 items-center gap-1 rounded border border-border bg-muted px-2 text-lg font-jetbrains-mono font-medium opacity-100 ml-auto flex"
               title="Settings"
               size={"sm"}
@@ -520,17 +517,12 @@ const Sandbox: React.FC<SandboxProps> = ({
             </Button>
 
             <Button
-              variant={
-                activeBottomPanel === "terminal" && terminalVisible
-                  ? "secondary"
-                  : "ghost"
-              }
+              variant={activeBottomPanel === "terminal" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => {
-                if (activeBottomPanel === "terminal" && terminalVisible) {
-                  setTerminalVisible(false);
+                if (activeBottomPanel === "terminal") {
+                  setActiveBottomPanel(null);
                 } else {
-                  setTerminalVisible(true);
                   setActiveBottomPanel("terminal");
                   setBottomPanelCollapsed(false);
                   setTimeout(() => focusTerminal(), 100);
@@ -547,17 +539,12 @@ const Sandbox: React.FC<SandboxProps> = ({
             </Button>
 
             <Button
-              variant={
-                activeBottomPanel === "output" && outputVisible
-                  ? "secondary"
-                  : "ghost"
-              }
+              variant={activeBottomPanel === "output" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => {
-                if (activeBottomPanel === "output" && outputVisible) {
-                  setOutputVisible(false);
+                if (activeBottomPanel === "output") {
+                  setActiveBottomPanel(null);
                 } else {
-                  setOutputVisible(true);
                   setActiveBottomPanel("output");
                   setBottomPanelCollapsed(false);
                 }
@@ -654,10 +641,9 @@ const Sandbox: React.FC<SandboxProps> = ({
                     <button
                       onClick={() => {
                         setActiveBottomPanel("terminal");
-                        setTerminalVisible(true);
                       }}
                       className={`px-2 py-1 text-xs rounded transition-colors ${
-                        activeBottomPanel === "terminal" && terminalVisible
+                        activeBottomPanel === "terminal"
                           ? "bg-white text-gray-900"
                           : "text-gray-600 hover:text-gray-100"
                       }`}
@@ -667,10 +653,9 @@ const Sandbox: React.FC<SandboxProps> = ({
                     <button
                       onClick={() => {
                         setActiveBottomPanel("output");
-                        setOutputVisible(true);
                       }}
                       className={`px-2 py-1 text-xs rounded transition-colors ${
-                        activeBottomPanel === "output" && outputVisible
+                        activeBottomPanel === "output"
                           ? "bg-white text-gray-900"
                           : "text-gray-600 hover:text-gray-900"
                       }`}
@@ -681,7 +666,7 @@ const Sandbox: React.FC<SandboxProps> = ({
 
                   <div className="flex items-center gap-1">
                     {/* Terminal-specific controls */}
-                    {activeBottomPanel === "terminal" && terminalVisible && (
+                    {activeBottomPanel === "terminal" && (
                       <>
                         <Button
                           variant="ghost"
@@ -746,7 +731,11 @@ const Sandbox: React.FC<SandboxProps> = ({
 
                 {/* Panel content */}
                 <div className="flex-1 overflow-hidden">
-                  {activeBottomPanel === "terminal" && terminalVisible && (
+                  <div
+                    className={
+                      activeBottomPanel === "terminal" ? "h-full" : "hidden"
+                    }
+                  >
                     <Terminal
                       ref={terminal.ref}
                       onSendData={terminal.handleSendData}
@@ -758,14 +747,18 @@ const Sandbox: React.FC<SandboxProps> = ({
                       onError={terminal.handleError}
                       className="h-full"
                     />
-                  )}
-                  {activeBottomPanel === "output" && outputVisible && (
+                  </div>
+                  <div
+                    className={
+                      activeBottomPanel === "output" ? "h-full" : "hidden"
+                    }
+                  >
                     <Output
                       replId={replId}
-                      isVisible={outputVisible}
+                      isVisible={true}
                       className="h-full"
                     />
-                  )}
+                  </div>
                 </div>
               </div>
             )}
@@ -833,7 +826,7 @@ const Sandbox: React.FC<SandboxProps> = ({
                     <ResizablePanel
                       defaultSize={30}
                       minSize={15}
-                      className={isTerminalMaximized ? "flex-1" : ""}
+                      className={cn(activeBottomPanel == null && "hidden")}
                     >
                       <div className="h-full bg-zinc-900 border-t border-gray-800">
                         {/* Tab buttons for bottom panel */}
@@ -842,12 +835,10 @@ const Sandbox: React.FC<SandboxProps> = ({
                             <button
                               onClick={() => {
                                 setActiveBottomPanel("terminal");
-                                setTerminalVisible(true);
                                 setTimeout(() => focusTerminal(), 100);
                               }}
                               className={`px-3 py-1 text-xs rounded-t border-b-2 transition-colors ${
-                                activeBottomPanel === "terminal" &&
-                                terminalVisible
+                                activeBottomPanel === "terminal"
                                   ? "bg-white border-blue-500 text-gray-900"
                                   : "bg-gray-100 border-transparent text-gray-600 hover:text-gray-900"
                               }`}
@@ -863,10 +854,9 @@ const Sandbox: React.FC<SandboxProps> = ({
                             <button
                               onClick={() => {
                                 setActiveBottomPanel("output");
-                                setOutputVisible(true);
                               }}
                               className={`px-3 py-1 text-xs rounded-t border-b-2 transition-colors ${
-                                activeBottomPanel === "output" && outputVisible
+                                activeBottomPanel === "output"
                                   ? "bg-white border-blue-500 text-gray-900"
                                   : "bg-gray-100 border-transparent text-gray-600 hover:text-gray-900"
                               }`}
@@ -877,41 +867,40 @@ const Sandbox: React.FC<SandboxProps> = ({
                           </div>
 
                           {/* Terminal-specific controls */}
-                          {activeBottomPanel === "terminal" &&
-                            terminalVisible && (
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={clearTerminal}
-                                  className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
-                                  title="Clear Terminal"
-                                >
-                                  <RotateCcw className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={resetTerminal}
-                                  className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
-                                  title="Reset Terminal"
-                                >
-                                  <RotateCcw className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    const term = prompt("Search in terminal:");
-                                    if (term) searchInTerminal(term);
-                                  }}
-                                  className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
-                                  title="Search in Terminal (Ctrl+Shift+F)"
-                                >
-                                  <Search className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
+                          {activeBottomPanel === "terminal" && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearTerminal}
+                                className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                                title="Clear Terminal"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={resetTerminal}
+                                className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                                title="Reset Terminal"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const term = prompt("Search in terminal:");
+                                  if (term) searchInTerminal(term);
+                                }}
+                                className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                                title="Search in Terminal (Ctrl+Shift+F)"
+                              >
+                                <Search className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
 
                           <div className="flex items-center gap-1">
                             <Button
@@ -936,9 +925,9 @@ const Sandbox: React.FC<SandboxProps> = ({
                               size="sm"
                               onClick={() => {
                                 if (activeBottomPanel === "terminal") {
-                                  setTerminalVisible(false);
+                                  setActiveBottomPanel(null);
                                 } else {
-                                  setOutputVisible(false);
+                                  setActiveBottomPanel(null);
                                 }
                               }}
                               className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
@@ -953,27 +942,39 @@ const Sandbox: React.FC<SandboxProps> = ({
                           className="h-full overflow-hidden"
                           style={{ height: "calc(100% - 2rem)" }}
                         >
-                          {activeBottomPanel === "terminal" &&
-                            terminalVisible && (
-                              <Terminal
-                                ref={terminal.ref}
-                                onSendData={terminal.handleSendData}
-                                onRequestTerminal={terminal.handleRequest}
-                                onTerminalResize={terminal.handleResize}
-                                onReady={terminal.handleReady}
-                                onClose={terminal.handleClose}
-                                sessionId={terminal.sessionId}
-                                onError={terminal.handleError}
-                                className="h-full"
-                              />
-                            )}
-                          {activeBottomPanel === "output" && outputVisible && (
-                            <Output
-                              replId={replId}
-                              isVisible={outputVisible}
+                          <div
+                            className={
+                              activeBottomPanel === "terminal"
+                                ? "h-full"
+                                : "hidden"
+                            }
+                          >
+                            <Terminal
+                              ref={terminal.ref}
+                              onSendData={terminal.handleSendData}
+                              onRequestTerminal={terminal.handleRequest}
+                              onTerminalResize={terminal.handleResize}
+                              onReady={terminal.handleReady}
+                              onClose={terminal.handleClose}
+                              sessionId={terminal.sessionId}
+                              onError={terminal.handleError}
                               className="h-full"
                             />
-                          )}
+                          </div>
+
+                          <div
+                            className={
+                              activeBottomPanel === "output"
+                                ? "h-full"
+                                : "hidden"
+                            }
+                          >
+                            <Output
+                              replId={replId}
+                              isVisible={true}
+                              className="h-full"
+                            />
+                          </div>
                         </div>
                       </div>
                     </ResizablePanel>
