@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Code, Zap, Shield, Globe } from "lucide-react";
@@ -6,27 +7,43 @@ import MatrixText from "../ui/matrix-text";
 import { ScrollComponent } from "../ui/container-scoll-animation";
 import GithubStarButton from "../ui/github-star";
 import Previews from "./Previews";
+import HeroVideoDialog from "../magicui/hero-video-dialog";
+import { useState } from "react";
 
 export default function HeroSection() {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
   return (
-    <ScrollComponent titleComponent={<Component />}>
-      <Previews />
-    </ScrollComponent>
+    <>
+      <HeroVideoDialog
+        isVideoOpen={isVideoOpen}
+        setIsVideoOpen={setIsVideoOpen}
+        animationStyle="from-center"
+        videoSrc="https://www.youtube.com/embed/Tlck20bJeFE"
+      />
+      <ScrollComponent
+        titleComponent={<Component openVideo={() => setIsVideoOpen(true)} />}
+      >
+        <Previews />
+      </ScrollComponent>
+    </>
   );
 }
 
-function Component() {
+function Component({ openVideo }: { openVideo: () => void }) {
   return (
     <div className="max-md:pt-28">
       <GithubStarButton />
       {/* Badge */}
-      <div className="flex justify-center mb-8">
+      <div
+        className="flex justify-center mb-8 cursor-pointer"
+        onClick={openVideo}
+      >
         <Badge
           variant="outline"
-          className="border-emerald-500/80 bg-emerald-800/50 text-emerald-300 px-4 py-2 text-sm font-medium"
+          className="border-emerald-500/80 bg-emerald-800/50 text-emerald-300 hover:bg-emerald-600 hover:text-white duration-300 transition-colors px-4 py-2 text-sm font-medium"
         >
           <Zap className="w-4 h-4 mr-2" />
-          Repl-as-a-Service Platform
+          Checkout Demo Video
         </Badge>
       </div>
 

@@ -15,6 +15,7 @@ import FeaturedPills from "@/components/landing/FeaturedPills";
 import LogoCloud from "@/components/landing/LogoCloud";
 import Pricing from "@/components/landing/Pricing";
 import Footer from "@/components/landing/Footer";
+import HeroVideoDialog from "@/components/magicui/hero-video-dialog";
 
 const LandingPage = () => {
   return (
