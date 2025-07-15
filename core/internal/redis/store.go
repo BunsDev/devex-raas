@@ -37,6 +37,12 @@ func NewRedisStore() *Redis {
 	}
 }
 
+// Ping Redis (Health Check)
+func (r *Redis) Ping() error {
+	_, err := r.client.Ping(r.ctx).Result()
+	return err
+}
+
 // Helper Functinos
 func (r *Redis) CreateRepl(template, username, replName, replId string) error {
 	if err := r.client.HSet(r.ctx, "repl:"+replId, map[string]string{

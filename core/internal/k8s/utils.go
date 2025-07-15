@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	"log"
 
 	"path/filepath"
@@ -8,6 +9,7 @@ import (
 	"github.com/parthkapoor-dev/core/pkg/dotenv"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -17,19 +19,36 @@ import (
 var KUBE_CONFIG_PATH = dotenv.EnvString("KUBE_CONFIG_PATH", filepath.Join(homedir.HomeDir(), ".kube", "config"))
 
 // Initializes the K8s client
-func getClientSet() *kubernetes.Clientset {
+func getClientSet() (*kubernetes.Clientset, error) {
 	kubeconfig := KUBE_CONFIG_PATH
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		log.Printf("Failed to load kubeconfig: %v", err)
+		return nil, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Printf("Failed to create clientset: %v", err)
+		return nil, err
 	}
 
-	return clientset
+	return clientset, nil
+}
+
+func CheckStatus() (bool, error) {
+	clientset, err := getClientSet()
+	if err != nil {
+		return false, err
+	}
+
+	_, err = clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		log.Printf("Failed to list Kubernetes nodes: %v", err)
+		return false, err
+	}
+
+	return true, nil
 }
 
 // Utility functions

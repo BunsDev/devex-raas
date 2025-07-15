@@ -13,7 +13,7 @@ import (
 )
 
 func DeleteReplDeploymentAndService(userName, replId string) error {
-	clientset := getClientSet()
+	clientset, _ := getClientSet()
 	ctx := context.Background()
 
 	region := dotenv.EnvString("SPACES_REGION", "blr1")

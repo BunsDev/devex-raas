@@ -16,7 +16,7 @@ import (
 var RUNNER_CLUSTER_IP = dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost")
 
 func CreateReplDeploymentAndService(userName, replId, template string) error {
-	clientset := getClientSet()
+	clientset, _ := getClientSet()
 	ctx := context.Background()
 
 	config, exists := models.TemplateConfigs[template]

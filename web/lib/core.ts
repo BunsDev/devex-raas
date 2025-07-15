@@ -33,6 +33,23 @@ export class CoreService {
     return fetch(`${API_BASE_URL}${url}`, defaultOptions);
   }
 
+  // Get current user info
+  async ping(): Promise<any> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/ping`, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("Get me error:", error);
+      return null;
+    }
+  }
+
   async githubLogin(): Promise<void> {
     window.location.href = `${API_BASE_URL}/auth/github/login`;
   }

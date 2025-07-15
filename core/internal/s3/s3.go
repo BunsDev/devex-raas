@@ -50,6 +50,19 @@ func NewS3Client() *S3Client {
 	}
 }
 
+// To Ping the S3 Connection
+func (s *S3Client) Ping() error {
+	input := &s3.HeadBucketInput{
+		Bucket: aws.String(spacesBucket),
+	}
+
+	_, err := s.client.HeadBucket(s.ctx, input)
+	if err != nil {
+		return fmt.Errorf("S3 ping failed: %w", err)
+	}
+	return nil
+}
+
 func (s *S3Client) CopyFolder(sourcePrefix, destinationPrefix string) error {
 	var continuationToken *string
 

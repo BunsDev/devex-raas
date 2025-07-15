@@ -1,10 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/parthkapoor-dev/core/cmd/middleware"
+	"github.com/parthkapoor-dev/core/internal/k8s"
 	"github.com/parthkapoor-dev/core/internal/redis"
 	"github.com/parthkapoor-dev/core/internal/s3"
 	"github.com/parthkapoor-dev/core/pkg/dotenv"
@@ -33,10 +36,50 @@ func (api *APIServer) Run() error {
 	s3Client := s3.NewS3Client()
 	rds := redis.NewRedisStore()
 
-	// Test Route
-	router.HandleFunc("GET /test", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("The Protected Route is Accessed")
-		json.WriteJSON(w, http.StatusOK, "Success")
+	router.HandleFunc("GET /ping", func(w http.ResponseWriter, r *http.Request) {
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+		wg.Add(3)
+		status := map[string]string{
+			"api":   "ok",
+			"k8s":   "ok",
+			"s3":    "ok",
+			"redis": "ok",
+		}
+
+		go func() {
+			defer wg.Done()
+			if err := rds.Ping(); err != nil {
+				mu.Lock()
+				status["api"] = "degraded"
+				status["redis"] = fmt.Sprintf("%v", err)
+				mu.Unlock()
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+			if err := s3Client.Ping(); err != nil {
+				mu.Lock()
+				status["api"] = "degraded"
+				status["s3"] = fmt.Sprintf("%v", err)
+				mu.Unlock()
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+			if _, err := k8s.CheckStatus(); err != nil {
+				mu.Lock()
+				status["api"] = "degraded"
+				status["k8s"] = fmt.Sprintf("%v", err)
+				mu.Unlock()
+			}
+		}()
+
+		wg.Wait()
+
+		json.WriteJSON(w, http.StatusOK, status)
 	})
 
 	//  Auth Routes
