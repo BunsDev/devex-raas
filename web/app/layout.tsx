@@ -31,6 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/logo.png" sizes="any" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${jetBrainsMono.variable} antialiased`}
         suppressHydrationWarning
