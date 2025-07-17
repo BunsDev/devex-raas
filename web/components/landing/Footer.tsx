@@ -2,6 +2,7 @@
 
 import { Github, ExternalLink, BookOpen, Code } from "lucide-react";
 import Link from "next/link";
+import { DevExLogoDark } from "../icons/logo";
 
 export default function Footer() {
   return (
@@ -42,9 +43,7 @@ export default function Footer() {
       <div className="glass relative mx-auto flex max-w-6xl flex-col items-center gap-8 rounded-2xl px-6 py-10 md:flex-row md:items-start md:justify-between md:gap-12">
         <div className="flex flex-col items-center md:items-start">
           <a href="/" className="mb-4 flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-2xl font-extrabold text-white shadow-lg">
-              <Code className="h-5 w-5" />
-            </span>
+            <DevExLogoDark height={35} width={35} />
             <span className="bg-gradient-to-br from-emerald-300 to-teal-400 bg-clip-text text-xl font-semibold tracking-tight text-transparent">
               devX
             </span>
