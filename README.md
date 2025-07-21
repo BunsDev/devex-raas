@@ -1,8 +1,8 @@
-<h1 align="center">🧑‍💻 DevEx Cloud Development IDE - REPL as a Service</h1>
+<h1 align="center">⚡ DevEx – The Open Cloud IDE Platform</h1>
 
 <p align="center">
-  <b>A production-grade REPL-as-a-Service Cloud IDE platform</b><br/>
-  Built with Kubernetes, WebSockets, S3, and GoLang magic.
+  <b>Run full-featured, containerized dev environments in the cloud — with AI assistance and secure sandboxing.</b><br/>
+  Scalable REPL sessions powered by Kubernetes, WebSockets, and GoLang.
 </p>
 
 <p align="center">
@@ -23,8 +23,11 @@
 
 ---
 
-Think **Replit** but open-source, custom-built, and containerized!
-This monorepo powers an **on-demand cloud development environment**, where users can spin up live REPLs, write code, use terminals, and persist their work — all through a browser.
+DevEx is an open-source platform to spin up cloud-based development environments (REPLs) that work like your local setup — but in the browser, anywhere, anytime.
+
+Built for flexibility, you can code in your preferred stack, connect over SSH, or run sessions with AI agents via our MCP server. We also support sandboxing AI-generated code securely, letting you test real changes in isolated environments.
+
+Unlike Gitpod or E2B, DevEx is lightweight, self-hostable, and production-grade out of the box — with a developer-first CLI, seamless AI integration, and Kubernetes-native design for infinite scale.
 
 > 📣 Want to add your own REPL template? It's easy!
 > 👉 [Read the Contributing Guide](./CONTRIBUTING.md) to get started.

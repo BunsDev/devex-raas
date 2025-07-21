@@ -34,7 +34,7 @@ func NewHandler(s3Client *s3.S3Client, rds *redis.Redis) http.Handler {
 		activateRepl(w, r, rds)
 	})
 	mux.HandleFunc("DELETE /session/{replId}", func(w http.ResponseWriter, r *http.Request) {
-		endReplSession(w, r, rds)
+		deactivateRepl(w, r, rds)
 	})
 	mux.HandleFunc("DELETE /{replId}", func(w http.ResponseWriter, r *http.Request) {
 		deleteRepl(w, r, s3Client, rds)
@@ -190,7 +190,7 @@ func activateRepl(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 	})
 }
 
-func endReplSession(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
+func deactivateRepl(w http.ResponseWriter, r *http.Request, rds *redis.Redis) {
 
 	user, _ := middleware.GetUserFromContext(r.Context())
 	userName := strings.ToLower(user.Login)
