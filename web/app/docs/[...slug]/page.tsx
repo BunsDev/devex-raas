@@ -30,7 +30,7 @@ export default async function DocsPage({ params }: DocsPageProps) {
     }
 
     return (
-      <div className="flex-1 flex flex-col md:m-2 md:rounded-lg overflow-hidden">
+      <div className="flex-1 flex flex-col md:m-2 md:rounded-lg overflow-hidden ">
         {/* Header */}
         <div className="bg-zinc-900 border-b border-zinc-800 px-4 sm:px-6 md:px-8 py-4 ">
           <div className="flex items-center justify-between">

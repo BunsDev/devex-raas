@@ -8,6 +8,7 @@ import LetterGlitch from "@/components/ui/letter-glitch";
 import StartReplCard from "@/components/ui/start-repl-card";
 import { useAuth } from "@/contexts/AuthContext";
 import { CoreService } from "@/lib/core";
+import { cn } from "@/lib/utils";
 import { Activity, Clock, Terminal, Zap } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
@@ -130,44 +131,45 @@ const NavigationTabs = ({
   setActiveTab: (tab: "terminal" | "ui") => void;
 }) => {
   return (
-    <div className="w-full sm:w-auto">
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-5 bg-gray-900 rounded-lg p-2">
-        <Button
-          onClick={() => setActiveTab("ui")}
-          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-            activeTab === "ui"
-              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-              : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-          }`}
-        >
-          <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">GUI Mode</span>
-          <span className="sm:hidden">GUI</span>
-          <Activity className="w-3 h-3" />
-          <span>Live</span>
-        </Button>
-        <Button
-          className={`flex gap-2 sm:gap-3 justify-center items-center px-3 sm:px-4 py-2 text-xs sm:text-sm ${
-            activeTab === "terminal"
-              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
-              : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
-          }`}
-          onClick={() => setActiveTab("terminal")}
-        >
-          <Terminal className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
-          <span className="font-semibold text-gray-200 hidden sm:inline">
-            devX Terminal
+    <div className="flex gap-2 max-md:justify-around w-full lg:gap-5 bg-gray-900 rounded-lg p-2">
+      <Button
+        onClick={() => setActiveTab("ui")}
+        className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 w-full ${
+          activeTab === "ui"
+            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
+            : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+        }`}
+      >
+        <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="hidden sm:inline">GUI Mode</span>
+        <span className="sm:hidden">GUI</span>
+        <Activity className="w-3 h-3" />
+        <span>Live</span>
+      </Button>
+      <Button
+        className={`flex gap-2 sm:gap-3 justify-center items-center px-3 sm:px-4 py-2 text-xs sm:text-sm w-full ${
+          activeTab === "terminal"
+            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
+            : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+        }`}
+        onClick={() => setActiveTab("terminal")}
+      >
+        <Terminal
+          className={cn(
+            "w-4 h-4 sm:w-5 sm:h-5 text-emerald-400",
+            activeTab == "terminal" && "text-teal-900",
+          )}
+        />
+        <span className="font-semibold text-gray-200 hidden sm:inline">
+          devX Terminal
+        </span>
+        <span className="font-semibold text-gray-200 sm:hidden">Terminal</span>
+        <div className="hidden sm:flex items-center gap-1 text-xs text-gray-500">
+          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 sm:px-2 py-0.5 rounded-full">
+            Beta
           </span>
-          <span className="font-semibold text-gray-200 sm:hidden">
-            Terminal
-          </span>
-          <div className="hidden sm:flex items-center gap-1 text-xs text-gray-500">
-            <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 sm:px-2 py-0.5 rounded-full">
-              Beta
-            </span>
-          </div>
-        </Button>
-      </div>
+        </div>
+      </Button>
     </div>
   );
 };
@@ -181,7 +183,7 @@ function DashboardHeader({
 }) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 px-3 sm:px-4 py-3 bg-gray-900 border-b border-gray-700">
-      <div className="w-full sm:w-auto">
+      <div className="w-full md:w-auto">
         <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
       <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">

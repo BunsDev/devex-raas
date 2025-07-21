@@ -23,6 +23,17 @@ const ASCII_BANNER = `
 
 `;
 
+const ASCII_BANNER_MOBILE = `
+
+  ██████╗ ███████╗██╗   ██╗██╗  ██╗
+  ██╔══██╗██╔════╝██║   ██║╚██╗██╔╝
+  ██║  ██║█████╗  ██║   ██║ ╚███╔╝
+  ██║  ██║██╔══╝  ╚██╗ ██╔╝ ██╔██╗
+  ██████╔╝███████╗ ╚████╔╝ ██╔╝ ██╗
+  ╚═════╝ ╚══════╝  ╚═══╝  ╚═╝  ╚═╝
+
+`;
+
 interface TerminalInterfaceProps {
   userName: string;
   getRepls: () => Promise<StoredRepl[]>;
@@ -46,7 +57,7 @@ const TerminalInterface: React.FC<TerminalInterfaceProps> = ({
   const [history, setHistory] = useState<HistoryEntry[]>([
     {
       type: "success",
-      content: ASCII_BANNER,
+      content: window.innerWidth < 640 ? ASCII_BANNER_MOBILE : ASCII_BANNER,
       timestamp: new Date().toLocaleTimeString(),
     },
     {
