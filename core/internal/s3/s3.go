@@ -7,12 +7,13 @@ import (
 	"path"
 	"strings"
 
+	"core/pkg/dotenv"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
 )
 
 var (

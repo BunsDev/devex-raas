@@ -4,7 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"core/pkg/dotenv"
+
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )

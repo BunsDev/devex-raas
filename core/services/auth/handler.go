@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	sessionManager "github.com/parthkapoor-dev/core/internal/session"
-	"github.com/parthkapoor-dev/core/pkg/resend"
+	sessionManager "core/internal/session"
+	"core/pkg/resend"
 )
 
 func NewAuthHandler() http.Handler {

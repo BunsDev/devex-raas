@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/parthkapoor-dev/core/internal/session"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"core/internal/session"
+	"core/pkg/dotenv"
 )
 
 const (

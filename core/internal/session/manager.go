@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"core/models"
+	"core/pkg/dotenv"
+
 	"github.com/gorilla/sessions"
-	"github.com/parthkapoor-dev/core/models"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
 )
 
 const SessionName = "oauth-session"

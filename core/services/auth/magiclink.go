@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/parthkapoor-dev/core/internal/email"
-	sessionManager "github.com/parthkapoor-dev/core/internal/session"
-	"github.com/parthkapoor-dev/core/models"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
-	"github.com/parthkapoor-dev/core/pkg/resend"
+	"core/internal/email"
+	sessionManager "core/internal/session"
+	"core/models"
+	"core/pkg/dotenv"
+	"core/pkg/resend"
 )
 
 type MagicLinkData struct {

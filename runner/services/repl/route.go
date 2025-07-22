@@ -10,10 +10,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/parthkapoor-dev/runner/pkg/fs"
-	"github.com/parthkapoor-dev/runner/pkg/pty"
-	"github.com/parthkapoor-dev/runner/pkg/shutdown"
-	"github.com/parthkapoor-dev/runner/pkg/ws"
+	"runner/pkg/fs"
+	"runner/pkg/pty"
+	"runner/pkg/shutdown"
+	"runner/pkg/ws"
 )
 
 var (

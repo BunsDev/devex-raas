@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"sync"
 
+	"runner/pkg/shutdown"
+
 	"github.com/gorilla/websocket"
-	"github.com/parthkapoor-dev/runner/pkg/shutdown"
 )
 
 // Message represents the structured message format for WebSocket communication

@@ -1,4 +1,4 @@
-module github.com/parthkapoor-dev/core
+module core
 
 go 1.24.3
 

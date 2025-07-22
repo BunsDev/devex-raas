@@ -6,14 +6,15 @@ import (
 	"net/http"
 	"strings"
 
+	"core/cmd/middleware"
+	"core/internal/k8s"
+	"core/internal/redis"
+	"core/internal/s3"
+	"core/models"
+	"core/pkg/dotenv"
+	"core/pkg/json"
+
 	"github.com/google/uuid"
-	"github.com/parthkapoor-dev/core/cmd/middleware"
-	"github.com/parthkapoor-dev/core/internal/k8s"
-	"github.com/parthkapoor-dev/core/internal/redis"
-	"github.com/parthkapoor-dev/core/internal/s3"
-	"github.com/parthkapoor-dev/core/models"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
-	"github.com/parthkapoor-dev/core/pkg/json"
 )
 
 func NewHandler(s3Client *s3.S3Client, rds *redis.Redis) http.Handler {

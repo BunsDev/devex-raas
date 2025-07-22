@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/parthkapoor-dev/core/internal/k8s"
-	"github.com/parthkapoor-dev/core/internal/redis"
-	"github.com/parthkapoor-dev/core/pkg/json"
+	"core/internal/k8s"
+	"core/internal/redis"
+	"core/pkg/json"
 )
 
 func NewHandler(rds *redis.Redis) http.Handler {

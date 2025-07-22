@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/parthkapoor-dev/core/internal/oauth"
-	"github.com/parthkapoor-dev/core/internal/session"
-	"github.com/parthkapoor-dev/core/models"
-	"github.com/parthkapoor-dev/core/pkg/json"
+	"core/internal/oauth"
+	"core/internal/session"
+	"core/models"
+	"core/pkg/json"
+
 	"golang.org/x/oauth2"
 )
 

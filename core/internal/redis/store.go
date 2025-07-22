@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/parthkapoor-dev/core/models"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"core/models"
+	"core/pkg/dotenv"
+
 	"github.com/redis/go-redis/v9"
 )
 

@@ -3,7 +3,8 @@ package gomail
 import (
 	"errors"
 
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"core/pkg/dotenv"
+
 	"gopkg.in/gomail.v2"
 )
 

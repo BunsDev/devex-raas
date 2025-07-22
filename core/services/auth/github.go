@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"core/internal/oauth"
+	sessionManager "core/internal/session"
+	"core/models"
+	"core/pkg/dotenv"
+
 	"github.com/google/go-github/v57/github"
-	"github.com/parthkapoor-dev/core/internal/oauth"
-	sessionManager "github.com/parthkapoor-dev/core/internal/session"
-	"github.com/parthkapoor-dev/core/models"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
 )
 
 func githubLoginHandler(w http.ResponseWriter, r *http.Request) {

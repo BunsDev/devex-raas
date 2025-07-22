@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/parthkapoor-dev/core/cmd/api"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"core/cmd/api"
+	"core/pkg/dotenv"
 )
 
 func main() {

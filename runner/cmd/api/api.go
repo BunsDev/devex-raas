@@ -5,11 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/parthkapoor-dev/runner/cmd/proxy"
-	"github.com/parthkapoor-dev/runner/pkg/dotenv"
-	"github.com/parthkapoor-dev/runner/pkg/json"
-	"github.com/parthkapoor-dev/runner/pkg/shutdown"
-	"github.com/parthkapoor-dev/runner/services/repl"
+	"runner/cmd/proxy"
+	"runner/pkg/dotenv"
+	"runner/pkg/json"
+	"runner/pkg/shutdown"
+	"runner/services/repl"
+
 	"github.com/rs/cors"
 )
 

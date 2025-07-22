@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/parthkapoor-dev/runner/pkg/ws"
+	"runner/pkg/ws"
 )
 
 type FetchDirRequest struct {

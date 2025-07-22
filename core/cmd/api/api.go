@@ -6,15 +6,16 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/parthkapoor-dev/core/cmd/middleware"
-	"github.com/parthkapoor-dev/core/internal/k8s"
-	"github.com/parthkapoor-dev/core/internal/redis"
-	"github.com/parthkapoor-dev/core/internal/s3"
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
-	"github.com/parthkapoor-dev/core/pkg/json"
-	"github.com/parthkapoor-dev/core/services/auth"
-	"github.com/parthkapoor-dev/core/services/repl"
-	"github.com/parthkapoor-dev/core/services/runner"
+	"core/cmd/middleware"
+	"core/internal/k8s"
+	"core/internal/redis"
+	"core/internal/s3"
+	"core/pkg/dotenv"
+	"core/pkg/json"
+	"core/services/auth"
+	"core/services/repl"
+	"core/services/runner"
+
 	"github.com/rs/cors"
 )
 

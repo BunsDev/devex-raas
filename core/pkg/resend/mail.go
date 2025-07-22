@@ -1,7 +1,8 @@
 package resend
 
 import (
-	"github.com/parthkapoor-dev/core/pkg/dotenv"
+	"core/pkg/dotenv"
+
 	"github.com/resend/resend-go/v2"
 )
 
