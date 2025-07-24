@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "core/**" # Only trigger if something in core/ changes
+      - "apps/core/**" # Only trigger if something in core/ changes
       - ".github/workflows/core-pipeline.yaml" # Also trigger if the workflow itself changes
 
 permissions:
@@ -32,7 +32,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./core
+          context: .
+          file: infra/core/dockerfile
           push: true
           tags: |
             ghcr.io/parthkapoor-dev/devex/core-service:latest
@@ -50,7 +51,7 @@ jobs:
         uses: cssnr/stack-deploy-action@v1
         with:
           name: devex
-          file: core/docker-stack.yaml
+          file: infra/core/docker-stack.yaml
           host: api.devx.parthkapoor.me
           user: deploy
           ssh_key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}

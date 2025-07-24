@@ -1,8 +1,8 @@
 go 1.24.5
 
 use (
-	./core
-	./runner
-	./mcp
+	./apps/core
+	./apps/runner
+	./apps/mcp
 	./packages
 )

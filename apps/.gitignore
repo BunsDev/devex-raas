@@ -1,0 +1,35 @@
+
+# Compiled Go binaries
+*.exe
+*.darwin
+*.linux
+*.windows
+*.freebsd
+*.netbsd
+*.openbsd
+*.dragonfly
+*.solaris
+*.plan9
+
+# Go build cache
+.cache/go-build/
+*/dist
+
+# IDE-specific files (common for Go development)
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+
+# Environment variables
+*/.env
+
+# Secrets
+*/secrets
+*/hosts/
+
+# Logs and temporary files
+*.log
+*/tmp/
+*/workspaces/

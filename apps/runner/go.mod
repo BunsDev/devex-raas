@@ -1,6 +1,6 @@
 module runner
 
-go 1.24.3
+go 1.24.5
 
 require (
 	github.com/creack/pty v1.1.24
@@ -10,4 +10,4 @@ require (
 	packages v0.0.0
 )
 
-replace packages/ => ../packages
+replace packages => ../../packages

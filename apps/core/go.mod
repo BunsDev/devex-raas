@@ -1,6 +1,6 @@
 module core
 
-go 1.24.3
+go 1.24.5
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.4
@@ -23,7 +23,7 @@ require (
 	packages v0.0.0
 )
 
-replace packages => ../packages
+replace packages => ../../packages
 
 require (
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.10 // indirect

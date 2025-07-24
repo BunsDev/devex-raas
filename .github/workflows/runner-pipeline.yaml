@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "runner/**"
+      - "apps/runner/**"
       - ".github/workflows/runner-pipeline.yaml"
 
 permissions:
@@ -24,7 +24,7 @@ jobs:
       - name: Find Dockerfiles in runner/
         id: set-matrix
         run: |
-          files=$(find runner -maxdepth 1 -name '*.dockerfile' -exec basename {} \;)
+          files=$(find apps/runner -maxdepth 1 -name '*.dockerfile' -exec basename {} \;)
           matrix=$(echo "$files" | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "Found Dockerfiles: $matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
@@ -57,8 +57,8 @@ jobs:
       - name: Build and push ${{ steps.tag.outputs.tag }}
         uses: docker/build-push-action@v6
         with:
-          context: ./runner
-          file: ./runner/${{ matrix.dockerfile }}
+          context: .
+          file: ./infra/runner/${{ matrix.dockerfile }}
           push: true
           tags: |
             ghcr.io/parthkapoor-dev/devex/runner-${{ steps.tag.outputs.tag }}:latest

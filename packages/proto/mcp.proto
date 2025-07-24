@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package repl;
+
+option go_package = "./pb";
+
+service ReplService {
+  rpc FetchContent(FetchContentRequest) returns (FetchContentResponse);
+}
+
+message FetchContentRequest {
+  string path = 1;
+}
+
+message FetchContentResponse {
+  string content = 1;
+  string error = 2;
+}
