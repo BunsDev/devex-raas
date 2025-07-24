@@ -24,7 +24,7 @@ jobs:
       - name: Find Dockerfiles in runner/
         id: set-matrix
         run: |
-          files=$(find apps/runner -maxdepth 1 -name '*.dockerfile' -exec basename {} \;)
+          files=$(find infra/runner -maxdepth 1 -name '*.dockerfile' -exec basename {} \;)
           matrix=$(echo "$files" | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "Found Dockerfiles: $matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
