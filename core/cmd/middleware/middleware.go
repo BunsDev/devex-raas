@@ -9,7 +9,8 @@ import (
 	"core/internal/oauth"
 	"core/internal/session"
 	"core/models"
-	"core/pkg/json"
+
+	"packages/utils/json"
 
 	"golang.org/x/oauth2"
 )

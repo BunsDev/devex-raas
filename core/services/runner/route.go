@@ -6,7 +6,7 @@ import (
 
 	"core/internal/k8s"
 	"core/internal/redis"
-	"core/pkg/json"
+	"packages/utils/json"
 )
 
 func NewHandler(rds *redis.Redis) http.Handler {

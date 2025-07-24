@@ -12,7 +12,7 @@ import (
 	"core/internal/s3"
 	"core/models"
 	"core/pkg/dotenv"
-	"core/pkg/json"
+	"packages/utils/json"
 
 	"github.com/google/uuid"
 )

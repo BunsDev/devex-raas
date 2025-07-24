@@ -4,4 +4,5 @@ use (
 	./core
 	./runner
 	./mcp
+	./packages
 )
