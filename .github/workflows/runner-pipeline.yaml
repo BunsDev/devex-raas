@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "apps/runner/**"
+      - "infra/runner/**"
       - ".github/workflows/runner-pipeline.yaml"
 
 permissions:
@@ -13,7 +14,33 @@ permissions:
   packages: write
 
 jobs:
+  # Job 1: Build and Push the Background Runner Image
+  build-runner-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push runner image
+        uses: docker/build-push-action@v6
+        with:
+          context: . # Context is the root of the repository
+          file: ./infra/runner/dockerfile # Path to the dedicated runner Dockerfile
+          push: true
+          tags: |
+            ghcr.io/parthkapoor-dev/devex/runner-service:latest
+            ghcr.io/parthkapoor-dev/devex/runner-service:${{ github.sha }}
+
+  # Job 2: Discover other environment Dockerfiles (excluding the runner itself)
   discover-dockerfiles:
+    needs: build-runner-image # Ensure runner image is built first
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -21,16 +48,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find Dockerfiles in runner/
+      - name: Find environment Dockerfiles in infra/runner/
         id: set-matrix
         run: |
-          files=$(find infra/runner -maxdepth 1 -name '*.dockerfile' -exec basename {} \;)
+          # Find all .dockerfile files excluding Dockerfile.runner
+          files=$(find infra/runner -maxdepth 1 -name '*.dockerfile' | grep -v 'Dockerfile.runner' | xargs -n 1 basename)
           matrix=$(echo "$files" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "Found Dockerfiles: $matrix"
+          echo "Found environment Dockerfiles: $matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  build-and-push:
-    needs: discover-dockerfiles
+  # Job 3: Build and Push Environment-Specific Images
+  build-and-push-env-images:
+    needs: [build-runner-image, discover-dockerfiles]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -50,16 +79,18 @@ jobs:
       - name: Extract tag name
         id: tag
         run: |
-          # Extract basename without `.dockerfile` (e.g., python.dockerfile -> python)
+          # Extract basename without `.dockerfile` (e.g., node.dockerfile -> node)
           tag_name=$(basename "${{ matrix.dockerfile }}" .dockerfile)
           echo "tag=$tag_name" >> $GITHUB_OUTPUT
 
-      - name: Build and push ${{ steps.tag.outputs.tag }}
+      - name: Build and push ${{ steps.tag.outputs.tag }} environment image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./infra/runner/${{ matrix.dockerfile }}
+          file: ./infra/runner/${{ matrix.dockerfile }} # Path to the specific environment Dockerfile
           push: true
           tags: |
             ghcr.io/parthkapoor-dev/devex/runner-${{ steps.tag.outputs.tag }}:latest
             ghcr.io/parthkapoor-dev/devex/runner-${{ steps.tag.outputs.tag }}:${{ github.sha }}
+          build-args: |
+            RUNNER_IMAGE_TAG=${{ github.sha }}

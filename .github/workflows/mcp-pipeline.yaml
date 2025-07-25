@@ -1,0 +1,40 @@
+name: MCP Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/mcp/**" # Only trigger if something in mcp/ changes
+      - ".github/workflows/mcp-pipeline.yaml" # Also trigger if the workflow itself changes
+
+permissions:
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/mcp/dockerfile
+          push: true
+          tags: |
+            ghcr.io/parthkapoor-dev/devex/mcp:latest
+            ghcr.io/parthkapoor-dev/devex/mcp:${{ github.sha }}

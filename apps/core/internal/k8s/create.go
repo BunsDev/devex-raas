@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var RUNNER_CLUSTER_IP = dotenv.EnvString("RUNNER_CLUSTER_IP", "localhost")
@@ -71,19 +72,10 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 								},
 							},
 							Env: awsEnvVars(),
-							// Resources: corev1.ResourceRequirements{
-							// 	Requests: corev1.ResourceList{
-							// 		corev1.ResourceCPU:    resource.MustParse("50m"),
-							// 		corev1.ResourceMemory: resource.MustParse("100Mi"),
-							// 	},
-							// 	Limits: corev1.ResourceList{
-							// 		corev1.ResourceCPU:    resource.MustParse("200m"),
-							// 		corev1.ResourceMemory: resource.MustParse("300Mi"),
-							// 	},
-							// },
 						},
 					},
 					Containers: []corev1.Container{
+						// Runner container now exposes the app port AND the internal gRPC port
 						{
 							Name:            "runner",
 							Image:           fmt.Sprintf("ghcr.io/parthkapoor-dev/devex/runner-%s:latest", template),
@@ -105,20 +97,50 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 								},
 							},
 							Ports: []corev1.ContainerPort{
+								// Port for the user-facing application (e.g., a web server)
 								{
+									Name:          "http",
 									ContainerPort: config.Port,
 								},
+								// Port for internal gRPC communication, acting as the server
+								{
+									Name:          "grpc",
+									ContainerPort: 50051,
+									Protocol:      corev1.ProtocolTCP,
+								},
 							},
-							// Resources: corev1.ResourceRequirements{
-							// 	Requests: corev1.ResourceList{
-							// 		corev1.ResourceCPU:    resource.MustParse("125m"),
-							// 		corev1.ResourceMemory: resource.MustParse("256Mi"),
-							// 	},
-							// 	Limits: corev1.ResourceList{
-							// 		corev1.ResourceCPU:    resource.MustParse("750m"),
-							// 		corev1.ResourceMemory: resource.MustParse("1Gi"),
-							// 	},
-							// },
+						},
+						// MCP container now exposes its own HTTP port for external access
+						{
+							Name:            "mcp-server",
+							Image:           "ghcr.io/parthkapoor-dev/devex/mcp:latest",
+							ImagePullPolicy: corev1.PullAlways,
+							Env: []corev1.EnvVar{
+								{
+									Name:  "REPL_ID",
+									Value: replId,
+								},
+								{
+									Name:  "TEMPLATE",
+									Value: template,
+								},
+								// NOTE: The mcp-server (gRPC client) will connect to the runner (gRPC server)
+								// on localhost:50051 as they are in the same Pod.
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "workspace-vol",
+									MountPath: "/workspaces",
+								},
+							},
+							Ports: []corev1.ContainerPort{
+								// Port for the mcp-service's own HTTP server
+								{
+									Name:          "mcp-http",
+									ContainerPort: 8080,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
 						},
 					},
 				},
@@ -139,9 +161,25 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 		Spec: corev1.ServiceSpec{
 			Selector: labels,
 			Ports: []corev1.ServicePort{
+				// Port for the runner's web application
 				{
+					Name:       "http",
 					Port:       config.Port,
-					TargetPort: intstrFromInt(int(config.Port)),
+					TargetPort: intstr.FromInt(int(config.Port)),
+				},
+				// Port for the mcp-service's HTTP server
+				{
+					Name:       "mcp-http",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+					Protocol:   corev1.ProtocolTCP,
+				},
+				// Port for the internal gRPC communication
+				{
+					Name:       "grpc",
+					Port:       50051,
+					TargetPort: intstr.FromInt(50051),
+					Protocol:   corev1.ProtocolTCP,
 				},
 			},
 			Type: corev1.ServiceTypeClusterIP,
@@ -153,13 +191,13 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 		return fmt.Errorf("failed to create service: %w", err)
 	}
 
-	// 3. Ingress (same as before, but using config.Port)
+	// 3. Ingress
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: replId + "-ingress",
 			Annotations: map[string]string{
 				"nginx.ingress.kubernetes.io/use-regex":          "true",
-				"nginx.ingress.kubernetes.io/rewrite-target":     "/$1",
+				"nginx.ingress.kubernetes.io/rewrite-target":     "/$2", // Captures group after the replId
 				"nginx.ingress.kubernetes.io/websocket-services": replId,
 				"nginx.ingress.kubernetes.io/ssl-redirect":       "false",
 				"nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
@@ -180,14 +218,28 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 					IngressRuleValue: networkingv1.IngressRuleValue{
 						HTTP: &networkingv1.HTTPIngressRuleValue{
 							Paths: []networkingv1.HTTPIngressPath{
+								// Path for the runner service
 								{
-									Path:     fmt.Sprintf("/%s/(.*)", replId),
+									Path:     fmt.Sprintf("/(%s)/(.*)", replId),
 									PathType: pathTypePtr(networkingv1.PathTypeImplementationSpecific),
 									Backend: networkingv1.IngressBackend{
 										Service: &networkingv1.IngressServiceBackend{
 											Name: replId,
 											Port: networkingv1.ServiceBackendPort{
 												Number: config.Port,
+											},
+										},
+									},
+								},
+								// Path for the mcp-service
+								{
+									Path:     fmt.Sprintf("/mcp/(%s)/(.*)", replId),
+									PathType: pathTypePtr(networkingv1.PathTypeImplementationSpecific),
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: replId,
+											Port: networkingv1.ServiceBackendPort{
+												Number: 8080,
 											},
 										},
 									},
@@ -205,6 +257,6 @@ func CreateReplDeploymentAndService(userName, replId, template string) error {
 		return fmt.Errorf("failed to create ingress: %w", err)
 	}
 
-	log.Printf("✅ Deployment and Service for repl %s (template: %s) created.\n", replId, template)
+	log.Printf("✅ Deployment and Service for repl %s (template: %s) created with MCP sidecar.\n", replId, template)
 	return nil
 }
