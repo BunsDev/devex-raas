@@ -1,0 +1,71 @@
+# Stage 1: Build the Go application
+FROM golang:1.24-alpine AS builder
+
+# Install protoc and dependencies
+RUN apk add --no-cache bash curl git build-base protobuf
+
+# Install protoc-gen-go and protoc-gen-go-grpc
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# Set the working directory for the entire repository
+WORKDIR /devex
+
+# Copy the go.mod and go.sum files specific to the mcp application first.
+# This allows Docker to cache the 'go mod tidy' step. If only your source code
+# changes (but not the dependencies), this layer will be reused, speeding up builds.
+COPY apps/mcp/go.mod apps/mcp/go.sum ./apps/mcp/
+
+# Set working directory for Go module to download modules
+WORKDIR /devex/apps/mcp
+
+# Download modules. This layer will be cached if go.mod/go.sum haven't changed.
+RUN go mod download
+
+# Now, copy the rest of the application code.
+# Changes here won't invalidate the 'go mod tidy' cache layer above.
+WORKDIR /devex
+COPY . .
+
+# Set PATH so protoc can find plugins
+ENV PATH="/go/bin:$PATH"
+
+# Run the proto generation step
+RUN make generate-proto
+
+# Set working dir back to the Go module for building
+WORKDIR /devex/apps/mcp
+
+# Build the Go application
+# CGO_ENABLED=0 for static binary, GOOS=linux for Linux target
+# -a -installsuffix cgo helps ensure a fully static binary
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
+
+
+# Stage 2: Create the final lean image for deployment
+# Use a minimal base image. 'alpine:latest' is a good balance for beginner friendliness
+# between extreme minimalism (like 'scratch') and having basic debugging tools.
+FROM alpine:latest
+
+# Set the working directory for the final image
+WORKDIR /app
+
+# Copy the compiled binary from the 'builder' stage into the final image's working directory
+COPY --from=builder /devex/apps/mcp/main .
+
+# Expose the port your Go application listens on.
+# Based on your .env, your app listens on PORT=8080.
+EXPOSE 8080
+
+# Define the command to run your application when the container starts.
+# This executes the 'main' binary copied from the builder stage.
+CMD ["./main"]
+
+# --- Best Practices for Dockerfile ---
+# 1. Use specific version tags for base images (e.g., golang:1.22-alpine) to ensure reproducible builds.
+# 2. Leverage Docker's layer caching by placing less frequently changing instructions (like COPY go.mod/sum)
+#    before more frequently changing ones (like COPY . .).
+# 3. Keep the final image as small as possible to reduce attack surface and improve deployment speed.
+# 4. Use `CGO_ENABLED=0` for Go applications to create static binaries.
+# 5. Define `EXPOSE` for clarity, though it doesn't actually publish the port; it's documentation.
+# 6. Use `CMD` with the executable path.
