@@ -1,25 +1,36 @@
 package server
 
 import (
-	"context"
+	"log"
+	"mcp/internal/gRPC"
 	"mcp/internal/tools"
+	"net/http"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 type McpServer struct {
-	server *mcp.Server
-	tools  *tools.ToolsHandler
+	server     *mcp.Server
+	replClient *gRPC.ReplClient
+	tools      *tools.ToolsHandler
+	httpAddr   string
 }
 
 func NewMcpServer() *McpServer {
+
+	defer log.Println("Created a New Server Instance")
 
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "DevEx MCP Server",
 		Version: "v1.0.0",
 	}, nil)
 
-	tools := tools.NewToolsHandler()
+	replClient, err := gRPC.NewReplClient()
+	if err != nil {
+		log.Println("repl client error:", err)
+	}
+
+	tools := tools.NewToolsHandler(replClient)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "Ping",
@@ -239,9 +250,21 @@ func NewMcpServer() *McpServer {
 	// 	},
 	// }, toolsHandler.CloseTerminal)
 
-	return &McpServer{server: server, tools: tools}
+	return &McpServer{
+		server:   server,
+		tools:    tools,
+		httpAddr: ":8080",
+	}
 }
 
 func (m *McpServer) Run() error {
-	return m.server.Run(context.Background(), mcp.NewStdioTransport())
+	log.Println("Running the MCP Server Now")
+	defer log.Println("Shutting Down the MCP Server")
+
+	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
+		return m.server
+	}, nil)
+
+	http.ListenAndServe(m.httpAddr, handler)
+	return nil
 }
