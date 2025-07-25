@@ -1,29 +1,57 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"packages/utils/json"
 	"runner/cmd/proxy"
 	"runner/pkg/dotenv"
 	"runner/pkg/shutdown"
+	"runner/services/mcp"
 	"runner/services/repl"
 
 	"github.com/rs/cors"
+	"golang.org/x/sync/errgroup"
 )
 
 type APIServer struct {
-	addr string
+	httpAddr string
+	grpcAddr string
 }
 
-func NewAPIServer(addr string) *APIServer {
+func NewAPIServer(httpAddr, grpcAddr string) *APIServer {
 	return &APIServer{
-		addr: addr,
+		httpAddr: httpAddr,
+		grpcAddr: grpcAddr,
 	}
 }
 
 func (api *APIServer) Run() error {
+
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(api.RunGRPC)
+	g.Go(api.RunHTTP)
+
+	return g.Wait()
+}
+
+func (api *APIServer) RunGRPC() error {
+
+	lis, err := net.Listen("tcp", api.grpcAddr)
+	if err != nil {
+		return err
+	}
+
+	mcp.NewGrpcServer(lis)
+	return nil
+
+}
+
+func (api *APIServer) RunHTTP() error {
 
 	router := http.NewServeMux()
 	sm := shutdown.NewShutdownManager(dotenv.EnvString("REPL_ID", "repl_id_not_found"), shutdownCallback)
@@ -40,16 +68,16 @@ func (api *APIServer) Run() error {
 	})
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // TODO: Update to frontend URL in prod
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
 	})
 	server := http.Server{
-		Addr:    api.addr,
+		Addr:    api.httpAddr,
 		Handler: c.Handler(router),
 	}
 
-	log.Println("Server has started at ", api.addr)
+	log.Println("Server has started at ", api.httpAddr)
 	return server.ListenAndServe()
 }

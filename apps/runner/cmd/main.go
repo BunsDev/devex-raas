@@ -7,8 +7,7 @@ import (
 )
 
 func main() {
-	server := api.NewAPIServer(":8081")
-	if err := server.Run(); err != nil {
-		log.Println("Unable to run server")
+	if err := api.NewAPIServer(":8081", ":50051").Run(); err != nil {
+		log.Fatal("Unable to run server")
 	}
 }
