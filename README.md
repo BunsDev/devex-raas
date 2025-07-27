@@ -34,6 +34,15 @@ Unlike Gitpod or E2B, DevEx is lightweight, self-hostable, and production-grade 
 
 ---
 
+<p align="center">
+  <a href="https://glama.ai/mcp/servers/@ParthKapoor-dev/devex">
+    <img width="380" height="200" src="https://glama.ai/mcp/servers/@ParthKapoor-dev/devex/badge" />
+  </a>
+</p>
+
+<p align="center"><b>🚀 MCP Server is now live at <a href="https://glama.ai">glama.ai</a> – enabling AI agents to interact directly with your REPLs!</b></p>
+
+
 ## ✨ Features
 
 - 🔐 **GitHub OAuth** authentication
