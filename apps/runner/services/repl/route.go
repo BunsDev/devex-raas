@@ -1,8 +1,6 @@
 package repl
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,31 +20,16 @@ var (
 )
 
 // Existing request structures (assumed)
-func getPTYManager() *pty.PTYManager {
-	once.Do(func() {
-		ptyManager = pty.NewPTYManager()
-	})
-	return ptyManager
-}
 
 func NewHandler(sm *shutdown.ShutdownManager) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		wsHandler := ws.NewWSHandler(strings.Split(r.Host, ".")[0], sm)
-		ptyManager = getPTYManager()
+		ptyManager = pty.GetPTYManager()
 		defer ptyManager.Cleanup()
 		handleWs(w, r, wsHandler, ptyManager)
 	})
 	return mux
-}
-
-func generateSessionID() string {
-	bytes := make([]byte, 16)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		return ""
-	}
-	return hex.EncodeToString(bytes)
 }
 
 func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, ptyManager *pty.PTYManager) {
@@ -194,19 +177,14 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, ptyManag
 
 	// Terminal Actions
 	ws.On("requestTerminal", func(data any) {
-		sessionID := generateSessionID()
-		if sessionID == "" {
-			ws.Emit("terminalError", map[string]string{"error": "Failed to generate session ID"})
-			return
-		}
 
-		session, err := ptyManager.CreateSession(sessionID, nil)
+		session, err := ptyManager.CreateSession(nil)
 		if err != nil {
 			ws.Emit("terminalError", map[string]string{"error": "Failed to create terminal session"})
 			return
 		}
 
-		ws.Emit("terminalConnected", map[string]string{"sessionId": sessionID})
+		ws.Emit("terminalConnected", map[string]string{"sessionId": session.ID})
 
 		session.SetOnDataCallback(func(data []byte) {
 			ws.Emit("terminalResponse", string(data))
@@ -214,7 +192,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, ws *ws.WSHandler, ptyManag
 
 		session.SetOnCloseCallback(func() {
 			ws.Emit("terminalClosed", nil)
-			ptyManager.RemoveSession(sessionID)
+			ptyManager.RemoveSession(session.ID)
 		})
 	})
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"packages/utils/json"
 	"runner/cmd/proxy"
@@ -19,13 +18,13 @@ import (
 
 type APIServer struct {
 	httpAddr string
-	grpcAddr string
+	grpcPort int
 }
 
-func NewAPIServer(httpAddr, grpcAddr string) *APIServer {
+func NewAPIServer(httpAddr string, grpcPort int) *APIServer {
 	return &APIServer{
 		httpAddr: httpAddr,
-		grpcAddr: grpcAddr,
+		grpcPort: grpcPort,
 	}
 }
 
@@ -41,12 +40,9 @@ func (api *APIServer) Run() error {
 
 func (api *APIServer) RunGRPC() error {
 
-	lis, err := net.Listen("tcp", api.grpcAddr)
-	if err != nil {
+	if err := mcp.NewGrpcServer().Start(api.grpcPort); err != nil {
 		return err
 	}
-
-	mcp.NewGrpcServer(lis)
 	return nil
 
 }

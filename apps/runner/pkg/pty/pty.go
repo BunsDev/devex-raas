@@ -2,6 +2,9 @@ package pty
 
 import (
 	"bufio"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -44,6 +47,15 @@ type PTYConfig struct {
 	Rows        int               // Initial terminal rows
 }
 
+func generateSessionID() string {
+	bytes := make([]byte, 16)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return ""
+	}
+	return hex.EncodeToString(bytes)
+}
+
 // NewPTYManager creates a new PTY manager
 func NewPTYManager() *PTYManager {
 	return &PTYManager{
@@ -52,9 +64,14 @@ func NewPTYManager() *PTYManager {
 }
 
 // CreateSession creates a new PTY session with the given configuration
-func (pm *PTYManager) CreateSession(sessionID string, config *PTYConfig) (*PTYSession, error) {
+func (pm *PTYManager) CreateSession(config *PTYConfig) (*PTYSession, error) {
 	pm.mutex.Lock()
 	defer pm.mutex.Unlock()
+
+	sessionID := generateSessionID()
+	if sessionID == "" {
+		return nil, errors.New("Cannot gen a session ID")
+	}
 
 	// Check if session already exists
 	if _, exists := pm.sessions[sessionID]; exists {

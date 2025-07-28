@@ -32,6 +32,10 @@ func FetchFileContent(fullPath string) (string, error) {
 	return string(bytes), err
 }
 
+func SaveFile(fullPath, content string) error {
+	return os.WriteFile(fullPath, []byte(content), 0644)
+}
+
 func SaveFileDiffs(fullPath, patch string) error {
 	currentBytes, err := os.ReadFile(fullPath)
 	if err != nil {

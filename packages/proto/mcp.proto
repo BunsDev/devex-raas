@@ -5,14 +5,110 @@ package repl;
 option go_package = "./pb";
 
 service ReplService {
-  rpc FetchContent(FetchContentRequest) returns (FetchContentResponse);
+  // File System
+  rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
+  rpc WriteFile(WriteFileRequest) returns (FileActionResponse);
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  rpc CreateFile(CreateFileRequest) returns (FileActionResponse);
+  rpc CreateFolder(CreateFolderRequest) returns (FileActionResponse);
+  rpc Delete(DeleteRequest) returns (FileActionResponse);
+  rpc Rename(RenameRequest) returns (FileActionResponse);
+  rpc Copy(CopyRequest) returns (FileActionResponse);
+
+  // Terminal
+  rpc ExecuteCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse);
+  rpc CreateTerminal(CreateTerminalRequest) returns (CreateTerminalResponse);
+  rpc SendToTerminal(SendToTerminalRequest) returns (TerminalActionResponse);
+  rpc CloseTerminal(CloseTerminalRequest) returns (TerminalActionResponse);
 }
 
-message FetchContentRequest {
+// File System Messages
+message ReadFileRequest {
   string path = 1;
 }
 
-message FetchContentResponse {
+message ReadFileResponse {
   string content = 1;
+  string error = 2;
+}
+
+message WriteFileRequest {
+  string path = 1;
+  string content = 2;
+}
+
+message ListFilesRequest {
+  string path = 1;
+}
+
+message ListFilesResponse {
+  message FileInfo {
+    string name = 1;
+    bool is_dir = 2;
+    int64 mod_time = 4;
+  }
+  repeated FileInfo files = 1;
+  string error = 2;
+}
+
+message CreateFileRequest {
+  string path = 1;
+}
+
+message CreateFolderRequest {
+  string path = 1;
+}
+
+message DeleteRequest {
+  string path = 1;
+}
+
+message RenameRequest {
+  string old_path = 1;
+  string new_path = 2;
+}
+
+message CopyRequest {
+  string source_path = 1;
+  string target_path = 2;
+}
+
+message FileActionResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+// Terminal Messages
+message ExecuteCommandRequest {
+  string command = 1;
+  string working_dir = 2;
+  int32 timeout = 3;
+}
+
+message ExecuteCommandResponse {
+  string output = 1;
+  string error = 2;
+}
+
+message CreateTerminalRequest {
+  string name = 1;
+}
+
+message CreateTerminalResponse {
+  string session_id = 1;
+  string error = 2;
+}
+
+message SendToTerminalRequest {
+  string session_id = 1;
+  string input = 2;
+}
+
+message CloseTerminalRequest {
+  string session_id = 1;
+}
+
+message TerminalActionResponse {
+  bool success = 1;
   string error = 2;
 }
