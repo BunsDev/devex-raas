@@ -21,21 +21,21 @@ Before using these workflows, make sure the following secrets are added under:
 
 ### `core-pipeline.yaml`
 
-- **Triggers**: On changes in `core/` or the workflow file itself.
+- **Triggers**: On changes in `apps/core/` or the workflow file itself.
 - **What it does**:
   - Builds the Docker image for the Core service.
   - Pushes it to GHCR.
   - Deploys the updated Core service via Docker Stack to a remote VPS using SSH.
 
-📄 See also: [`core/DEPLOYMENT.md`](../../core/DEPLOYMENT.md)
+📄 See also: [`apps/core/DEPLOYMENT.md`](../../apps/core/DEPLOYMENT.md)
 
 ---
 
 ### `runner-pipeline.yaml`
 
-- **Triggers**: On changes in `runner/` or the workflow file.
+- **Triggers**: On changes in `apps/runner/` or the workflow file.
 - **What it does**:
-  - Dynamically finds all Dockerfiles in `runner/`.
+  - Dynamically finds all Dockerfiles in `apps/runner/`.
   - Builds and pushes one Docker image per template runner to GHCR.
   - Tags each image with both `:latest` and the current `git sha`.
 

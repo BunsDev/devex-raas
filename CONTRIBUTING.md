@@ -10,7 +10,7 @@ Whether you’re fixing a bug, improving docs, or adding a new template — ever
 Make sure to:
 
 - Carefully read the [README.md](../README.md) at the root to understand what Devex is and how it works.
-- Explore the `README.md` files inside each subdirectory (`core/`, `runner/`, `templates/`, `web/`, etc.) to get a deeper understanding of each module.
+- Explore the `README.md` files inside each subdirectory (`apps/core/`, `apps/runner/`, `templates/`, `apps/web/`, etc.) to get a deeper understanding of each module.
 - Use [PULL_REQUEST_TEMPLATE.md](../PULL_REQUEST_TEMPLATE) for creating a Pull Request.
 
 ---
@@ -55,17 +55,17 @@ Follow the [Template Contribution Guide](./templates/README.md) or see [this ful
 Steps include:
 
 * Add files to `templates/<your-template>/`
-* Add Dockerfile to `runner/<your-template>.dockerfile`
+* Add Dockerfile to `apps/runner/<your-template>.dockerfile`
 * Register the template in:
 
-  * `web/lib/templates.tsx`
-  * `core/models/templates.go`
+  * `apps/web/lib/templates.tsx`
+  * `apps/core/models/templates.go`
 
 ---
 
 ### 2. 🐛 Fix a Bug or Improve Code
 
-* Navigate to the relevant module (`core/`, `runner/`, `web/`, etc.).
+* Navigate to the relevant module (`apps/core/`, `apps/runner/`, `apps/web/`, etc.).
 * Each has its own `README.md` and may contain TODOs, architecture notes, or issues.
 * Submit your fix as a PR with a descriptive title and message. Checkout [PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
 

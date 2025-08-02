@@ -13,8 +13,8 @@ To use this WebSocket handler in your own HTTP route:
 ```go
 import (
   "net/http"
-  "github.com/ParthKapoor-dev/devex/runner/pkg/ws"
-  "github.com/ParthKapoor-dev/devex/runner/pkg/pty"
+  "github.com/ParthKapoor-dev/devex/apps/runner/pkg/ws"
+  "github.com/ParthKapoor-dev/devex/apps/runner/pkg/pty"
 )
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +79,7 @@ D -->|outgoing msg| F["Emit(event)"]
 
 ## 📄 File Overview
 
-> 📁 [View Source](https://github.com/ParthKapoor-dev/devex/blob/main/runner/pkg/ws/ws.go)
+> 📁 [View Source](https://github.com/ParthKapoor-dev/devex/blob/main/apps/runner/pkg/ws/ws.go)
 
 | Function             | Description                                   |
 | -------------------- | --------------------------------------------- |
@@ -145,10 +145,10 @@ ws.Emit("serverReady", map[string]string{"msg": "Welcome!"})
 
 * [📂 `pkg/pty`](../pty) – Manages terminal sessions
 * [📂 `pkg/fs`](../fs) – Manages filesystem read/write operations
-* [📂 `runner/services/repl`](../../services/repl) – API integration using this handler
+* [📂 `apps/runner/services/repl`](../../services/repl) – API integration using this handler
 
 ---
 
 ## 🔗 Source
 
-* [Source Code – `ws.go`](https://github.com/ParthKapoor-dev/devex/blob/main/runner/pkg/ws/ws.go)
+* [Source Code – `ws.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/runner/pkg/ws/ws.go)

@@ -1,6 +1,6 @@
 # 🏃 Runner Service – REPL Runtime Engine
 
-The `runner/` service is the runtime component of the Devex platform.
+The `apps/runner/` service is the runtime component of the Devex platform.
 
 It is a **lightweight WebSocket server** embedded inside the user’s REPL pod. The runner connects directly to the frontend, allowing real-time:
 
@@ -15,7 +15,7 @@ It is a **lightweight WebSocket server** embedded inside the user’s REPL pod. 
 | Path                            | Description                                       |
 |---------------------------------|---------------------------------------------------|
 | [`cmd/`](./cmd)                 | Entrypoint and route setup                        |
-| [`services/repl/route.go`](https://github.com/ParthKapoor-dev/devex/blob/main/runner/services/repl/route.go) | WebSocket endpoint handler                       |
+| [`services/repl/route.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/runner/services/repl/route.go) | WebSocket endpoint handler                       |
 | [`pkg/ws`](./pkg/ws)           | WebSocket abstraction and event routing layer     |
 | [`pkg/fs`](./pkg/fs)           | Filesystem utils: read directory, patch files     |
 | [`pkg/pty`](./pkg/pty)         | Terminal session manager using PTY                |
@@ -26,7 +26,7 @@ It is a **lightweight WebSocket server** embedded inside the user’s REPL pod. 
 
 ### `GET /api/v1/repl/ws`
 
-Defined in [`route.go`](https://github.com/ParthKapoor-dev/devex/blob/main/runner/services/repl/route.go), this WebSocket endpoint serves as the **main connection point** between the frontend and the REPL container.
+Defined in [`route.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/runner/services/repl/route.go), this WebSocket endpoint serves as the **main connection point** between the frontend and the REPL container.
 
 ---
 
@@ -196,8 +196,8 @@ The runner is deployed inside each user’s REPL pod via Kubernetes, and interac
 
 ## 🔗 Related
 
-* Main backend API: [`/core`](../../core)
-* Kubernetes setup: [`/k8s`](../../k8s)
+* Main backend API: [`/apps/core`](../../apps/core)
+* Kubernetes setup: [`/infra/k8s`](../../infra/k8s)
 * Templates used at REPL creation: [`/templates`](../../templates)
 
 ---
