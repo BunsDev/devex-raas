@@ -119,7 +119,7 @@ Your stack file describes:
 * **Port mapping**
 * **Secrets (optional)**
 
-📄 [View full file → `core/docker-stack.yaml`](https://github.com/ParthKapoor-dev/devex/blob/main/core/docker-stack.yaml)
+📄 [View full file → `apps/core/docker-stack.yaml`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/docker-stack.yaml)
 
 ---
 
@@ -156,7 +156,7 @@ docker swarm leave --force
 ## 📬 Notes
 
 * You can deploy **multiple services** via `docker-stack.yaml`, and manage them together.
-* Add load balancer (e.g., NGINX) if exposing to public internet with TLS (check [k8s/cert-manager](../../k8s) for ideas).
+* Add load balancer (e.g., NGINX) if exposing to public internet with TLS (check [infra/k8s/cert-manager](../../infra/k8s) for ideas).
 * Future enhancement: integrate with GitHub Actions for CI/CD to auto-deploy on push.
 
 ---

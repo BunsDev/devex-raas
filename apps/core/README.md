@@ -1,6 +1,6 @@
 # 📘 Core Service – Devex Cloud IDE Backend
 
-The `core/` service is the **main backend API server** responsible for:
+The `apps/core/` service is the **main backend API server** responsible for:
 
 - Handling GitHub OAuth2.0 login
 - Managing REPL sessions and their lifecycles
@@ -34,8 +34,8 @@ You can Checkout how this server is deployed at [`DEPLOYMENT`](./DEPLOYMENT.md).
 
 ### `POST /auth/github`
 
-**Path**: [`services/auth/github/`](https://github.com/ParthKapoor-dev/devex/blob/main/core/services/auth/github)
-**Handler**: [`handler.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/services/auth/github/handler.go)
+**Path**: [`services/auth/github/`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/services/auth/github)
+**Handler**: [`handler.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/services/auth/github/handler.go)
 
 Handles GitHub OAuth2.0 login. After successful login, the user session is managed via cookies or JWT.
 
@@ -43,12 +43,12 @@ Handles GitHub OAuth2.0 login. After successful login, the user session is manag
 
 ### `POST /api/repl/...` (Protected Route)
 
-**Path**: [`services/repl/route.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/services/repl/route.go)
+**Path**: [`services/repl/route.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/services/repl/route.go)
 
 These routes require a valid authenticated user session.
 
 #### Protected via Middleware
-**Middleware**: [`cmd/middleware/middleware.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/cmd/middleware/middleware.go)
+**Middleware**: [`cmd/middleware/middleware.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/cmd/middleware/middleware.go)
 
 The middleware verifies the user's session using cookies or headers, and passes the request if authenticated.
 
@@ -71,7 +71,7 @@ On REPL creation:
 - Template files are copied from the [`/templates`](../../templates) directory
 
 **Code Reference**:
-[`internal/s3/s3.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/internal/s3/s3.go)
+[`internal/s3/s3.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/internal/s3/s3.go)
 
 ---
 
@@ -96,8 +96,8 @@ These allow the user to access their running REPL via:
 - The **main container** (Runner) connects to frontend over WebSocket
 
 📁 Code:
-- [Create REPL](https://github.com/ParthKapoor-dev/devex/blob/main/core/internal/k8s/create.go)
-- [Ingress setup](https://github.com/ParthKapoor-dev/devex/blob/main/core/internal/k8s/create.go#L50)
+- [Create REPL](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/internal/k8s/create.go)
+- [Ingress setup](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/internal/k8s/create.go#L50)
 
 #### REPL Deletion Logic
 When a REPL session ends:
@@ -106,7 +106,7 @@ When a REPL session ends:
 - The **Deployment**, **Service**, and **Ingress** are deleted
 
 📁 Code:
-- [Delete REPL](https://github.com/ParthKapoor-dev/devex/blob/main/core/internal/k8s/delete.go)
+- [Delete REPL](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/internal/k8s/delete.go)
 
 ---
 
@@ -123,7 +123,7 @@ No traditional SQL DB is needed as:
 - Code is stored in S3
 
 📁 Redis Store Logic:
-[`internal/redis/store.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/internal/redis/store.go)
+[`internal/redis/store.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/internal/redis/store.go)
 
 ---
 
@@ -131,11 +131,11 @@ No traditional SQL DB is needed as:
 
 | Path | Purpose |
 |------|---------|
-| [`cmd/api/api.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/cmd/api/api.go) | Sets up the routes and API server |
-| [`cmd/middleware/middleware.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/cmd/middleware/middleware.go) | Middleware for session protection |
-| [`models/repl.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/models/repl.go) | REPL struct used across the app |
-| [`pkg/dotenv/env.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/pkg/dotenv/env.go) | Loads environment variables |
-| [`pkg/json/json.go`](https://github.com/ParthKapoor-dev/devex/blob/main/core/pkg/json/json.go) | JSON encoder/decoder helpers |
+| [`cmd/api/api.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/cmd/api/api.go) | Sets up the routes and API server |
+| [`cmd/middleware/middleware.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/cmd/middleware/middleware.go) | Middleware for session protection |
+| [`models/repl.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/models/repl.go) | REPL struct used across the app |
+| [`pkg/dotenv/env.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/pkg/dotenv/env.go) | Loads environment variables |
+| [`pkg/json/json.go`](https://github.com/ParthKapoor-dev/devex/blob/main/apps/core/pkg/json/json.go) | JSON encoder/decoder helpers |
 
 ---
 
@@ -164,8 +164,8 @@ No traditional SQL DB is needed as:
 
 ## 🧭 Next Docs
 
-👉 Want to understand how the REPL container works? Check out the [`runner/`](../../runner) docs.
+👉 Want to understand how the REPL container works? Check out the [`apps/runner/`](../../apps/runner) docs.
 
-Need help setting up the cluster? Head to [`k8s/`](../../k8s).
+Need help setting up the cluster? Head to [`infra/k8s/`](../../infra/k8s).
 
 ---

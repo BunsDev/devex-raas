@@ -23,12 +23,12 @@ Devex allows users to spin up containerized REPL environments using predefined t
 
 ---
 
-### ⚙️ Step 2: Add a Dockerfile in `runner/`
+### ⚙️ Step 2: Add a Dockerfile in `apps/runner/`
 
-* Create a Dockerfile in `runner/` named `<template-key>.dockerfile`.
+* Create a Dockerfile in `apps/runner/` named `<template-key>.dockerfile`.
 
 > Example: For a `node` template:
-> Create `runner/node.dockerfile`
+> Create `apps/runner/node.dockerfile`
 
 #### 🔧 Sample Dockerfile
 
@@ -73,7 +73,7 @@ CMD ["/app/runner"]
 
 ### 🧠 Step 3: Register the Template in the Web UI
 
-Edit `web/libs/templates.tsx` and register your new template:
+Edit `apps/web/libs/templates.tsx` and register your new template:
 
 ```tsx
 node: {
@@ -92,7 +92,7 @@ node: {
 
 ### 🛡 Step 4: Add Template to Whitelist in Backend
 
-Edit `core/models/template.go` and add your template under the allowed list:
+Edit `apps/core/models/template.go` and add your template under the allowed list:
 
 ```go
 "node": {

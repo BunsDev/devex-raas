@@ -133,36 +133,36 @@ sequenceDiagram
 
 ## 🔩 Key Components
 
-### [`web/`](./web) – **Frontend**
+### [`apps/web/`](./apps/web) – **Frontend**
 
 * Built with **Next.js** + **Tailwind CSS**
 * GitHub OAuth login
 * GUI for File Tree, Editor, Terminal
 * WebSocket hooks to interact with Runner
 
-### [`core/`](./core) – **Backend API**
+### [`apps/core/`](./apps/core) – **Backend API**
 
 * Written in **Go**
 * Handles user auth, S3 ops, Kubernetes deployments, cleanup
 * Redis for REPL session state
-* 📄 See [core/README.md](./core) for detailed architecture & deployment steps
+* 📄 See [apps/core/README.md](./apps/core) for detailed architecture & deployment steps
 
-### [`runner/`](./runner) – **REPL Runtime Container**
+### [`apps/runner/`](./apps/runner) – **REPL Runtime Container**
 
 * Lightweight Go server
 * WebSocket API for:
 
   * File tree and file content access
   * Terminal (PTY) sessions
-* 📄 See [runner/README.md](./runner) for event list and package internals
+* 📄 See [apps/runner/README.md](./apps/runner) for event list and package internals
 
-### [`k8s/`](./k8s) – **Kubernetes Bootstrap & TLS**
+### [`infra/k8s/`](./infra/k8s) – **Kubernetes Bootstrap & TLS**
 
 * Contains:
 
   * Ingress-NGINX setup
   * `cert-manager` + Let’s Encrypt for auto TLS
-* 📄 See [k8s/README.md](./k8s) for full setup instructions
+* 📄 See [infra/k8s/README.md](./infra/k8s) for full setup instructions
 
 ### [`templates/`](./templates)
 
@@ -185,9 +185,9 @@ sequenceDiagram
 ## 📦 Deployment Flow
 
 1. User logs in and creates a REPL
-2. `core/` copies a template into `username/repl-id/` on S3
-3. `core/` deploys a pod, service, ingress in Kubernetes
-4. `runner/` connects via WebSocket and serves FS + Terminal
+2. `apps/core/` copies a template into `username/repl-id/` on S3
+3. `apps/core/` deploys a pod, service, ingress in Kubernetes
+4. `apps/runner/` connects via WebSocket and serves FS + Terminal
 5. On session end:
 
    * Ephemeral container uploads updated files to S3
@@ -212,10 +212,10 @@ sequenceDiagram
 
 📚 For deeper implementation details:
 
-* [`core/`](./core) – [Backend README.md](./core/README.md)
-* [`runner/`](./runner) – [Runner WebSocket README.md](./runner/README.md)
-* [`k8s/`](./k8s) – [Kubernetes + TLS Setup](./k8s/README.md)
-* [`web/`](./web) – [Frontend README.md](./web/README.md)
+* [`apps/core/`](./apps/core) – [Backend README.md](./apps/core/README.md)
+* [`apps/runner/`](./apps/runner) – [Runner WebSocket README.md](./apps/runner/README.md)
+* [`infra/k8s/`](./infra/k8s) – [Kubernetes + TLS Setup](./infra/k8s/README.md)
+* [`apps/web/`](./apps/web) – [Frontend README.md](./apps/web/README.md)
 
 ---
 
